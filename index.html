@@ -1,9 +1,10 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>地水利マップ（プロトタイプ）</title>
+    <title>地水利マップ（複数ピンテスト）</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -15,19 +16,35 @@
 </head>
 <body>
     <div id="map"></div>
-    <script>
-        // 地図の初期設定（和歌山市役所付近）
-        const map = L.map('map').setView([34.2305, 135.1705], 15);
 
-        // 背景地図の設定
+    <script>
+        // 1. 地図の初期設定（和歌山城付近を中心に少し引いた状態）
+        const map = L.map('map').setView([34.226, 135.174], 14);
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // テストピン
-        L.marker([34.2305, 135.1705]).addTo(map)
-            .bindPopup('<b>テスト消火栓</b><br>最初のピンが立ちました！')
-            .openPopup();
+        // 2. 地水利のテストデータ（リスト）を作成
+        // ※実際はこれをスプレッドシートなどから読み込みます
+        const waterSources = [
+            { id: 'S-001', type: '消火栓', lat: 34.2305, lng: 135.1705, info: '市役所前 65mm' },
+            { id: 'S-002', type: '消火栓', lat: 34.2250, lng: 135.1750, info: '和歌山城北側 65mm' },
+            { id: 'B-001', type: '防火水槽', lat: 34.2210, lng: 135.1710, info: '県庁南 40t' },
+            { id: 'S-003', type: '消火栓', lat: 34.2330, lng: 135.1780, info: '和歌山駅西口 65mm' }
+        ];
+
+        // 3. リストのデータを順番に取り出して、地図にピンを立てる
+        waterSources.forEach(function(source) {
+            let markerText = `<b>${source.type} (${source.id})</b><br>${source.info}`;
+            
+            L.marker([source.lat, source.lng])
+                .addTo(map)
+                .bindPopup(markerText);
+        });
     </script>
 </body>
 </html>
+
+
+```
