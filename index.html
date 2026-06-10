@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>地水利マップ（プロトタイプ）</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100vw; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        // 地図の初期設定（和歌山市役所付近）
+        const map = L.map('map').setView([34.2305, 135.1705], 15);
+
+        // 背景地図の設定
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // テストピン
+        L.marker([34.2305, 135.1705]).addTo(map)
+            .bindPopup('<b>テスト消火栓</b><br>最初のピンが立ちました！')
+            .openPopup();
+    </script>
+</body>
+</html>
