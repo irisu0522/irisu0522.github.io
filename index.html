@@ -155,7 +155,6 @@
         const map = L.map('map').setView([34.2305, 135.1705], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
 
-        // 🌟最新のURL🌟
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxIVWN3_EzzvlFTngR7sG2HjZNQTi1-L4HnqyPp3m-Zq6h4f4z5G6WVWwMPNegoziq_Tw/exec";
 
         let allData = []; 
@@ -201,7 +200,7 @@
                 areas.forEach(area => { let option = document.createElement('option'); option.value = option.innerText = area; areaSelect.appendChild(option); });
 
                 currentFilteredData = [...allData];
-                renderMarkers(allData);
+                renderMarkers(allData, true); // 初回は自動ズームをスキップ（現在地優先のため）
                 updateListTable(allData);
 
                 document.getElementById('loading').style.display = 'none';
@@ -212,7 +211,8 @@
             }
         }
 
-        function renderMarkers(dataToRender) {
+        // 🌟改良：skipFit 引数を追加して、送信完了時は広域に戻らないように制御🌟
+        function renderMarkers(dataToRender, skipFit) {
             markersGroup.clearLayers(); 
 
             dataToRender.forEach(function(row) {
@@ -253,7 +253,11 @@
 
                 L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent).addTo(markersGroup);
             });
-            if (dataToRender.length > 0) map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
+            
+            // skipFit が true でない時だけ、全体が収まるように自動ズームする
+            if (!skipFit && dataToRender.length > 0) {
+                map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
+            }
         }
 
         window.toggleForm = function(id) {
@@ -261,7 +265,6 @@
             form.style.display = (form.style.display === "block") ? "none" : "block";
         };
 
-        // 🌟送信処理（より安全なGETベース通信に改修）🌟
         window.submitReport = async function(id) {
             let btn = document.getElementById("btn-" + id);
             let resultVal = document.getElementById("input-result-" + id).value;
@@ -272,11 +275,9 @@
             btn.disabled = true;
             btn.innerText = "送信中...";
 
-            // JSONPに近い形で確実にGoogle Apps Scriptに届ける
             let url = `${GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}&t=${Date.now()}`;
 
             try {
-                // 確実に通信を通すための設定
                 let response = await fetch(url, { method: 'GET', mode: 'cors' });
                 let res = await response.json();
 
@@ -290,7 +291,7 @@
                         let y = today.getFullYear();
                         let m = ("0" + (today.getMonth() + 1)).slice(-2);
                         let d = ("0" + today.getDate()).slice(-2);
-                        let todayStr = `${y}/${m}/${d}`; // yyyy/MM/dd 形式に統一
+                        let todayStr = `${y}/${m}/${d}`; 
                         
                         allData[targetIndex]["前回調査日"] = todayStr;
                         allData[targetIndex]["要調査"] = "点検済";
@@ -302,8 +303,13 @@
 
                     setTimeout(() => {
                         map.closePopup();
-                        // 送信成功したら、現在の検索状態を維持したまま地図を更新
-                        document.getElementById('search-btn').click();
+                        // 🌟改良：広域に戻さないように skipFit=true で再描画処理を呼び出す🌟
+                        execSearch(true);
+                        
+                        // 🌟改良：送信完了と同時に、即座に現在地へ視点を戻す🌟
+                        setTimeout(() => {
+                            map.locate({setView: true, maxZoom: 17});
+                        }, 200);
                     }, 1500);
 
                 } else {
@@ -311,7 +317,6 @@
                     btn.disabled = false; btn.innerText = "送信失敗（再試行）";
                 }
             } catch (err) {
-                // 通信エラー時の詳細な表示
                 console.error(err);
                 alert("送信に失敗しました。電波状態を確認してください。");
                 btn.disabled = false; btn.innerText = "スプレッドシートへ送信";
@@ -344,18 +349,17 @@
         };
         document.getElementById('list-toggle-btn').addEventListener('click', () => toggleList());
 
-        // 🌟今日の点検リスト専用機能（日付判定をより厳密に）🌟
         document.getElementById('today-list-btn').addEventListener('click', function() {
             let today = new Date();
             let y = today.getFullYear();
             let m = ("0" + (today.getMonth() + 1)).slice(-2);
             let d = ("0" + today.getDate()).slice(-2);
-            let todayStr1 = `${y}/${m}/${d}`; // 例：2026/06/10
-            let todayStr2 = `${y}/${today.getMonth() + 1}/${today.getDate()}`; // 例：2026/6/10
+            let todayStr1 = `${y}/${m}/${d}`; 
+            let todayStr2 = `${y}/${today.getMonth() + 1}/${today.getDate()}`; 
 
             currentFilteredData = allData.filter(row => row["前回調査日"] === todayStr1 || row["前回調査日"] === todayStr2);
 
-            renderMarkers(currentFilteredData);
+            renderMarkers(currentFilteredData, false); // 今日の一覧全体が見えるようにズーム
             updateListTable(currentFilteredData);
             toggleList(true); 
 
@@ -376,7 +380,8 @@
             window.print();
         };
 
-        document.getElementById('search-btn').addEventListener('click', function() {
+        // 🌟改良：検索ロジックを共通関数化し、全体ズームのオンオフ(skipFit)を選べるように分離🌟
+        function execSearch(skipFit) {
             let selectedArea = document.getElementById('filter-area').value;
             let selectedStatus = document.getElementById('filter-status').value;
             let keyword = document.getElementById('search-text').value.trim().toLowerCase();
@@ -386,7 +391,7 @@
 
             currentFilteredData = allData.filter(row => {
                 let matchArea = (selectedArea === "") || (row["地区"] === selectedArea);
-                let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
+                let matchStatus = (selectedStatus === "") || (row["Ph番号"] === selectedStatus || row["要調査"] === selectedStatus);
                 let matchDate = true;
                 if (filterDateTime && row["前回調査日"]) {
                     let rowDateTime = parseLocalDate(row["前回調査日"]).getTime();
@@ -397,9 +402,15 @@
                 if (keyword !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
                 return matchArea && matchStatus && matchDate && matchKeyword;
             });
-            renderMarkers(currentFilteredData);
+            
+            renderMarkers(currentFilteredData, skipFit);
             updateListTable(currentFilteredData);
             if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; document.getElementById('search-toggle-btn').style.backgroundColor = '#f59e0b'; }
+        }
+
+        // 手動で検索ボタンを押した時は、全体が収まるようにズーム(skipFit=false)
+        document.getElementById('search-btn').addEventListener('click', function() {
+            execSearch(false);
         });
 
         let currentLocationMarker = null;
