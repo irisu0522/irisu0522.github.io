@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -18,7 +17,6 @@
         #main-container { position: relative; flex: 1; display: flex; flex-direction: column; height: 100%; }
         #map { flex: 1; width: 100vw; height: 100%; }
         
-        /* モード選択（トップ画面） */
         #mode-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background-color: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); overflow-y: auto; padding: 20px 0; }
         .mode-title { font-size: 26px; font-weight: bold; color: #1e293b; margin-bottom: 10px; text-align: center; }
         .mode-subtitle { font-size: 14px; color: #64748b; margin-bottom: 30px; text-align: center; max-width: 80%; line-height: 1.5; }
@@ -93,6 +91,7 @@
         .help-section h4 { margin: 0 0 5px 0; color: #0f172a; border-left: 4px solid #3b82f6; padding-left: 8px; }
         .help-section ul { margin: 0; padding-left: 20px; }
 
+        /* レイヤーコントロールの配置を調整 */
         .leaflet-top.leaflet-right { top: 60px !important; }
 
         @media print {
@@ -113,23 +112,18 @@
 </head>
 <body>
     
-    <!-- トップ画面（モード選択） -->
     <div id="mode-overlay">
         <div class="mode-title">🗺️ 地水利マップシステム</div>
         <div class="mode-subtitle">
             和歌山市内の地水利状況を地図上で確認・点検できるシステムです。<br>
-            右上のボタンから航空写真への切り替えも可能です。
+            右上のボタンから航空写真や地理院地図への切り替えも可能です。
         </div>
-        
         <button class="mode-btn mode-view" onclick="startApp('view')">👀 閲覧モードで開始</button>
         <div class="mode-desc">データの確認や検索のみ行います（誤操作防止用）</div>
-        
-        <!-- 🛠️ 暗証番号の確認を追加 🛠️ -->
         <button class="mode-btn mode-edit" onclick="promptPasscode()">🛠️ 点検モードで開始</button>
         <div class="mode-desc">現場でピンをタップし、点検結果を入力・送信します（暗証番号が必要）</div>
     </div>
 
-    <!-- 説明書（ヘルプモーダル） -->
     <div id="help-modal">
         <div class="help-content">
             <div class="help-header">
@@ -159,7 +153,7 @@
                 <div class="help-section">
                     <h4>🗺️ ナビ・航空写真</h4>
                     <ul>
-                        <li><b>航空写真：</b> 画面右上の重なった四角のアイコンから「Google 航空写真」に切り替えられます。</li>
+                        <li><b>航空写真・地理院地図：</b> 画面右上の重なった四角のアイコンから各種地図に切り替えられます。</li>
                         <li><b>現在地追従：</b> 「📍 現在地」ボタンを押すと緑色に光り、移動に合わせて地図が自動でついてきます。</li>
                     </ul>
                 </div>
@@ -220,12 +214,23 @@
     </div>
 
     <script>
+        // 🌟地図タイルの定義（Google＆国土地理院公式）🌟
         const googleRoad = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ja&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 21 });
         const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=ja&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 21 });
-        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors', maxZoom: 19 });
+        const gsiStd = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>", maxZoom: 18 });
+        const gsiPale = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', { attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>", maxZoom: 18 });
+        const gsiPhoto = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.png', { attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>", maxZoom: 18 });
 
         const map = L.map('map', { center: [34.2305, 135.1705], zoom: 14, layers: [googleRoad] });
-        const baseMaps = { "Google マップ": googleRoad, "Google 航空写真": googleSatellite, "標準地図 (OSM)": osm };
+
+        // 🌟右上の切り替えスイッチにすべて登録🌟
+        const baseMaps = { 
+            "Google マップ": googleRoad, 
+            "Google 航空写真": googleSatellite,
+            "地理院地図 (標準)": gsiStd,
+            "地理院地図 (淡色：ピンが見易い)": gsiPale,
+            "地理院 航空写真": gsiPhoto
+        };
         L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxIVWN3_EzzvlFTngR7sG2HjZNQTi1-L4HnqyPp3m-Zq6h4f4z5G6WVWwMPNegoziq_Tw/exec";
@@ -238,20 +243,13 @@
 
         let isTracking = false;
         let currentLocationMarker = null;
-
-        // 🌟 4桁のセキュリティ暗証番号（必要に応じて変更してください） 🌟
         const EDIT_MODE_PIN = "1190";
 
-        // 🌟点検モード開始時に暗証番号を求める処理🌟
         window.promptPasscode = function() {
             let pass = prompt("点検モード用の4桁の暗証番号を入力してください：");
-            if (pass === null) return; // キャンセルされた場合
-            
-            if (pass === EDIT_MODE_PIN) {
-                startApp('edit');
-            } else {
-                alert("❌ 暗証番号が違います。点検モードは起動できません。");
-            }
+            if (pass === null) return;
+            if (pass === EDIT_MODE_PIN) { startApp('edit'); } 
+            else { alert("❌ 暗証番号が違います。点検モードは起動できません。"); }
         };
 
         window.startApp = function(mode) {
@@ -265,9 +263,7 @@
             loadData();
         };
 
-        window.toggleHelp = function(show) {
-            document.getElementById('help-modal').style.display = show ? 'flex' : 'none';
-        };
+        window.toggleHelp = function(show) { document.getElementById('help-modal').style.display = show ? 'flex' : 'none'; };
 
         document.getElementById('search-toggle-btn').addEventListener('click', function() {
             let panel = document.getElementById('search-panel');
@@ -306,22 +302,13 @@
             }
         }
 
-        // 🌟ヘルパー：水利番号の「ハイフン後の頭文字」から公設/私設を自動判別する関数🌟
         function isPublicWater(suiriNumber) {
-            if (!suiriNumber || !suiriNumber.includes("-")) return true; // ハイフンがなければ暫定で公設扱い
+            if (!suiriNumber || !suiriNumber.includes("-")) return true;
             let parts = suiriNumber.split("-");
             if (parts.length < 2) return true;
-            
             let afterHyphen = parts[1].trim();
             if (afterHyphen.length === 0) return true;
-            
-            let firstChar = afterHyphen.charAt(0);
-            
-            // 🔥 ルール：ハイフン後の頭1桁が "6" なら「私設」、それ以外(1や4など)は「公設」 🔥
-            if (firstChar === "6") {
-                return false; // 私設
-            }
-            return true; // 公設
+            return afterHyphen.charAt(0) !== "6";
         }
 
         function renderMarkers(dataToRender, skipFit) {
@@ -335,8 +322,6 @@
                 if (isAlert) className += " alert-marker";
 
                 let customIcon = L.divIcon({ className: className });
-
-                // ポップアップ内の区分表示をより分かりやすく表示
                 let calculatedCategory = isPublicWater(row["水利番号"]) ? "公設" : "私設";
 
                 let popupContent = `
@@ -369,9 +354,7 @@
                 L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent).addTo(markersGroup);
             });
             
-            if (!skipFit && dataToRender.length > 0) {
-                map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
-            }
+            if (!skipFit && dataToRender.length > 0) { map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] }); }
         }
 
         window.toggleForm = function(id) {
@@ -380,120 +363,63 @@
         };
 
         window.submitReport = async function(id) {
-            let btn = document.getElementById("btn-" + id);
+            let btn = document.getElementById("btn-%22%20+%20id);");
             let resultVal = document.getElementById("input-result-" + id).value;
             let errorVal = document.getElementById("input-error-" + id).value;
             let paintVal = document.getElementById("input-paint-" + id).value;
             let commentVal = document.getElementById("input-comment-" + id).value;
-
-            btn.disabled = true;
-            btn.innerText = "送信中...";
-
+            btn.disabled = true; btn.innerText = "送信中...";
             let url = `${GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}&t=${Date.now()}`;
-
             try {
                 let response = await fetch(url, { method: 'GET', mode: 'cors' });
                 let res = await response.json();
-
                 if (res.status === "Success") {
-                    btn.innerText = "送信完了！";
-                    btn.style.backgroundColor = "#28a745";
-
+                    btn.innerText = "送信完了！"; btn.style.backgroundColor = "#28a745";
                     let targetIndex = allData.findIndex(row => row["水利番号"] === id);
                     if (targetIndex !== -1) {
                         let today = new Date();
-                        let y = today.getFullYear();
-                        let m = ("0" + (today.getMonth() + 1)).slice(-2);
-                        let d = ("0" + today.getDate()).slice(-2);
-                        let todayStr = `${y}/${m}/${d}`; 
-                        
-                        allData[targetIndex]["前回調査日"] = todayStr;
-                        allData[targetIndex]["要調査"] = "点検済";
-                        allData[targetIndex]["点検結果"] = resultVal;
-                        allData[targetIndex]["異常の種類"] = errorVal;
-                        allData[targetIndex]["塗装レベル"] = paintVal;
-                        allData[targetIndex]["コメント"] = commentVal;
+                        let todayStr = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`;
+                        allData[targetIndex]["前回調査日"] = todayStr; allData[targetIndex]["要調査"] = "点検済";
+                        allData[targetIndex]["点検結果"] = resultVal; allData[targetIndex]["異常の種類"] = errorVal;
+                        allData[targetIndex]["塗装レベル"] = paintVal; allData[targetIndex]["コメント"] = commentVal;
                     }
-
-                    setTimeout(() => {
-                        map.closePopup();
-                        execSearch(true); 
-                        
-                        if(!isTracking) { map.locate({setView: true, maxZoom: 17}); }
-                    }, 1500);
-
-                } else {
-                    alert("送信エラー: " + res.message);
-                    btn.disabled = false; btn.innerText = "送信失敗（再試行）";
-                }
-            } catch (err) {
-                console.error(err);
-                alert("送信に失敗しました。電波状態を確認してください。");
-                btn.disabled = false; btn.innerText = "スプレッドシートへ送信";
-            }
+                    setTimeout(() => { map.closePopup(); execSearch(true); if(!isTracking) { map.locate({setView: true, maxZoom: 17}); } }, 1500);
+                } else { alert("送信エラー: " + res.message); btn.disabled = false; btn.innerText = "送信失敗（再試行）"; }
+            } catch (err) { console.error(err); alert("送信に失敗しました。電波状態を確認してください。"); btn.disabled = false; btn.innerText = "スプレッドシートへ送信"; }
         };
 
         function updateListTable(data) {
-            let tbody = document.getElementById('table-body');
-            tbody.innerHTML = '';
-            document.getElementById('list-count').innerText = data.length;
-            document.getElementById('table-count').innerText = data.length;
-
+            let tbody = document.getElementById('table-body'); tbody.innerHTML = '';
+            document.getElementById('list-count').innerText = data.length; document.getElementById('table-count').innerText = data.length;
             data.forEach(row => {
-                let tr = document.createElement('tr');
-                let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok";
+                let tr = document.createElement('tr'); let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok";
                 let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
-
                 tr.innerHTML = `<td style="font-weight:bold;">${row["水利番号"]}</td><td>${row["地区"]||"-"}</td><td>${row["水利種別"]}</td><td>${categoryText}</td><td style="font-weight:bold; color:#0369a1;">${row["前回調査日"]||"未実施"}</td><td><span class="badge ${badgeClass}">${row["要調査"]}</span></td><td>${row["点検結果"]||"-"}</td><td>${row["異常の種類"]||"-"}</td><td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"]||"-"}</td>`;
-                tr.addEventListener('click', () => {
-                    if (row["緯度"] && row["経度"]) {
-                        toggleList(false); map.setView([row["緯度"], row["経度"]], 18);
-                        setTimeout(() => { markersGroup.eachLayer(marker => { if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) marker.openPopup(); }); }, 300);
-                    }
-                });
+                tr.addEventListener('click', () => { if (row["緯度"] && row["経度"]) { toggleList(false); map.setView([row["緯度"], row["経度"]], 18); setTimeout(() => { markersGroup.eachLayer(marker => { if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) marker.openPopup(); }); }, 300); } });
                 tbody.appendChild(tr);
             });
         }
 
-        window.toggleList = function(show) {
-            let container = document.getElementById('list-container');
-            container.style.display = (show !== undefined) ? (show ? 'flex' : 'none') : (container.style.display === 'flex' ? 'none' : 'flex');
-        };
+        window.toggleList = function(show) { let container = document.getElementById('list-container'); container.style.display = (show !== undefined) ? (show ? 'flex' : 'none') : (container.style.display === 'flex' ? 'none' : 'flex'); };
         document.getElementById('list-toggle-btn').addEventListener('click', () => toggleList());
 
         document.getElementById('today-list-btn').addEventListener('click', function() {
             let today = new Date();
-            let y = today.getFullYear();
-            let m = ("0" + (today.getMonth() + 1)).slice(-2);
-            let d = ("0" + today.getDate()).slice(-2);
-            let todayStr1 = `${y}/${m}/${d}`; 
-            let todayStr2 = `${y}/${today.getMonth() + 1}/${today.getDate()}`; 
-
+            let todayStr1 = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`;
+            let todayStr2 = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
             currentFilteredData = allData.filter(row => row["前回調査日"] === todayStr1 || row["前回調査日"] === todayStr2);
-
-            renderMarkers(currentFilteredData, false); 
-            updateListTable(currentFilteredData);
-            toggleList(true); 
-
+            renderMarkers(currentFilteredData, false); updateListTable(currentFilteredData); toggleList(true);
             if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; document.getElementById('search-toggle-btn').style.backgroundColor = '#f59e0b'; }
         });
 
         window.downloadCSV = function() {
             if (currentFilteredData.length === 0) return alert("リストが空です");
             let csvContent = "\uFEFF水利番号,地区,水利種別,設置区分,前回調査日,要調査,点検結果,異常の種類,塗装レベル,コメント\r\n";
-            currentFilteredData.forEach(row => { 
-                let catText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
-                csvContent += [row["水利番号"], row["地区"]||"-", row["水利種別"], catText, row["前回調査日"]||"未実施", row["要調査"], row["点検結果"]||"-", row["異常の種類"]||"-", row["塗装レベル"]||"-", (row["コメント"]||"-").replace(/,/g, "，")].join(",") + "\r\n"; 
-            });
-            let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
-            link.download = `地水利点検リスト_${new Date().toISOString().slice(0,10)}.csv`;
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            currentFilteredData.forEach(row => { let catText = isPublicWater(row["水利番号"]) ? "公設" : "私設"; csvContent += [row["水利番号"], row["地区"]||"-", row["水利種別"], catText, row["前回調査日"]||"未実施", row["要調査"], row["点検結果"]||"-", row["異常の種類"]||"-", row["塗装レベル"]||"-", (row["コメント"]||"-").replace(/,/g, "，")].join(",") + "\r\n"; });
+            let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `地水利点検リスト_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
         };
 
-        window.printReport = function() {
-            document.getElementById('print-date').innerText = `${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日`;
-            window.print();
-        };
+        window.printReport = function() { document.getElementById('print-date').innerText = `${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日`; window.print(); };
 
         function execSearch(skipFit) {
             let selectedCategory = document.getElementById('filter-category').value;
@@ -505,16 +431,8 @@
             let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
 
             currentFilteredData = allData.filter(row => {
-                // 🌟 改良：水利番号の「ハイフン後の頭文字」を使った高精度な判別ロジック 🌟
-                let matchCategory = true;
-                let isPublic = isPublicWater(row["水利番号"]); // true=公設, false=私設
-
-                if (selectedCategory === "公設") {
-                    matchCategory = (isPublic === true); // 公設のみを抽出（空白や表記ミスを完全無視）
-                } else if (selectedCategory === "私設") {
-                    matchCategory = (isPublic === false); // 私設のみを抽出
-                }
-
+                let isPublic = isPublicWater(row["水利番号"]);
+                let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic);
                 let matchArea = (selectedArea === "") || (row["地区"] === selectedArea);
                 let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
                 let matchDate = true;
@@ -525,47 +443,22 @@
                 }
                 let matchKeyword = true;
                 if (keyword !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
-                
                 return matchCategory && matchArea && matchStatus && matchDate && matchKeyword;
             });
-            
-            renderMarkers(currentFilteredData, skipFit);
-            updateListTable(currentFilteredData);
+            renderMarkers(currentFilteredData, skipFit); updateListTable(currentFilteredData);
             if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; document.getElementById('search-toggle-btn').style.backgroundColor = '#f59e0b'; }
         }
 
-        document.getElementById('search-btn').addEventListener('click', function() {
-            execSearch(false);
-        });
+        document.getElementById('search-btn').addEventListener('click', function() { execSearch(false); });
 
         document.getElementById('gps-btn').addEventListener('click', function() {
             let btn = document.getElementById('gps-btn');
-            if (isTracking) {
-                isTracking = false; map.stopLocate();
-                btn.classList.remove('tracking'); btn.innerText = "📍 現在地";
-            } else {
-                isTracking = true;
-                btn.classList.add('tracking'); btn.innerText = "🟢 追従中";
-                map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true});
-            }
+            if (isTracking) { isTracking = false; map.stopLocate(); btn.classList.remove('tracking'); btn.innerText = "📍 現在地"; } 
+            else { isTracking = true; btn.classList.add('tracking'); btn.innerText = "🟢 追従中"; map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true}); }
         });
 
-        map.on('locationfound', function(e) {
-            if (currentLocationMarker) map.removeLayer(currentLocationMarker);
-            let color = isTracking ? "#28a745" : "#007bff";
-            currentLocationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: color, color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9 }).addTo(map).bindPopup("<b>現在地</b>");
-        });
-
-        map.on('dragstart', function() {
-            if (isTracking) {
-                isTracking = false; map.stopLocate();
-                let btn = document.getElementById('gps-btn');
-                btn.classList.remove('tracking'); btn.innerText = "📍 現在地";
-            }
-        });
-
+        map.on('locationfound', function(e) { if (currentLocationMarker) map.removeLayer(currentLocationMarker); let color = isTracking ? "#28a745" : "#007bff"; currentLocationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: color, color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9 }).addTo(map).bindPopup("<b>現在地</b>"); });
+        map.on('dragstart', function() { if (isTracking) { isTracking = false; map.stopLocate(); let btn = document.getElementById('gps-btn'); btn.classList.remove('tracking'); btn.innerText = "📍 現在地"; } });
     </script>
 </body>
 </html>
-
-```
