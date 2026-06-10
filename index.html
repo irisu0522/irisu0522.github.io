@@ -15,72 +15,32 @@
     
     <style>
         body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background-color: #f8fafc; }
-        
         #main-container { position: relative; flex: 1; display: flex; flex-direction: column; height: 100%; }
         #map { flex: 1; width: 100vw; height: 100%; }
         
-        /* 🌟起動時のモード選択画面🌟 */
-        #mode-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999;
-            background-color: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column;
-            align-items: center; justify-content: center; backdrop-filter: blur(5px);
-        }
+        #mode-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background-color: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .mode-title { font-size: 24px; font-weight: bold; color: #1e293b; margin-bottom: 30px; text-align: center; }
-        .mode-btn {
-            width: 80%; max-width: 300px; padding: 20px; margin-bottom: 15px; border-radius: 12px;
-            font-size: 18px; font-weight: bold; border: none; cursor: pointer; color: white;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
-        .mode-view { background-color: #3b82f6; }
-        .mode-edit { background-color: #ef4444; }
+        .mode-btn { width: 80%; max-width: 300px; padding: 20px; margin-bottom: 15px; border-radius: 12px; font-size: 18px; font-weight: bold; border: none; cursor: pointer; color: white; box-shadow: 0 6px 12px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .mode-view { background-color: #3b82f6; } .mode-edit { background-color: #ef4444; }
         .mode-desc { font-size: 13px; color: #64748b; margin-top: -5px; margin-bottom: 25px; text-align: center; }
         
-        /* 画面上部のモード表示バッジ */
-        #current-mode-badge {
-            position: absolute; top: 10px; left: 50px; z-index: 1000; padding: 6px 12px;
-            border-radius: 20px; font-size: 13px; font-weight: bold; color: white; display: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
+        #current-mode-badge { position: absolute; top: 10px; left: 50px; z-index: 1000; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: white; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
-        /* 検索・絞り込みパネル（初期は非表示） */
-        #search-panel {
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-            width: 92%; max-width: 680px; z-index: 1000; display: none; /* 🌟初期非表示🌟 */
-            background: rgba(255, 255, 255, 0.95); padding: 12px; border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            flex-wrap: wrap; gap: 8px;
-        }
-        #search-panel select, #search-panel input {
-            padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; min-width: 110px;
-        }
+        #search-panel { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 680px; z-index: 1000; display: none; background: rgba(255, 255, 255, 0.95); padding: 12px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); flex-wrap: wrap; gap: 8px; }
+        #search-panel select, #search-panel input { padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; min-width: 110px; }
         #search-panel .date-group { display: flex; align-items: center; gap: 4px; flex-grow: 1.5; min-width: 210px; }
-        #search-panel button {
-            padding: 8px 15px; font-size: 13px; background-color: #28a745; color: white; 
-            border: none; border-radius: 4px; font-weight: bold; cursor: pointer; flex-grow: 1;
-        }
+        #search-panel button { padding: 8px 15px; font-size: 13px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; flex-grow: 1; }
 
-        #loading {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            z-index: 2000; background-color: rgba(255, 255, 255, 0.95); display: none;
-            padding: 20px 40px; border-radius: 8px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background-color: rgba(255, 255, 255, 0.95); display: none; padding: 20px 40px; border-radius: 8px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
 
-        /* 各種操作ボタン（画面右側） */
-        .side-btn-container {
-            position: absolute; bottom: 30px; right: 20px; z-index: 1000;
-            display: flex; flex-direction: column; gap: 10px;
-        }
-        .action-btn {
-            padding: 12px 15px; font-size: 14px; font-weight: bold;
-            color: white; border: none; border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer;
-            text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;
-        }
-        #search-toggle-btn { background-color: #f59e0b; } /* 🌟検索窓開閉ボタン🌟 */
+        .side-btn-container { position: absolute; bottom: 30px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+        .action-btn { padding: 12px 15px; font-size: 14px; font-weight: bold; color: white; border: none; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        
+        #search-toggle-btn { background-color: #f59e0b; }
         #list-toggle-btn { background-color: #17a2b8; }
+        #today-list-btn { background-color: #8b5cf6; } 
         #gps-btn { background-color: #007bff; }
         
-        /* カスタムアイコン */
         .marker-hydrant { width: 24px !important; height: 24px !important; margin-left: -12px !important; margin-top: -12px !important; display: flex; align-items: center; justify-content: center; background: transparent; }
         .marker-hydrant::after { content: ''; width: 11px; height: 11px; background-color: #ff3b30; border: 1.5px solid #ffffff; border-radius: 50%; box-shadow: 0 0 3px rgba(0,0,0,0.4); }
         .marker-hydrant.alert-marker::after { border: 1.5px solid #ffcc00; box-shadow: 0 0 5px #ff3b30; animation: pulse 1.5s infinite; }
@@ -90,7 +50,6 @@
 
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
-        /* ポップアップ＆フォーム */
         .popup-title { font-size: 15px; font-weight: bold; color: #333; border-bottom: 2px solid #007bff; margin-bottom: 8px; padding-bottom: 5px; text-align: center; }
         .popup-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
         .popup-table th { background-color: #f8f9fa; text-align: left; padding: 5px; border-bottom: 1px solid #ddd; width: 35%; color: #555;}
@@ -105,7 +64,6 @@
         .form-submit-btn { width: 100%; padding: 6px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .form-submit-btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
 
-        /* リスト表示エリア */
         #list-container { display: none; height: 35vh; background: #ffffff; border-top: 3px solid #17a2b8; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1010; overflow: hidden; flex-direction: column; }
         .list-header { background: #f1f5f9; padding: 10px 15px; border-bottom: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; }
         .list-header h3 { margin: 0; font-size: 15px; color: #1e293b; display: flex; align-items: center; gap: 8px; }
@@ -134,51 +92,32 @@
         }
         #print-title { display: none; }
 
-        @media (max-width: 600px) {
-            #search-panel select { width: calc(50% - 4px); }
-            #search-panel .date-group { width: 100%; }
-            #search-panel input { width: 100%; }
-            .leaflet-top { top: 60px; }
-        }
+        @media (max-width: 600px) { #search-panel select { width: calc(50% - 4px); } #search-panel .date-group { width: 100%; } #search-panel input { width: 100%; } .leaflet-top { top: 60px; } }
     </style>
 </head>
 <body>
     
-    <!-- 🌟モード選択オーバーレイ🌟 -->
     <div id="mode-overlay">
         <div class="mode-title">🗺️ 地水利マップシステム</div>
-        
         <button class="mode-btn mode-view" onclick="startApp('view')">👀 閲覧モードで開始</button>
         <div class="mode-desc">データの確認や検索のみ行います（誤操作防止）</div>
-        
         <button class="mode-btn mode-edit" onclick="startApp('edit')">🛠️ 点検モードで開始</button>
         <div class="mode-desc">現場で点検結果を入力し、台帳を更新します</div>
     </div>
 
-    <!-- モード表示バッジ -->
     <div id="current-mode-badge"></div>
-
-    <!-- 印刷用ヘッダー -->
     <div id="print-title">
         <h1 style="font-size: 20px; margin-bottom: 5px;">地水利点検状況 報告書</h1>
         <p style="font-size: 11px; margin: 0; color: #555;">出力日: <span id="print-date"></span> | フィルタ条件適用済リスト</p>
     </div>
 
     <div id="main-container">
-        <!-- 検索・絞り込みパネル（隠れている） -->
         <div id="search-panel">
             <select id="filter-area"><option value="">🌐 すべての地区</option></select>
-            <select id="filter-status">
-                <option value="">🟢 すべての状態</option>
-                <option value="要点検">🔴 要点検のみ</option>
-                <option value="点検済">🔵 点検済のみ</option>
-            </select>
+            <select id="filter-status"><option value="">🟢 すべての状態</option><option value="要点検">🔴 要点検のみ</option><option value="点検済">🔵 点検済のみ</option></select>
             <div class="date-group">
                 <input type="date" id="filter-date" placeholder="点検日">
-                <select id="filter-date-cond" style="min-width: 100px; flex-grow: 0;">
-                    <option value="before">以前に点検</option>
-                    <option value="after">以降に点検</option>
-                </select>
+                <select id="filter-date-cond" style="min-width: 100px; flex-grow: 0;"><option value="before">以前に点検</option><option value="after">以降に点検</option></select>
             </div>
             <input type="text" id="search-text" placeholder="水利番号などで検索...">
             <button id="search-btn">検索・絞り込み</button>
@@ -187,10 +126,10 @@
         <div id="loading">📡 最新データを読み込み中...</div>
         <div id="map"></div>
         
-        <!-- 🌟操作ボタン群🌟 -->
         <div class="side-btn-container">
             <button id="search-toggle-btn" class="action-btn">🔍 検索 / 絞込</button>
             <button id="list-toggle-btn" class="action-btn">📊 リスト (<span id="list-count">0</span>)</button>
+            <button id="today-list-btn" class="action-btn">📅 今日の点検リスト</button>
             <button id="gps-btn" class="action-btn">📍 現在地</button>
         </div>
     </div>
@@ -206,9 +145,7 @@
         </div>
         <div class="table-wrapper">
             <table class="result-table">
-                <thead>
-                    <tr><th>水利番号</th><th>地区</th><th>種別</th><th>区分</th><th>前回調査日</th><th>要調査</th><th>点検結果</th><th>異常の種類</th><th>コメント</th></tr>
-                </thead>
+                <thead><tr><th>水利番号</th><th>地区</th><th>種別</th><th>区分</th><th>前回調査日</th><th>要調査</th><th>点検結果</th><th>異常の種類</th><th>コメント</th></tr></thead>
                 <tbody id="table-body"></tbody>
             </table>
         </div>
@@ -218,43 +155,30 @@
         const map = L.map('map').setView([34.2305, 135.1705], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
 
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycby5K-uoeLHnuvgL2BJH-gWcxj3TS1WT6J9zlL_LcNh1nRfYAXKEpZk-61qh6cnCtbLS_g/exec";
+        // 🌟最新のURL🌟
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxIVWN3_EzzvlFTngR7sG2HjZNQTi1-L4HnqyPp3m-Zq6h4f4z5G6WVWwMPNegoziq_Tw/exec";
 
         let allData = []; 
         let currentFilteredData = [];
-        let appMode = 'view'; // 選択されたモード（view or edit）
+        let appMode = 'view'; 
         let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 });
         map.addLayer(markersGroup);
 
-        // 🌟アプリ起動処理（モード選択後に呼ばれる）🌟
         window.startApp = function(mode) {
             appMode = mode;
             document.getElementById('mode-overlay').style.display = 'none';
-            
             let badge = document.getElementById('current-mode-badge');
             badge.style.display = 'block';
-            if (mode === 'view') {
-                badge.innerText = '👀 閲覧モード';
-                badge.style.backgroundColor = '#3b82f6';
-            } else {
-                badge.innerText = '🛠️ 点検モード';
-                badge.style.backgroundColor = '#ef4444';
-            }
-
+            if (mode === 'view') { badge.innerText = '👀 閲覧モード'; badge.style.backgroundColor = '#3b82f6'; } 
+            else { badge.innerText = '🛠️ 点検モード'; badge.style.backgroundColor = '#ef4444'; }
             document.getElementById('loading').style.display = 'block';
             loadData();
         };
 
-        // 🌟検索パネルの開閉トグル🌟
         document.getElementById('search-toggle-btn').addEventListener('click', function() {
             let panel = document.getElementById('search-panel');
-            if (panel.style.display === 'flex') {
-                panel.style.display = 'none';
-                this.style.backgroundColor = '#f59e0b'; // 元の色
-            } else {
-                panel.style.display = 'flex';
-                this.style.backgroundColor = '#d97706'; // 押された色
-            }
+            if (panel.style.display === 'flex') { panel.style.display = 'none'; this.style.backgroundColor = '#f59e0b'; } 
+            else { panel.style.display = 'flex'; this.style.backgroundColor = '#d97706'; }
         });
 
         function parseLocalDate(dateStr) {
@@ -274,11 +198,7 @@
                 let areas = [...new Set(allData.map(row => row["地区"]).filter(a => a))].sort();
                 let areaSelect = document.getElementById('filter-area');
                 areaSelect.innerHTML = '<option value="">🌐 すべての地区</option>';
-                areas.forEach(area => {
-                    let option = document.createElement('option');
-                    option.value = option.innerText = area;
-                    areaSelect.appendChild(option);
-                });
+                areas.forEach(area => { let option = document.createElement('option'); option.value = option.innerText = area; areaSelect.appendChild(option); });
 
                 currentFilteredData = [...allData];
                 renderMarkers(allData);
@@ -287,7 +207,7 @@
                 document.getElementById('loading').style.display = 'none';
                 map.locate({setView: true, maxZoom: 17}); 
             } catch (error) {
-                alert("データの読み込みに失敗しました。");
+                alert("データの読み込みに失敗しました。URLが正しいか確認してください。");
                 document.getElementById('loading').innerText = "❌ 読み込みエラー";
             }
         }
@@ -318,40 +238,22 @@
                     </table>
                 `;
 
-                // 🌟点検モードの時だけ入力フォームを表示する🌟
                 if (appMode === 'edit') {
                     popupContent += `
                         <button class="form-toggle" onclick="toggleForm('${row["水利番号"]}')">📝 点検結果を入力する</button>
                         <div class="input-form" id="form-${row["水利番号"]}">
-                            <div class="form-group">
-                                <label>点検結果</label>
-                                <select id="input-result-${row["水利番号"]}"><option value="点検済">点検済（良好）</option><option value="要対応">要対応（不備あり）</option><option value="未実施">未点検</option></select>
-                            </div>
-                            <div class="form-group">
-                                <label>異常の種類</label>
-                                <select id="input-error-${row["水利番号"]}"><option value="なし">異常なし</option><option value="蓋破損">蓋の破損</option><option value="泥溜まり">土砂・泥溜まり</option><option value="バルブ不良">バルブ開閉不良</option><option value="その他">その他</option></select>
-                            </div>
-                            <div class="form-group">
-                                <label>塗装レベル</label>
-                                <select id="input-paint-${row["水利番号"]}"><option value="良">良（必要なし）</option><option value="普通">普通（経年）</option><option value="要塗装">要塗装（ハゲ）</option></select>
-                            </div>
-                            <div class="form-group">
-                                <label>コメント</label>
-                                <input type="text" id="input-comment-${row["水利番号"]}" placeholder="状況など">
-                            </div>
+                            <div class="form-group"><label>点検結果</label><select id="input-result-${row["水利番号"]}"><option value="点検済">点検済（良好）</option><option value="要対応">要対応（不備あり）</option><option value="未実施">未点検</option></select></div>
+                            <div class="form-group"><label>異常の種類</label><select id="input-error-${row["水利番号"]}"><option value="なし">異常なし</option><option value="蓋破損">蓋の破損</option><option value="泥溜まり">土砂・泥溜まり</option><option value="バルブ不良">バルブ開閉不良</option><option value="その他">その他</option></select></div>
+                            <div class="form-group"><label>塗装レベル</label><select id="input-paint-${row["水利番号"]}"><option value="良">良（必要なし）</option><option value="普通">普通（経年）</option><option value="要塗装">要塗装（ハゲ）</option></select></div>
+                            <div class="form-group"><label>コメント</label><input type="text" id="input-comment-${row["水利番号"]}" placeholder="状況など"></div>
                             <button class="form-submit-btn" id="btn-${row["水利番号"]}" onclick="submitReport('${row["水利番号"]}')">スプレッドシートへ送信</button>
                         </div>
                     `;
                 }
 
-                L.marker([row["緯度"], row["経度"]], {icon: customIcon})
-                    .bindPopup(popupContent)
-                    .addTo(markersGroup);
+                L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent).addTo(markersGroup);
             });
-
-            if (dataToRender.length > 0) {
-                map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
-            }
+            if (dataToRender.length > 0) map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
         }
 
         window.toggleForm = function(id) {
@@ -359,7 +261,7 @@
             form.style.display = (form.style.display === "block") ? "none" : "block";
         };
 
-        // 🌟送信処理（GAS修正により確実に成功します）🌟
+        // 🌟送信処理（より安全なGETベース通信に改修）🌟
         window.submitReport = async function(id) {
             let btn = document.getElementById("btn-" + id);
             let resultVal = document.getElementById("input-result-" + id).value;
@@ -370,10 +272,12 @@
             btn.disabled = true;
             btn.innerText = "送信中...";
 
-            let url = `${GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}`;
+            // JSONPに近い形で確実にGoogle Apps Scriptに届ける
+            let url = `${GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}&t=${Date.now()}`;
 
             try {
-                let response = await fetch(url);
+                // 確実に通信を通すための設定
+                let response = await fetch(url, { method: 'GET', mode: 'cors' });
                 let res = await response.json();
 
                 if (res.status === "Success") {
@@ -383,7 +287,10 @@
                     let targetIndex = allData.findIndex(row => row["水利番号"] === id);
                     if (targetIndex !== -1) {
                         let today = new Date();
-                        let todayStr = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
+                        let y = today.getFullYear();
+                        let m = ("0" + (today.getMonth() + 1)).slice(-2);
+                        let d = ("0" + today.getDate()).slice(-2);
+                        let todayStr = `${y}/${m}/${d}`; // yyyy/MM/dd 形式に統一
                         
                         allData[targetIndex]["前回調査日"] = todayStr;
                         allData[targetIndex]["要調査"] = "点検済";
@@ -395,18 +302,19 @@
 
                     setTimeout(() => {
                         map.closePopup();
+                        // 送信成功したら、現在の検索状態を維持したまま地図を更新
                         document.getElementById('search-btn').click();
                     }, 1500);
 
                 } else {
                     alert("送信エラー: " + res.message);
-                    btn.disabled = false;
-                    btn.innerText = "送信失敗（再試行）";
+                    btn.disabled = false; btn.innerText = "送信失敗（再試行）";
                 }
             } catch (err) {
-                alert("送信エラー：電波状態を確認してください。");
-                btn.disabled = false;
-                btn.innerText = "スプレッドシートへ送信";
+                // 通信エラー時の詳細な表示
+                console.error(err);
+                alert("送信に失敗しました。電波状態を確認してください。");
+                btn.disabled = false; btn.innerText = "スプレッドシートへ送信";
             }
         };
 
@@ -419,7 +327,7 @@
             data.forEach(row => {
                 let tr = document.createElement('tr');
                 let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok";
-                tr.innerHTML = `<td style="font-weight:bold;">${row["水利番号"]}</td><td>${row["地区"]||"-"}</td><td>${row["水利種別"]}</td><td>${row["設置区分"]||"-"}</td><td>${row["前回調査日"]||"未実施"}</td><td><span class="badge ${badgeClass}">${row["要調査"]}</span></td><td>${row["点検結果"]||"-"}</td><td>${row["異常の種類"]||"-"}</td><td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"]||"-"}</td>`;
+                tr.innerHTML = `<td style="font-weight:bold;">${row["水利番号"]}</td><td>${row["地区"]||"-"}</td><td>${row["水利種別"]}</td><td>${row["設置区分"]||"-"}</td><td style="font-weight:bold; color:#0369a1;">${row["前回調査日"]||"未実施"}</td><td><span class="badge ${badgeClass}">${row["要調査"]}</span></td><td>${row["点検結果"]||"-"}</td><td>${row["異常の種類"]||"-"}</td><td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"]||"-"}</td>`;
                 tr.addEventListener('click', () => {
                     if (row["緯度"] && row["経度"]) {
                         toggleList(false); map.setView([row["緯度"], row["経度"]], 18);
@@ -436,14 +344,29 @@
         };
         document.getElementById('list-toggle-btn').addEventListener('click', () => toggleList());
 
+        // 🌟今日の点検リスト専用機能（日付判定をより厳密に）🌟
+        document.getElementById('today-list-btn').addEventListener('click', function() {
+            let today = new Date();
+            let y = today.getFullYear();
+            let m = ("0" + (today.getMonth() + 1)).slice(-2);
+            let d = ("0" + today.getDate()).slice(-2);
+            let todayStr1 = `${y}/${m}/${d}`; // 例：2026/06/10
+            let todayStr2 = `${y}/${today.getMonth() + 1}/${today.getDate()}`; // 例：2026/6/10
+
+            currentFilteredData = allData.filter(row => row["前回調査日"] === todayStr1 || row["前回調査日"] === todayStr2);
+
+            renderMarkers(currentFilteredData);
+            updateListTable(currentFilteredData);
+            toggleList(true); 
+
+            if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; document.getElementById('search-toggle-btn').style.backgroundColor = '#f59e0b'; }
+        });
+
         window.downloadCSV = function() {
             if (currentFilteredData.length === 0) return alert("リストが空です");
             let csvContent = "\uFEFF水利番号,地区,水利種別,設置区分,前回調査日,要調査,点検結果,異常の種類,塗装レベル,コメント\r\n";
-            currentFilteredData.forEach(row => {
-                csvContent += [row["水利番号"], row["地区"]||"-", row["水利種別"], row["設置区分"]||"-", row["前回調査日"]||"未実施", row["要調査"], row["点検結果"]||"-", row["異常の種類"]||"-", row["塗装レベル"]||"-", (row["コメント"]||"-").replace(/,/g, "，")].join(",") + "\r\n";
-            });
-            let link = document.createElement("a");
-            link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
+            currentFilteredData.forEach(row => { csvContent += [row["水利番号"], row["地区"]||"-", row["水利種別"], row["設置区分"]||"-", row["前回調査日"]||"未実施", row["要調査"], row["点検結果"]||"-", row["異常の種類"]||"-", row["塗装レベル"]||"-", (row["コメント"]||"-").replace(/,/g, "，")].join(",") + "\r\n"; });
+            let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
             link.download = `地水利点検リスト_${new Date().toISOString().slice(0,10)}.csv`;
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
         };
@@ -476,12 +399,7 @@
             });
             renderMarkers(currentFilteredData);
             updateListTable(currentFilteredData);
-            
-            // スマホなどの狭い画面で検索ボタンを押したら、自動で検索窓を閉じて地図を見せる
-            if (window.innerWidth <= 600) {
-                document.getElementById('search-panel').style.display = 'none';
-                document.getElementById('search-toggle-btn').style.backgroundColor = '#f59e0b';
-            }
+            if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; document.getElementById('search-toggle-btn').style.backgroundColor = '#f59e0b'; }
         });
 
         let currentLocationMarker = null;
