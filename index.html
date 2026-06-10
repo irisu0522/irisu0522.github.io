@@ -54,8 +54,8 @@
 </head>
 <body>
     
-    <!-- 読込中メッセージ（最初は表示しておく） -->
-    <div id="loading">📡 スプレッドシートからデータを読み込み中...</div>
+    <!-- 読込中メッセージ -->
+    <div id="loading">📡 最新データを読み込み中...</div>
     
     <!-- 地図表示エリア -->
     <div id="map"></div>
@@ -64,7 +64,7 @@
     <button id="gps-btn">📍 現在地へ</button>
 
     <script>
-        // 1. 地図の初期設定（和歌山城付近を中心）
+        // 1. 地図の初期設定
         const map = L.map('map').setView([34.226, 135.174], 14);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -72,28 +72,22 @@
             maxZoom: 19
         }).addTo(map);
 
-        // 🌟 取得したGoogle Apps ScriptのAPIキー（URL）🌟
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwVJwQ0jWwjojHx1PPNElTT-7PYpuH38bXnKWk_NDi3WdSS2DCvdNIorhqEAAvw1Hhv1g/exec";
+        // 🌟 新しく発行した完璧なURL 🌟
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycby5K-uoeLHnuvgL2BJH-gWcxj3TS1WT6J9zlL_LcNh1nRfYAXKEpZk-61qh6cnCtbLS_g/exec";
 
         // 2. データを取得して地図に表示する機能
         async function loadData() {
             try {
-                // APIにアクセスしてデータを取ってくる
                 const response = await fetch(GAS_API_URL);
                 const data = await response.json();
                 
-                // ピンをまとめて管理するためのグループ
                 const markers = L.featureGroup().addTo(map);
 
-                // データ1件ずつに対してピンを立てる
                 data.forEach(function(row) {
-                    // 緯度・経度が無いデータはスキップ
                     if (!row["緯度"] || !row["経度"]) return;
 
-                    // ピンの色を決める（要調査なら赤、それ以外は青）
                     let markerColor = (row["要調査"] === "要点検") ? "red" : "blue";
                     
-                    // カスタムアイコン（色付きピン）の作成
                     let customIcon = L.icon({
                         iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${markerColor}.png`,
                         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -103,45 +97,43 @@
                         shadowSize: [41, 41]
                     });
 
-                    // ポップアップに表示する内容（シート1の列名を指定）
+                    // 🌟 12列に厳選されたスッキリ版のポップアップ内容 🌟
                     let popupContent = `
                         <div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>
                         <b>地区:</b> ${row["地区"] || "不明"}<br>
-                        <b>住所:</b> ${row["住所"] || ""}<br>
-                        <b>目標:</b> ${row["目標"] || "なし"}<br>
-                        <b>配管径:</b> ${row["配管径"] || "-"} / <b>部署:</b> ${row["車両部署"] || "-"}<br>
-                        <b>前回点検:</b> ${row["前回調査日"] || "未実施"}
+                        <b>区分:</b> ${row["設置区分"] || "-"}<br>
+                        <b>前回点検:</b> ${row["前回調査日"] || "未実施"}<br>
+                        <b>点検結果:</b> ${row["点検結果"] || "未入力"}<br>
+                        <b>異常の種類:</b> ${row["異常の種類"] || "-"}<br>
+                        <b>塗装レベル:</b> ${row["塗装レベル"] || "-"}<br>
+                        <b>コメント:</b> ${row["コメント"] || "-"}
                     `;
                     
-                    // 要点検の場合は警告を表示
                     if (row["要調査"] === "要点検") {
-                        popupContent += `<br><span class="popup-alert">⚠️ 点検期限切れ（要点検）</span>`;
+                        popupContent += `<br><span class="popup-alert">⚠️ 要点検</span>`;
                     }
 
-                    // 地図にピンを立てる
                     L.marker([row["緯度"], row["経度"]], {icon: customIcon})
                         .bindPopup(popupContent)
                         .addTo(markers);
                 });
 
-                // すべてのピンが見えるように地図の縮尺を自動調整する
                 if (data.length > 0) {
                     map.fitBounds(markers.getBounds());
                 }
 
-                // 読み込み完了したら「読込中」の文字を消す
                 document.getElementById('loading').style.display = 'none';
 
             } catch (error) {
-                alert("データの読み込みに失敗しました。URLやネット接続を確認してください。");
+                alert("データの読み込みに失敗しました。");
                 document.getElementById('loading').innerText = "❌ 読み込みエラー";
             }
         }
 
-        // 3. ページを開いた瞬間にデータを読み込む処理をスタート
+        // 3. ページを開いた瞬間にデータを読み込む
         loadData();
 
-        // 4. 現在地取得ボタンの処理（フェーズ3と同じ）
+        // 4. 現在地取得ボタンの処理
         document.getElementById('gps-btn').addEventListener('click', function() {
             map.locate({setView: true, maxZoom: 16});
         });
