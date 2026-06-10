@@ -16,22 +16,25 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     
     <style>
-        body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; }
-        #map { height: 100vh; width: 100vw; }
+        body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        /* 検索・絞り込みパネルのデザイン */
+        /* 地図とコントロールの配置 */
+        #main-container { position: relative; flex: 1; display: flex; flex-direction: column; height: 100%; }
+        #map { flex: 1; width: 100vw; height: 100%; }
+        
+        /* 検索・絞り込みパネル */
         #search-panel {
             position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-            width: 92%; max-width: 650px; z-index: 1000;
+            width: 92%; max-width: 680px; z-index: 1000;
             background: rgba(255, 255, 255, 0.95); padding: 12px; border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             display: flex; flex-wrap: wrap; gap: 8px;
         }
         #search-panel select, #search-panel input {
-            padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; min-width: 120px;
+            padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; min-width: 110px;
         }
         #search-panel .date-group {
-            display: flex; align-items: center; gap: 4px; flex-grow: 1.5; min-width: 200px;
+            display: flex; align-items: center; gap: 4px; flex-grow: 1.5; min-width: 210px;
         }
         #search-panel button {
             padding: 8px 15px; font-size: 13px; background-color: #28a745; color: white; 
@@ -46,30 +49,49 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        #gps-btn {
+        /* 各種操作ボタン（画面右側） */
+        .side-btn-container {
             position: absolute; bottom: 30px; right: 20px; z-index: 1000;
-            padding: 15px 20px; font-size: 16px; font-weight: bold;
-            background-color: #007bff; color: white; border: none; border-radius: 8px;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .action-btn {
+            padding: 12px 18px; font-size: 14px; font-weight: bold;
+            color: white; border: none; border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer;
+            text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;
         }
+        #gps-btn { background-color: #007bff; }
+        #gps-btn:active { background-color: #0056b3; }
+        #list-toggle-btn { background-color: #17a2b8; }
+        #list-toggle-btn:active { background-color: #117a8b; }
         
-        /* 🌟追加：アイコンスタイル（丸と正方形）🌟 */
+        /* 🌟スマートカスタムアイコン（3分の2サイズ＆指タッチ領域は確保）🌟 */
         .marker-hydrant {
-            width: 16px !important; height: 16px !important; margin-left: -8px !important; margin-top: -8px !important;
-            background-color: #ff3b30; border: 2px solid #ffffff; border-radius: 50%;
-            box-shadow: 0 0 4px rgba(0,0,0,0.4);
+            width: 24px !important; height: 24px !important;
+            margin-left: -12px !important; margin-top: -12px !important;
+            display: flex; align-items: center; justify-content: center; background: transparent;
         }
-        .marker-hydrant.alert-marker {
-            border: 2px solid #ffcc00; box-shadow: 0 0 6px #ff3b30; animation: pulse 1.5s infinite;
+        .marker-hydrant::after {
+            content: ''; width: 11px; height: 11px;
+            background-color: #ff3b30; border: 1.5px solid #ffffff; border-radius: 50%;
+            box-shadow: 0 0 3px rgba(0,0,0,0.4); transition: transform 0.1s;
+        }
+        .marker-hydrant.alert-marker::after {
+            border: 1.5px solid #ffcc00; box-shadow: 0 0 5px #ff3b30; animation: pulse 1.5s infinite;
         }
 
         .marker-tank {
-            width: 14px !important; height: 14px !important; margin-left: -7px !important; margin-top: -7px !important;
-            background-color: #007aff; border: 2px solid #ffffff; border-radius: 2px;
-            box-shadow: 0 0 4px rgba(0,0,0,0.4);
+            width: 24px !important; height: 24px !important;
+            margin-left: -12px !important; margin-top: -12px !important;
+            display: flex; align-items: center; justify-content: center; background: transparent;
         }
-        .marker-tank.alert-marker {
-            border: 2px solid #ffcc00; box-shadow: 0 0 6px #007aff; animation: pulse 1.5s infinite;
+        .marker-tank::after {
+            content: ''; width: 10px; height: 10px;
+            background-color: #007aff; border: 1.5px solid #ffffff; border-radius: 2px;
+            box-shadow: 0 0 3px rgba(0,0,0,0.4); transition: transform 0.1s;
+        }
+        .marker-tank.alert-marker::after {
+            border: 1.5px solid #ffcc00; box-shadow: 0 0 5px #007aff; animation: pulse 1.5s infinite;
         }
 
         @keyframes pulse {
@@ -85,7 +107,7 @@
         .popup-table td { padding: 5px; border-bottom: 1px solid #ddd; color: #222;}
         .popup-alert { color: white; background-color: #dc3545; padding: 4px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 8px; font-size: 11px; }
 
-        /* 🌟現場入力フォームのデザイン🌟 */
+        /* 現場入力フォーム */
         .form-toggle {
             display: block; width: 100%; padding: 6px; background: #e2e8f0; border: none; border-radius: 4px;
             font-size: 12px; font-weight: bold; text-align: center; cursor: pointer; color: #475569; margin-top: 5px;
@@ -100,6 +122,57 @@
         }
         .form-submit-btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
 
+        /* 🌟持ち帰り用リストテーブルのスタイル🌟 */
+        #list-container {
+            display: none; height: 35vh; background: #ffffff; border-top: 3px solid #17a2b8;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1010; overflow: hidden;
+            flex-direction: column;
+        }
+        .list-header {
+            background: #f1f5f9; padding: 10px 15px; border-bottom: 1px solid #cbd5e1;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .list-header h3 { margin: 0; font-size: 15px; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+        .list-btn-group { display: flex; gap: 8px; }
+        .list-btn {
+            padding: 5px 12px; font-size: 12px; font-weight: bold; border: none; border-radius: 4px;
+            cursor: pointer; display: flex; align-items: center; gap: 4px; color: white;
+        }
+        .btn-csv { background-color: #28a745; }
+        .btn-print { background-color: #6c757d; }
+        .btn-close { background-color: #ef4444; }
+
+        .table-wrapper { flex: 1; overflow-y: auto; padding: 0 15px 15px 15px; }
+        .result-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        .result-table th { background: #334155; color: white; position: sticky; top: 0; padding: 8px; text-align: left; }
+        .result-table td { padding: 8px; border-bottom: 1px solid #e2e8f0; }
+        .result-table tr:nth-child(even) { background: #f8fafc; }
+        .result-table tr:hover { background: #f1f5f9; cursor: pointer; }
+        
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; }
+        .badge-alert { background-color: #ef4444; }
+        .badge-ok { background-color: #3b82f6; }
+
+        /* 🌟印刷（報告書出力）用の特別設定（A4縦にきれいに収める）🌟 */
+        @media print {
+            body { height: auto; overflow: visible; }
+            #search-panel, .side-btn-container, #map, .list-header, .btn-close, .btn-csv, .btn-print, #loading {
+                display: none !important;
+            }
+            #list-container {
+                display: block !important; height: auto !important; border-top: none !important; box-shadow: none !important; position: static !important;
+            }
+            .table-wrapper { overflow: visible !important; padding: 0 !important; }
+            .result-table { border: 1px solid #000; page-break-inside: auto; }
+            .result-table tr { page-break-inside: avoid; page-break-after: auto; }
+            .result-table th { background: #f1f5f9 !important; color: #000 !important; border-bottom: 2px solid #000; }
+            .result-table td { border-bottom: 1px solid #000; color: #000; }
+            /* 印刷専用タイトルを出現させる */
+            #print-title { display: block !important; margin-bottom: 20px; text-align: center; }
+        }
+        #print-title { display: none; }
+
+        /* スマホ/iPadでの配置調整 */
         @media (max-width: 600px) {
             #search-panel select { width: calc(50% - 4px); }
             #search-panel .date-group { width: 100%; }
@@ -110,29 +183,74 @@
 </head>
 <body>
     
-    <div id="search-panel">
-        <select id="filter-area"><option value="">🌐 すべての地区</option></select>
-        <select id="filter-status">
-            <option value="">🟢 すべての状態</option>
-            <option value="要点検">🔴 要点検のみ</option>
-            <option value="点検済">🔵 点検済のみ</option>
-        </select>
-        <!-- 🌟日付指定フィルター🌟 -->
-        <div class="date-group">
-            <input type="date" id="filter-date" placeholder="点検日">
-            <select id="filter-date-cond" style="min-width: 70px; flex-grow: 0;">
-                <option value="">指定なし</option>
-                <option value="before">以前</option>
-                <option value="after">以降</option>
-            </select>
-        </div>
-        <input type="text" id="search-text" placeholder="水利番号などで検索...">
-        <button id="search-btn">検索・絞り込み</button>
+    <!-- 印刷時だけ表示される報告書ヘッダー -->
+    <div id="print-title">
+        <h1 style="font-size: 20px; margin-bottom: 5px;">地水利点検状況 報告書</h1>
+        <p style="font-size: 11px; margin: 0; color: #555;">出力日: <span id="print-date"></span> | フィルタ条件適用済リスト</p>
     </div>
 
-    <div id="loading">📡 最新データを読み込み中...</div>
-    <div id="map"></div>
-    <button id="gps-btn">📍 現在地へ</button>
+    <div id="main-container">
+        <!-- 検索・絞り込みパネル -->
+        <div id="search-panel">
+            <select id="filter-area"><option value="">🌐 すべての地区</option></select>
+            <select id="filter-status">
+                <option value="">🟢 すべての状態</option>
+                <option value="要点検">🔴 要点検のみ</option>
+                <option value="点検済">🔵 点検済のみ</option>
+            </select>
+            <!-- 🌟日付指定フィルター：デフォルト「指定日以前に調査」に設定🌟 -->
+            <div class="date-group">
+                <input type="date" id="filter-date" placeholder="点検日">
+                <select id="filter-date-cond" style="min-width: 100px; flex-grow: 0;">
+                    <option value="before">以前に点検</option>
+                    <option value="after">以降に点検</option>
+                </select>
+            </div>
+            <input type="text" id="search-text" placeholder="水利番号などで検索...">
+            <button id="search-btn">検索・絞り込み</button>
+        </div>
+
+        <div id="loading">📡 最新データを読み込み中...</div>
+        <div id="map"></div>
+        
+        <!-- 操作ボタン -->
+        <div class="side-btn-container">
+            <button id="list-toggle-btn" class="action-btn">📊 リストを表示 (<span id="list-count">0</span>)</button>
+            <button id="gps-btn" class="action-btn">📍 現在地へ</button>
+        </div>
+    </div>
+
+    <!-- 🌟持ち帰り用リスト表示エリア🌟 -->
+    <div id="list-container">
+        <div class="list-header">
+            <h3>📊 抽出水利一覧リスト (<span id="table-count">0</span>件)</h3>
+            <div class="list-btn-group">
+                <button class="list-btn btn-csv" onclick="downloadCSV()">📥 Excel/CSV出力</button>
+                <button class="list-btn btn-print" onclick="printReport()">🖨️ 報告書印刷 (PDF)</button>
+                <button class="list-btn btn-close" onclick="toggleList(false)">✕ 閉じる</button>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th>水利番号</th>
+                        <th>地区</th>
+                        <th>種別</th>
+                        <th>区分</th>
+                        <th>前回調査日</th>
+                        <th>要調査</th>
+                        <th>点検結果</th>
+                        <th>異常の種類</th>
+                        <th>コメント</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- JavaScriptで動的に作成 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     <script>
         const map = L.map('map').setView([34.2305, 135.1705], 14);
@@ -141,8 +259,25 @@
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycby5K-uoeLHnuvgL2BJH-gWcxj3TS1WT6J9zlL_LcNh1nRfYAXKEpZk-61qh6cnCtbLS_g/exec";
 
         let allData = []; 
+        let currentFilteredData = []; // 現在フィルターがかかっているデータ
         let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 });
         map.addLayer(markersGroup);
+
+        // 🌟タイムゾーンの影響を受けずに安全に日付をパースする関数🌟
+        function parseLocalDate(dateStr) {
+            if (!dateStr || dateStr === "00年00月00日" || dateStr === "0") return new Date(2000, 0, 1);
+            let s = String(dateStr).trim();
+            // yyyy/MM/dd or yyyy-MM-dd に対応
+            const parts = s.split(/[-/]/);
+            if (parts.length >= 3) {
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                const day = parseInt(parts[2], 10);
+                return new Date(year, month, day);
+            }
+            let d = new Date(s);
+            return isNaN(d.getTime()) ? new Date(2000, 0, 1) : d;
+        }
 
         async function loadData() {
             try {
@@ -158,7 +293,10 @@
                     areaSelect.appendChild(option);
                 });
 
+                currentFilteredData = [...allData];
                 renderMarkers(allData);
+                updateListTable(allData);
+
                 document.getElementById('loading').style.display = 'none';
                 map.locate({setView: true, maxZoom: 17}); 
             } catch (error) {
@@ -176,7 +314,7 @@
                 let isAlert = (row["要調査"] === "要点検");
                 let className = "";
                 
-                // 🌟変更：消火栓＝赤丸、防火水槽＝青正方形、サイズ3分の2🌟
+                // 🌟消火栓＝赤丸、防火水槽＝青正方形、見た目のサイズを3分の2に縮小🌟
                 if (row["水利種別"] === "消火栓") {
                     className = "marker-hydrant" + (isAlert ? " alert-marker" : "");
                 } else {
@@ -198,7 +336,6 @@
                         <tr><th>コメント</th><td class="cell-comment">${row["コメント"] || "-"}</td></tr>
                     </table>
                     
-                    <!-- 🌟現場送信フォームの設置🌟 -->
                     <button class="form-toggle" onclick="toggleForm('${row["水利番号"]}')">📝 現場点検の入力を開く</button>
                     <div class="input-form" id="form-${row["水利番号"]}">
                         <div class="form-group">
@@ -245,13 +382,11 @@
             }
         }
 
-        // 🌟追加：現場入力フォームの展開/折りたたみ🌟
         window.toggleForm = function(id) {
             let form = document.getElementById("form-" + id);
             form.style.display = (form.style.display === "block") ? "none" : "block";
         };
 
-        // 🌟追加：iPadからスプレッドシートへ直接データを書き込む処理🌟
         window.submitReport = async function(id) {
             let btn = document.getElementById("btn-" + id);
             let resultVal = document.getElementById("input-result-" + id).value;
@@ -262,7 +397,6 @@
             btn.disabled = true;
             btn.innerText = "送信中...";
 
-            // GAS APIに直接通信してシートを書き換える
             let url = `${GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}`;
 
             try {
@@ -273,7 +407,6 @@
                     btn.innerText = "送信完了！";
                     btn.style.backgroundColor = "#28a745";
 
-                    // ローカルメモリ(allData)の中身もリアルタイムに書き換える（再読込なしで地図が変わる）
                     let targetIndex = allData.findIndex(row => row["水利番号"] === id);
                     if (targetIndex !== -1) {
                         let today = new Date();
@@ -287,10 +420,10 @@
                         allData[targetIndex]["コメント"] = commentVal;
                     }
 
-                    // 1.5秒後にポップアップを更新し、新しい青ピンにするために再描画
                     setTimeout(() => {
                         map.closePopup();
-                        renderMarkers(allData);
+                        // 検索状態を維持したまま再描画
+                        document.getElementById('search-btn').click();
                     }, 1500);
 
                 } else {
@@ -299,13 +432,117 @@
                     btn.innerText = "送信失敗（再試行）";
                 }
             } catch (err) {
-                alert("通信に失敗しました。圏外か接続状態を確認してください。");
+                alert("通信に失敗しました。電波状態を確認してください。");
                 btn.disabled = false;
                 btn.innerText = "スプレッドシートへ送信";
             }
         };
 
-        // 🌟追加：検索・絞り込みボタンの処理（日付検索対応）🌟
+        // 🌟持ち帰りリストの更新機能🌟
+        function updateListTable(data) {
+            let tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            document.getElementById('list-count').innerText = data.length;
+            document.getElementById('table-count').innerText = data.length;
+
+            data.forEach(row => {
+                let tr = document.createElement('tr');
+                let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok";
+                
+                tr.innerHTML = `
+                    <td style="font-weight: bold; color: #1e293b;">${row["水利番号"]}</td>
+                    <td>${row["地区"] || "-"}</td>
+                    <td>${row["水利種別"]}</td>
+                    <td>${row["設置区分"] || "-"}</td>
+                    <td>${row["前回調査日"] || "未実施"}</td>
+                    <td><span class="badge ${badgeClass}">${row["要調査"]}</span></td>
+                    <td>${row["点検結果"] || "-"}</td>
+                    <td>${row["異常の種類"] || "-"}</td>
+                    <td style="color: #64748b; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${row["コメント"] || "-"}</td>
+                `;
+                
+                // リストの行をタップすると、そのピンの位置に移動する機能
+                tr.addEventListener('click', () => {
+                    if (row["緯度"] && row["経度"]) {
+                        toggleList(false); // リストを閉じる
+                        map.setView([row["緯度"], row["経度"]], 18);
+                        
+                        // 該当するピンのポップアップを開く
+                        setTimeout(() => {
+                            markersGroup.eachLayer(function(marker) {
+                                if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) {
+                                    marker.openPopup();
+                                }
+                            });
+                        }, 300);
+                    }
+                });
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 🌟リスト表示の開閉切り替え🌟
+        window.toggleList = function(show) {
+            let container = document.getElementById('list-container');
+            if (show === undefined) {
+                container.style.display = (container.style.display === 'flex') ? 'none' : 'flex';
+            } else {
+                container.style.display = show ? 'flex' : 'none';
+            }
+        };
+
+        document.getElementById('list-toggle-btn').addEventListener('click', () => {
+            toggleList();
+        });
+
+        // 🌟CSVダウンロード（自署のPCに持ち帰ってスプレッドシート等で開く用）🌟
+        window.downloadCSV = function() {
+            if (currentFilteredData.length === 0) {
+                alert("リストが空のため出力できません。");
+                return;
+            }
+            
+            // CSVヘッダー
+            let csvContent = "\uFEFF"; // Excelの文字化け防止（BOM）
+            csvContent += "水利番号,地区,水利種別,設置区分,前回調査日,要調査,点検結果,異常の種類,塗装レベル,コメント\r\n";
+            
+            currentFilteredData.forEach(row => {
+                let line = [
+                    row["水利番号"],
+                    row["地区"] || "-",
+                    row["水利種別"],
+                    row["設置区分"] || "-",
+                    row["前回調査日"] || "未実施",
+                    row["要調査"],
+                    row["点検結果"] || "-",
+                    row["異常の種類"] || "-",
+                    row["塗装レベル"] || "-",
+                    (row["コメント"] || "-").replace(/,/g, "，") // カンマを全角にしてCSV破損を防ぐ
+                ].join(",");
+                csvContent += line + "\r\n";
+            });
+            
+            let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            let url = URL.createObjectURL(blob);
+            let link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `地水利点検リスト_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        // 🌟印刷用（PDF保存）の処理🌟
+        window.printReport = function() {
+            // 現在の年月日を印刷用シートに表示
+            let today = new Date();
+            document.getElementById('print-date').innerText = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
+            window.print();
+        };
+
+        // 🌟検索・絞り込み処理（バグ修正＆以前・以降対応完了版）🌟
         document.getElementById('search-btn').addEventListener('click', function() {
             let selectedArea = document.getElementById('filter-area').value;
             let selectedStatus = document.getElementById('filter-status').value;
@@ -314,33 +551,36 @@
             let filterDateVal = document.getElementById('filter-date').value; // YYYY-MM-DD
             let filterDateCond = document.getElementById('filter-date-cond').value;
 
-            let filterDateTime = filterDateVal ? new Date(filterDateVal).getTime() : null;
+            let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
 
-            let filteredData = allData.filter(row => {
+            currentFilteredData = allData.filter(row => {
                 let matchArea = (selectedArea === "") || (row["地区"] === selectedArea);
                 let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
                 
-                // 日付での絞り込み処理
+                // 🌟修正：タイムゾーンに依存しない「以前・以降」の完璧な日付絞り込み🌟
                 let matchDate = true;
-                if (filterDateTime && filterDateCond && row["前回調査日"]) {
-                    let rowDateTime = new Date(row["前回調査日"]).getTime();
+                if (filterDateTime && row["前回調査日"]) {
+                    let rowDateTime = parseLocalDate(row["前回調査日"]).getTime();
                     if (filterDateCond === "before") {
-                        matchDate = (rowDateTime <= filterDateTime); // 指定日以前
+                        // 前回調査日 <= フィルター日付 (指定日以前に調査された古いもの)
+                        matchDate = (rowDateTime <= filterDateTime);
                     } else if (filterDateCond === "after") {
-                        matchDate = (rowDateTime >= filterDateTime); // 指定日以降
+                        // 前回調査日 >= フィルター日付 (指定日以降に新しく調査されたもの)
+                        matchDate = (rowDateTime >= filterDateTime);
                     }
                 }
 
                 let matchKeyword = true;
                 if (keyword !== "") {
-                    let targetText = (row["水利番号"] + row["水利種別"] + row["コメント"]).toLowerCase();
+                    let targetText = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase();
                     matchKeyword = targetText.includes(keyword);
                 }
                 
                 return matchArea && matchStatus && matchDate && matchKeyword;
             });
 
-            renderMarkers(filteredData);
+            renderMarkers(currentFilteredData);
+            updateListTable(currentFilteredData);
         });
 
         loadData();
