@@ -82,6 +82,20 @@
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; }
         .badge-alert { background-color: #ef4444; } .badge-ok { background-color: #3b82f6; }
 
+        /* 🌟 改良：説明書の閉じやすさを徹底強化 🌟 */
+        #help-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); cursor: pointer; /* 背景タップ用 */ }
+        .help-content { background: white; width: 90%; max-width: 500px; max-height: 85vh; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; flex-direction: column; cursor: default; /* 中身のタップは無効化 */ }
+        .help-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; }
+        .help-header h2 { margin: 0; font-size: 18px; color: #1e293b; }
+        .help-close-btn { background: #e2e8f0; border: none; font-size: 13px; font-weight: bold; color: #475569; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+        .help-close-btn:active { background: #cbd5e1; }
+        .help-body { flex: 1; overflow-y: auto; font-size: 13px; color: #334155; line-height: 1.6; padding-right: 5px; }
+        .help-section { margin-bottom: 15px; }
+        .help-section h4 { margin: 0 0 5px 0; color: #0f172a; border-left: 4px solid #3b82f6; padding-left: 8px; }
+        .help-section ul { margin: 0; padding-left: 20px; }
+        .help-bottom-btn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; background-color: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 15px; }
+        .help-bottom-btn:active { background-color: #dc2626; }
+
         .leaflet-top.leaflet-right { top: 60px !important; }
 
         @media print {
@@ -114,11 +128,12 @@
         <div class="mode-desc">現場でピンをタップし、点検結果を入力・送信します（暗証番号が必要）</div>
     </div>
 
-    <div id="help-modal">
+    <!-- 🌟 改良：外側タップでも閉じるように、onclickを追加 🌟 -->
+    <div id="help-modal" onclick="if(event.target === this) toggleHelp(false)">
         <div class="help-content">
             <div class="help-header">
                 <h2>📖 システムの使い方</h2>
-                <button class="help-close-btn" onclick="toggleHelp(false)">&times;</button>
+                <button class="help-close-btn" onclick="toggleHelp(false)">✖ 閉じる</button>
             </div>
             <div class="help-body">
                 <div class="help-section">
@@ -148,6 +163,8 @@
                     </ul>
                 </div>
             </div>
+            <!-- 🌟 改良：一番下にも大きな閉じるボタンを追加 🌟 -->
+            <button class="help-bottom-btn" onclick="toggleHelp(false)">閉じる</button>
         </div>
     </div>
 
@@ -350,7 +367,6 @@
             form.style.display = (form.style.display === "block") ? "none" : "block";
         };
 
-        // 🌟【修正箇所】送信処理のタイポを完全に修正しました🌟
         window.submitReport = async function(id) {
             let btn = document.getElementById("btn-" + id);
             let resultVal = document.getElementById("input-result-" + id).value;
