@@ -19,19 +19,22 @@
         body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; }
         #map { height: 100vh; width: 100vw; }
         
-        /* 🌟追加：検索パネルのデザイン🌟 */
+        /* 検索・絞り込みパネルのデザイン */
         #search-panel {
             position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 600px; z-index: 1000;
-            background: rgba(255, 255, 255, 0.95); padding: 10px; border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            width: 92%; max-width: 650px; z-index: 1000;
+            background: rgba(255, 255, 255, 0.95); padding: 12px; border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             display: flex; flex-wrap: wrap; gap: 8px;
         }
         #search-panel select, #search-panel input {
-            padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1;
+            padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; min-width: 120px;
+        }
+        #search-panel .date-group {
+            display: flex; align-items: center; gap: 4px; flex-grow: 1.5; min-width: 200px;
         }
         #search-panel button {
-            padding: 8px 15px; font-size: 14px; background-color: #28a745; color: white; 
+            padding: 8px 15px; font-size: 13px; background-color: #28a745; color: white; 
             border: none; border-radius: 4px; font-weight: bold; cursor: pointer; flex-grow: 1;
         }
         #search-panel button:active { background-color: #218838; }
@@ -50,24 +53,63 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer;
         }
         
-        /* ポップアップデザイン */
-        .popup-title { font-size: 16px; font-weight: bold; color: #333; border-bottom: 2px solid #007bff; margin-bottom: 8px; padding-bottom: 5px; text-align: center; }
-        .popup-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .popup-table th { background-color: #f8f9fa; text-align: left; padding: 6px; border-bottom: 1px solid #ddd; width: 35%; color: #555;}
-        .popup-table td { padding: 6px; border-bottom: 1px solid #ddd; color: #222;}
-        .popup-alert { color: white; background-color: #dc3545; padding: 5px; text-align: center; font-weight: bold; border-radius: 4px; margin-top: 10px; }
+        /* 🌟追加：アイコンスタイル（丸と正方形）🌟 */
+        .marker-hydrant {
+            width: 16px !important; height: 16px !important; margin-left: -8px !important; margin-top: -8px !important;
+            background-color: #ff3b30; border: 2px solid #ffffff; border-radius: 50%;
+            box-shadow: 0 0 4px rgba(0,0,0,0.4);
+        }
+        .marker-hydrant.alert-marker {
+            border: 2px solid #ffcc00; box-shadow: 0 0 6px #ff3b30; animation: pulse 1.5s infinite;
+        }
 
-        /* スマホ向けレイアウト調整 */
+        .marker-tank {
+            width: 14px !important; height: 14px !important; margin-left: -7px !important; margin-top: -7px !important;
+            background-color: #007aff; border: 2px solid #ffffff; border-radius: 2px;
+            box-shadow: 0 0 4px rgba(0,0,0,0.4);
+        }
+        .marker-tank.alert-marker {
+            border: 2px solid #ffcc00; box-shadow: 0 0 6px #007aff; animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* ポップアップデザイン */
+        .popup-title { font-size: 15px; font-weight: bold; color: #333; border-bottom: 2px solid #007bff; margin-bottom: 8px; padding-bottom: 5px; text-align: center; }
+        .popup-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
+        .popup-table th { background-color: #f8f9fa; text-align: left; padding: 5px; border-bottom: 1px solid #ddd; width: 35%; color: #555;}
+        .popup-table td { padding: 5px; border-bottom: 1px solid #ddd; color: #222;}
+        .popup-alert { color: white; background-color: #dc3545; padding: 4px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 8px; font-size: 11px; }
+
+        /* 🌟現場入力フォームのデザイン🌟 */
+        .form-toggle {
+            display: block; width: 100%; padding: 6px; background: #e2e8f0; border: none; border-radius: 4px;
+            font-size: 12px; font-weight: bold; text-align: center; cursor: pointer; color: #475569; margin-top: 5px;
+        }
+        .input-form { display: none; background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 4px; margin-top: 5px; }
+        .form-group { margin-bottom: 6px; }
+        .form-group label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 2px; color: #64748b; }
+        .form-group select, .form-group input { width: 93%; padding: 4px; font-size: 11px; border: 1px solid #cbd5e1; border-radius: 3px; }
+        .form-submit-btn {
+            width: 100%; padding: 6px; background-color: #007bff; color: white; border: none; border-radius: 4px;
+            font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 5px;
+        }
+        .form-submit-btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
+
         @media (max-width: 600px) {
             #search-panel select { width: calc(50% - 4px); }
+            #search-panel .date-group { width: 100%; }
             #search-panel input { width: 100%; }
-            .leaflet-top { top: 130px; } /* 左上のズームボタンを検索パネルの下にずらす */
+            .leaflet-top { top: 160px; }
         }
     </style>
 </head>
 <body>
     
-    <!-- 🌟追加：検索・絞り込みパネル🌟 -->
     <div id="search-panel">
         <select id="filter-area"><option value="">🌐 すべての地区</option></select>
         <select id="filter-status">
@@ -75,8 +117,17 @@
             <option value="要点検">🔴 要点検のみ</option>
             <option value="点検済">🔵 点検済のみ</option>
         </select>
+        <!-- 🌟日付指定フィルター🌟 -->
+        <div class="date-group">
+            <input type="date" id="filter-date" placeholder="点検日">
+            <select id="filter-date-cond" style="min-width: 70px; flex-grow: 0;">
+                <option value="">指定なし</option>
+                <option value="before">以前</option>
+                <option value="after">以降</option>
+            </select>
+        </div>
         <input type="text" id="search-text" placeholder="水利番号などで検索...">
-        <button id="search-btn">検索・絞り込む</button>
+        <button id="search-btn">検索・絞り込み</button>
     </div>
 
     <div id="loading">📡 最新データを読み込み中...</div>
@@ -89,93 +140,204 @@
 
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycby5K-uoeLHnuvgL2BJH-gWcxj3TS1WT6J9zlL_LcNh1nRfYAXKEpZk-61qh6cnCtbLS_g/exec";
 
-        let allData = []; // 取得した全データを保存しておく変数
+        let allData = []; 
         let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 });
         map.addLayer(markersGroup);
 
         async function loadData() {
             try {
                 const response = await fetch(GAS_API_URL);
-                allData = await response.json(); // 全データを保存
+                allData = await response.json(); 
                 
-                // 地区のプルダウンリストをデータから自動生成する
                 let areas = [...new Set(allData.map(row => row["地区"]).filter(a => a))].sort();
                 let areaSelect = document.getElementById('filter-area');
+                areaSelect.innerHTML = '<option value="">🌐 すべての地区</option>';
                 areas.forEach(area => {
                     let option = document.createElement('option');
                     option.value = option.innerText = area;
                     areaSelect.appendChild(option);
                 });
 
-                // 初期状態として全ピンを描画
                 renderMarkers(allData);
-
                 document.getElementById('loading').style.display = 'none';
-                map.locate({setView: true, maxZoom: 17}); // 現在地へズーム
+                map.locate({setView: true, maxZoom: 17}); 
             } catch (error) {
                 alert("データの読み込みに失敗しました。");
                 document.getElementById('loading').innerText = "❌ 読み込みエラー";
             }
         }
 
-        // 🌟追加：ピンを描画する機能（検索時に何度も使うため独立化）🌟
         function renderMarkers(dataToRender) {
-            markersGroup.clearLayers(); // 一旦すべてのピンを消す
+            markersGroup.clearLayers(); 
 
             dataToRender.forEach(function(row) {
                 if (!row["緯度"] || !row["経度"]) return;
 
-                let markerColor = (row["要調査"] === "要点検") ? "red" : "blue";
-                let customIcon = L.icon({
-                    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${markerColor}.png`,
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-                });
+                let isAlert = (row["要調査"] === "要点検");
+                let className = "";
+                
+                // 🌟変更：消火栓＝赤丸、防火水槽＝青正方形、サイズ3分の2🌟
+                if (row["水利種別"] === "消火栓") {
+                    className = "marker-hydrant" + (isAlert ? " alert-marker" : "");
+                } else {
+                    className = "marker-tank" + (isAlert ? " alert-marker" : "");
+                }
+
+                let customIcon = L.divIcon({ className: className });
 
                 let popupContent = `
-                    <div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>
-                    <table class="popup-table">
+                    <div class="popup-title" id="title-${row["水利番号"]}">${row["水利種別"]} (${row["水利番号"]})</div>
+                    ${isAlert ? `<div class="popup-alert" id="alert-${row["水利番号"]}">⚠️ 要点検</div>` : ''}
+                    <table class="popup-table" id="table-${row["水利番号"]}">
                         <tr><th>地区</th><td>${row["地区"] || "-"}</td></tr>
                         <tr><th>区分</th><td>${row["設置区分"] || "-"}</td></tr>
-                        <tr><th>前回点検</th><td>${row["前回調査日"] || "未実施"}</td></tr>
-                        <tr><th>点検結果</th><td>${row["点検結果"] || "未入力"}</td></tr>
-                        <tr><th>異常の種類</th><td>${row["異常の種類"] || "-"}</td></tr>
-                        <tr><th>塗装レベル</th><td>${row["塗装レベル"] || "-"}</td></tr>
-                        <tr><th>コメント</th><td>${row["コメント"] || "-"}</td></tr>
+                        <tr><th>前回点検</th><td class="cell-date">${row["前回調査日"] || "未実施"}</td></tr>
+                        <tr><th>点検結果</th><td class="cell-result">${row["点検結果"] || "未入力"}</td></tr>
+                        <tr><th>異常の種類</th><td class="cell-error">${row["異常の種類"] || "-"}</td></tr>
+                        <tr><th>塗装レベル</th><td class="cell-paint">${row["塗装レベル"] || "-"}</td></tr>
+                        <tr><th>コメント</th><td class="cell-comment">${row["コメント"] || "-"}</td></tr>
                     </table>
+                    
+                    <!-- 🌟現場送信フォームの設置🌟 -->
+                    <button class="form-toggle" onclick="toggleForm('${row["水利番号"]}')">📝 現場点検の入力を開く</button>
+                    <div class="input-form" id="form-${row["水利番号"]}">
+                        <div class="form-group">
+                            <label>点検結果</label>
+                            <select id="input-result-${row["水利番号"]}">
+                                <option value="点検済">点検済（良好）</option>
+                                <option value="要対応">要対応（一部不備あり）</option>
+                                <option value="未実施">未点検</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>異常の種類</label>
+                            <select id="input-error-${row["水利番号"]}">
+                                <option value="なし">異常なし</option>
+                                <option value="蓋破損">蓋の破損</option>
+                                <option value="泥溜まり">土砂・泥溜まり</option>
+                                <option value="バルブ不良">バルブ開閉不良</option>
+                                <option value="その他">その他（コメント記入）</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>塗装レベル</label>
+                            <select id="input-paint-${row["水利番号"]}">
+                                <option value="良">良（塗装必要なし）</option>
+                                <option value="普通">普通（経年あり）</option>
+                                <option value="要塗装">要塗装（ハゲあり）</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>コメント</label>
+                            <input type="text" id="input-comment-${row["水利番号"]}" placeholder="不備の内容や状況など">
+                        </div>
+                        <button class="form-submit-btn" id="btn-${row["水利番号"]}" onclick="submitReport('${row["水利番号"]}')">スプレッドシートへ送信</button>
+                    </div>
                 `;
-                if (row["要調査"] === "要点検") popupContent += `<div class="popup-alert">⚠️ 要点検</div>`;
 
                 L.marker([row["緯度"], row["経度"]], {icon: customIcon})
                     .bindPopup(popupContent)
                     .addTo(markersGroup);
             });
 
-            // 絞り込んだ結果に合わせて地図のズームを自動調整
             if (dataToRender.length > 0) {
                 map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
             }
         }
 
-        // 🌟追加：検索・絞り込みボタンを押した時の処理🌟
+        // 🌟追加：現場入力フォームの展開/折りたたみ🌟
+        window.toggleForm = function(id) {
+            let form = document.getElementById("form-" + id);
+            form.style.display = (form.style.display === "block") ? "none" : "block";
+        };
+
+        // 🌟追加：iPadからスプレッドシートへ直接データを書き込む処理🌟
+        window.submitReport = async function(id) {
+            let btn = document.getElementById("btn-" + id);
+            let resultVal = document.getElementById("input-result-" + id).value;
+            let errorVal = document.getElementById("input-error-" + id).value;
+            let paintVal = document.getElementById("input-paint-" + id).value;
+            let commentVal = document.getElementById("input-comment-" + id).value;
+
+            btn.disabled = true;
+            btn.innerText = "送信中...";
+
+            // GAS APIに直接通信してシートを書き換える
+            let url = `${GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}`;
+
+            try {
+                let response = await fetch(url);
+                let res = await response.json();
+
+                if (res.status === "Success") {
+                    btn.innerText = "送信完了！";
+                    btn.style.backgroundColor = "#28a745";
+
+                    // ローカルメモリ(allData)の中身もリアルタイムに書き換える（再読込なしで地図が変わる）
+                    let targetIndex = allData.findIndex(row => row["水利番号"] === id);
+                    if (targetIndex !== -1) {
+                        let today = new Date();
+                        let todayStr = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
+                        
+                        allData[targetIndex]["前回調査日"] = todayStr;
+                        allData[targetIndex]["要調査"] = "点検済";
+                        allData[targetIndex]["点検結果"] = resultVal;
+                        allData[targetIndex]["異常の種類"] = errorVal;
+                        allData[targetIndex]["塗装レベル"] = paintVal;
+                        allData[targetIndex]["コメント"] = commentVal;
+                    }
+
+                    // 1.5秒後にポップアップを更新し、新しい青ピンにするために再描画
+                    setTimeout(() => {
+                        map.closePopup();
+                        renderMarkers(allData);
+                    }, 1500);
+
+                } else {
+                    alert("送信エラー: " + res.message);
+                    btn.disabled = false;
+                    btn.innerText = "送信失敗（再試行）";
+                }
+            } catch (err) {
+                alert("通信に失敗しました。圏外か接続状態を確認してください。");
+                btn.disabled = false;
+                btn.innerText = "スプレッドシートへ送信";
+            }
+        };
+
+        // 🌟追加：検索・絞り込みボタンの処理（日付検索対応）🌟
         document.getElementById('search-btn').addEventListener('click', function() {
             let selectedArea = document.getElementById('filter-area').value;
             let selectedStatus = document.getElementById('filter-status').value;
             let keyword = document.getElementById('search-text').value.trim().toLowerCase();
+            
+            let filterDateVal = document.getElementById('filter-date').value; // YYYY-MM-DD
+            let filterDateCond = document.getElementById('filter-date-cond').value;
 
-            // 条件に合うデータだけを抜き出す
+            let filterDateTime = filterDateVal ? new Date(filterDateVal).getTime() : null;
+
             let filteredData = allData.filter(row => {
                 let matchArea = (selectedArea === "") || (row["地区"] === selectedArea);
                 let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
-                let matchKeyword = true;
                 
+                // 日付での絞り込み処理
+                let matchDate = true;
+                if (filterDateTime && filterDateCond && row["前回調査日"]) {
+                    let rowDateTime = new Date(row["前回調査日"]).getTime();
+                    if (filterDateCond === "before") {
+                        matchDate = (rowDateTime <= filterDateTime); // 指定日以前
+                    } else if (filterDateCond === "after") {
+                        matchDate = (rowDateTime >= filterDateTime); // 指定日以降
+                    }
+                }
+
+                let matchKeyword = true;
                 if (keyword !== "") {
-                    // 水利番号、種別、コメントのどこかに文字が含まれていればOK
                     let targetText = (row["水利番号"] + row["水利種別"] + row["コメント"]).toLowerCase();
                     matchKeyword = targetText.includes(keyword);
                 }
                 
-                return matchArea && matchStatus && matchKeyword;
+                return matchArea && matchStatus && matchDate && matchKeyword;
             });
 
             renderMarkers(filteredData);
@@ -195,6 +357,5 @@
     </script>
 </body>
 </html>
-
 
 ```
