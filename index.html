@@ -4,78 +4,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>地水利マップ（GPSテスト）</title>
+    <title>地水利マップ（本番システム）</title>
     
+    <!-- Leaflet (地図ライブラリ) の読み込み -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <style>
-        body { margin: 0; padding: 0; }
+        body { margin: 0; padding: 0; font-family: sans-serif; }
         #map { height: 100vh; width: 100vw; }
         
+        /* 画面上部に表示する「読込中」のデザイン */
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px 40px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
         /* 画面右下に表示する現在地ボタンのデザイン */
         #gps-btn {
             position: absolute;
             bottom: 30px;
             right: 20px;
-            z-index: 1000; /* 地図より上に表示する */
+            z-index: 1000;
             padding: 15px 20px;
             font-size: 16px;
             font-weight: bold;
-            background-color: #007bff; /* 青色 */
+            background-color: #007bff;
             color: white;
             border: none;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
         }
-        #gps-btn:active {
-            background-color: #0056b3; /* 押した時に少し暗くする */
-        }
+        #gps-btn:active { background-color: #0056b3; }
+        
+        /* ポップアップ内の文字デザイン */
+        .popup-title { font-size: 16px; font-weight: bold; border-bottom: 2px solid #ccc; margin-bottom: 5px; padding-bottom: 3px; }
+        .popup-alert { color: red; font-weight: bold; }
     </style>
 </head>
 <body>
+    
+    <!-- 読込中メッセージ（最初は表示しておく） -->
+    <div id="loading">📡 スプレッドシートからデータを読み込み中...</div>
+    
+    <!-- 地図表示エリア -->
     <div id="map"></div>
     
-    <!-- 現在地へ移動するためのボタン -->
+    <!-- 現在地ボタン -->
     <button id="gps-btn">📍 現在地へ</button>
 
     <script>
-        // 1. 地図の初期設定
+        // 1. 地図の初期設定（和歌山城付近を中心）
         const map = L.map('map').setView([34.226, 135.174], 14);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
         }).addTo(map);
 
-        // 2. 地水利のテストデータ
-        const waterSources = [
-            { id: 'S-001', type: '消火栓', lat: 34.2305, lng: 135.1705, info: '市役所前 65mm' },
-            { id: 'S-002', type: '消火栓', lat: 34.2250, lng: 135.1750, info: '和歌山城北側 65mm' },
-            { id: 'B-001', type: '防火水槽', lat: 34.2210, lng: 135.1710, info: '県庁南 40t' },
-            { id: 'S-003', type: '消火栓', lat: 34.2330, lng: 135.1780, info: '和歌山駅西口 65mm' }
-        ];
+        // 🌟 取得したGoogle Apps ScriptのAPIキー（URL）🌟
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwVJwQ0jWwjojHx1PPNElTT-7PYpuH38bXnKWk_NDi3WdSS2DCvdNIorhqEAAvw1Hhv1g/exec";
 
-        // 3. ピンを立てる
-        waterSources.forEach(function(source) {
-            let markerText = `<b>${source.type} (${source.id})</b><br>${source.info}`;
-            L.marker([source.lat, source.lng]).addTo(map).bindPopup(markerText);
-        });
+        // 2. データを取得して地図に表示する機能
+        async function loadData() {
+            try {
+                // APIにアクセスしてデータを取ってくる
+                const response = await fetch(GAS_API_URL);
+                const data = await response.json();
+                
+                // ピンをまとめて管理するためのグループ
+                const markers = L.featureGroup().addTo(map);
 
-        // 4. 【追加】GPSで現在地を取得する処理
+                // データ1件ずつに対してピンを立てる
+                data.forEach(function(row) {
+                    // 緯度・経度が無いデータはスキップ
+                    if (!row["緯度"] || !row["経度"]) return;
+
+                    // ピンの色を決める（要調査なら赤、それ以外は青）
+                    let markerColor = (row["要調査"] === "要点検") ? "red" : "blue";
+                    
+                    // カスタムアイコン（色付きピン）の作成
+                    let customIcon = L.icon({
+                        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${markerColor}.png`,
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    });
+
+                    // ポップアップに表示する内容（シート1の列名を指定）
+                    let popupContent = `
+                        <div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>
+                        <b>地区:</b> ${row["地区"] || "不明"}<br>
+                        <b>住所:</b> ${row["住所"] || ""}<br>
+                        <b>目標:</b> ${row["目標"] || "なし"}<br>
+                        <b>配管径:</b> ${row["配管径"] || "-"} / <b>部署:</b> ${row["車両部署"] || "-"}<br>
+                        <b>前回点検:</b> ${row["前回調査日"] || "未実施"}
+                    `;
+                    
+                    // 要点検の場合は警告を表示
+                    if (row["要調査"] === "要点検") {
+                        popupContent += `<br><span class="popup-alert">⚠️ 点検期限切れ（要点検）</span>`;
+                    }
+
+                    // 地図にピンを立てる
+                    L.marker([row["緯度"], row["経度"]], {icon: customIcon})
+                        .bindPopup(popupContent)
+                        .addTo(markers);
+                });
+
+                // すべてのピンが見えるように地図の縮尺を自動調整する
+                if (data.length > 0) {
+                    map.fitBounds(markers.getBounds());
+                }
+
+                // 読み込み完了したら「読込中」の文字を消す
+                document.getElementById('loading').style.display = 'none';
+
+            } catch (error) {
+                alert("データの読み込みに失敗しました。URLやネット接続を確認してください。");
+                document.getElementById('loading').innerText = "❌ 読み込みエラー";
+            }
+        }
+
+        // 3. ページを開いた瞬間にデータを読み込む処理をスタート
+        loadData();
+
+        // 4. 現在地取得ボタンの処理（フェーズ3と同じ）
         document.getElementById('gps-btn').addEventListener('click', function() {
-            // 現在地を取得して地図を移動
             map.locate({setView: true, maxZoom: 16});
         });
 
-        // 現在地が見つかった時の処理
         map.on('locationfound', function(e) {
-            L.marker(e.latlng).addTo(map)
-                .bindPopup("<b>あなたは今ここにいます</b>").openPopup();
+            L.marker(e.latlng).addTo(map).bindPopup("<b>あなたの現在地</b>").openPopup();
         });
 
-        // GPS取得に失敗した時の処理
         map.on('locationerror', function(e) {
-            alert("現在地が取得できませんでした。端末の位置情報設定を確認してください。");
+            alert("現在地が取得できませんでした。");
         });
     </script>
 </body>
