@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>地水利マップ（本番システム）</title>
     
-    <!-- Leaflet (地図ライブラリ) の読み込み -->
+    <!-- Leaflet (地図ライブラリ) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- 🌟追加：爆速化するためのクラスター（まとめる）ライブラリ🌟 -->
+    <!-- クラスター（まとめる）ライブラリ -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
@@ -19,6 +19,23 @@
         body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; }
         #map { height: 100vh; width: 100vw; }
         
+        /* 🌟追加：検索パネルのデザイン🌟 */
+        #search-panel {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 600px; z-index: 1000;
+            background: rgba(255, 255, 255, 0.95); padding: 10px; border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex; flex-wrap: wrap; gap: 8px;
+        }
+        #search-panel select, #search-panel input {
+            padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1;
+        }
+        #search-panel button {
+            padding: 8px 15px; font-size: 14px; background-color: #28a745; color: white; 
+            border: none; border-radius: 4px; font-weight: bold; cursor: pointer; flex-grow: 1;
+        }
+        #search-panel button:active { background-color: #218838; }
+
         #loading {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             z-index: 2000; background-color: rgba(255, 255, 255, 0.95);
@@ -32,119 +49,148 @@
             background-color: #007bff; color: white; border: none; border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer;
         }
-        #gps-btn:active { background-color: #0056b3; }
         
-        /* 🌟追加：ポップアップの綺麗なデザイン🌟 */
-        .popup-title { 
-            font-size: 16px; font-weight: bold; color: #333; 
-            border-bottom: 2px solid #007bff; margin-bottom: 8px; padding-bottom: 5px; 
-            text-align: center;
-        }
+        /* ポップアップデザイン */
+        .popup-title { font-size: 16px; font-weight: bold; color: #333; border-bottom: 2px solid #007bff; margin-bottom: 8px; padding-bottom: 5px; text-align: center; }
         .popup-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .popup-table th { background-color: #f8f9fa; text-align: left; padding: 6px; border-bottom: 1px solid #ddd; width: 35%; color: #555;}
         .popup-table td { padding: 6px; border-bottom: 1px solid #ddd; color: #222;}
         .popup-alert { color: white; background-color: #dc3545; padding: 5px; text-align: center; font-weight: bold; border-radius: 4px; margin-top: 10px; }
+
+        /* スマホ向けレイアウト調整 */
+        @media (max-width: 600px) {
+            #search-panel select { width: calc(50% - 4px); }
+            #search-panel input { width: 100%; }
+            .leaflet-top { top: 130px; } /* 左上のズームボタンを検索パネルの下にずらす */
+        }
     </style>
 </head>
 <body>
     
+    <!-- 🌟追加：検索・絞り込みパネル🌟 -->
+    <div id="search-panel">
+        <select id="filter-area"><option value="">🌐 すべての地区</option></select>
+        <select id="filter-status">
+            <option value="">🟢 すべての状態</option>
+            <option value="要点検">🔴 要点検のみ</option>
+            <option value="点検済">🔵 点検済のみ</option>
+        </select>
+        <input type="text" id="search-text" placeholder="水利番号などで検索...">
+        <button id="search-btn">検索・絞り込む</button>
+    </div>
+
     <div id="loading">📡 最新データを読み込み中...</div>
     <div id="map"></div>
     <button id="gps-btn">📍 現在地へ</button>
 
     <script>
-        // 1. 地図の初期設定（とりあえず和歌山市役所付近にしておく）
         const map = L.map('map').setView([34.2305, 135.1705], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
-        }).addTo(map);
-
-        // APIキー
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycby5K-uoeLHnuvgL2BJH-gWcxj3TS1WT6J9zlL_LcNh1nRfYAXKEpZk-61qh6cnCtbLS_g/exec";
+
+        let allData = []; // 取得した全データを保存しておく変数
+        let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 });
+        map.addLayer(markersGroup);
 
         async function loadData() {
             try {
                 const response = await fetch(GAS_API_URL);
-                const data = await response.json();
+                allData = await response.json(); // 全データを保存
                 
-                // 🌟変更：7000件のピンを重くならないように「クラスター（まとまり）」で管理する🌟
-                const markers = L.markerClusterGroup({
-                    disableClusteringAtZoom: 16, // ズームレベル16まで寄ったらピンをバラす
-                    maxClusterRadius: 50 // まとめる範囲（ピクセル）
+                // 地区のプルダウンリストをデータから自動生成する
+                let areas = [...new Set(allData.map(row => row["地区"]).filter(a => a))].sort();
+                let areaSelect = document.getElementById('filter-area');
+                areas.forEach(area => {
+                    let option = document.createElement('option');
+                    option.value = option.innerText = area;
+                    areaSelect.appendChild(option);
                 });
 
-                data.forEach(function(row) {
-                    if (!row["緯度"] || !row["経度"]) return;
-
-                    let markerColor = (row["要調査"] === "要点検") ? "red" : "blue";
-                    
-                    let customIcon = L.icon({
-                        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${markerColor}.png`,
-                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-                    });
-
-                    // 🌟変更：ポップアップを表形式（テーブル）にして見やすくする🌟
-                    let popupContent = `
-                        <div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>
-                        <table class="popup-table">
-                            <tr><th>地区</th><td>${row["地区"] || "-"}</td></tr>
-                            <tr><th>区分</th><td>${row["設置区分"] || "-"}</td></tr>
-                            <tr><th>前回点検</th><td>${row["前回調査日"] || "未実施"}</td></tr>
-                            <tr><th>点検結果</th><td>${row["点検結果"] || "未入力"}</td></tr>
-                            <tr><th>異常の種類</th><td>${row["異常の種類"] || "-"}</td></tr>
-                            <tr><th>塗装レベル</th><td>${row["塗装レベル"] || "-"}</td></tr>
-                            <tr><th>コメント</th><td>${row["コメント"] || "-"}</td></tr>
-                        </table>
-                    `;
-                    
-                    if (row["要調査"] === "要点検") {
-                        popupContent += `<div class="popup-alert">⚠️ 要点検</div>`;
-                    }
-
-                    L.marker([row["緯度"], row["経度"]], {icon: customIcon})
-                        .bindPopup(popupContent)
-                        .addTo(markers);
-                });
-
-                // クラスター化したピンを地図に追加
-                map.addLayer(markers);
+                // 初期状態として全ピンを描画
+                renderMarkers(allData);
 
                 document.getElementById('loading').style.display = 'none';
-
-                // 🌟変更：全域ズームを廃止し、データ読み込み完了と同時に現在地へズームする🌟
-                map.locate({setView: true, maxZoom: 17});
-
+                map.locate({setView: true, maxZoom: 17}); // 現在地へズーム
             } catch (error) {
                 alert("データの読み込みに失敗しました。");
                 document.getElementById('loading').innerText = "❌ 読み込みエラー";
             }
         }
 
-        loadData();
+        // 🌟追加：ピンを描画する機能（検索時に何度も使うため独立化）🌟
+        function renderMarkers(dataToRender) {
+            markersGroup.clearLayers(); // 一旦すべてのピンを消す
 
-        // 現在地マーカーを管理する変数
-        let currentLocationMarker = null;
+            dataToRender.forEach(function(row) {
+                if (!row["緯度"] || !row["経度"]) return;
 
-        document.getElementById('gps-btn').addEventListener('click', function() {
-            map.locate({setView: true, maxZoom: 17});
+                let markerColor = (row["要調査"] === "要点検") ? "red" : "blue";
+                let customIcon = L.icon({
+                    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${markerColor}.png`,
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                });
+
+                let popupContent = `
+                    <div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>
+                    <table class="popup-table">
+                        <tr><th>地区</th><td>${row["地区"] || "-"}</td></tr>
+                        <tr><th>区分</th><td>${row["設置区分"] || "-"}</td></tr>
+                        <tr><th>前回点検</th><td>${row["前回調査日"] || "未実施"}</td></tr>
+                        <tr><th>点検結果</th><td>${row["点検結果"] || "未入力"}</td></tr>
+                        <tr><th>異常の種類</th><td>${row["異常の種類"] || "-"}</td></tr>
+                        <tr><th>塗装レベル</th><td>${row["塗装レベル"] || "-"}</td></tr>
+                        <tr><th>コメント</th><td>${row["コメント"] || "-"}</td></tr>
+                    </table>
+                `;
+                if (row["要調査"] === "要点検") popupContent += `<div class="popup-alert">⚠️ 要点検</div>`;
+
+                L.marker([row["緯度"], row["経度"]], {icon: customIcon})
+                    .bindPopup(popupContent)
+                    .addTo(markersGroup);
+            });
+
+            // 絞り込んだ結果に合わせて地図のズームを自動調整
+            if (dataToRender.length > 0) {
+                map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
+            }
+        }
+
+        // 🌟追加：検索・絞り込みボタンを押した時の処理🌟
+        document.getElementById('search-btn').addEventListener('click', function() {
+            let selectedArea = document.getElementById('filter-area').value;
+            let selectedStatus = document.getElementById('filter-status').value;
+            let keyword = document.getElementById('search-text').value.trim().toLowerCase();
+
+            // 条件に合うデータだけを抜き出す
+            let filteredData = allData.filter(row => {
+                let matchArea = (selectedArea === "") || (row["地区"] === selectedArea);
+                let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
+                let matchKeyword = true;
+                
+                if (keyword !== "") {
+                    // 水利番号、種別、コメントのどこかに文字が含まれていればOK
+                    let targetText = (row["水利番号"] + row["水利種別"] + row["コメント"]).toLowerCase();
+                    matchKeyword = targetText.includes(keyword);
+                }
+                
+                return matchArea && matchStatus && matchKeyword;
+            });
+
+            renderMarkers(filteredData);
         });
 
-        // 🌟変更：現在地のピンを青い丸（自分だと分かりやすい）に変更🌟
+        loadData();
+
+        let currentLocationMarker = null;
+        document.getElementById('gps-btn').addEventListener('click', function() { map.locate({setView: true, maxZoom: 17}); });
+
         map.on('locationfound', function(e) {
-            if (currentLocationMarker) {
-                map.removeLayer(currentLocationMarker);
-            }
+            if (currentLocationMarker) map.removeLayer(currentLocationMarker);
             currentLocationMarker = L.circleMarker(e.latlng, {
                 radius: 8, fillColor: "#007bff", color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9
             }).addTo(map).bindPopup("<b>現在地</b>").openPopup();
-        });
-
-        map.on('locationerror', function(e) {
-            // 初回起動時などでGPSが取得できない場合は何もしない（和歌山市中心のまま）
-            console.log("現在地が取得できませんでした");
         });
     </script>
 </body>
