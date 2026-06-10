@@ -41,6 +41,7 @@
         #today-list-btn { background-color: #8b5cf6; } 
         #gps-btn { background-color: #007bff; }
         
+        /* カスタムアイコン設定 */
         .marker-hydrant { width: 24px !important; height: 24px !important; margin-left: -12px !important; margin-top: -12px !important; display: flex; align-items: center; justify-content: center; background: transparent; }
         .marker-hydrant::after { content: ''; width: 11px; height: 11px; background-color: #ff3b30; border: 1.5px solid #ffffff; border-radius: 50%; box-shadow: 0 0 3px rgba(0,0,0,0.4); }
         .marker-hydrant.alert-marker::after { border: 1.5px solid #ffcc00; box-shadow: 0 0 5px #ff3b30; animation: pulse 1.5s infinite; }
@@ -79,9 +80,12 @@
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; }
         .badge-alert { background-color: #ef4444; } .badge-ok { background-color: #3b82f6; }
 
+        /* レイヤーコントロールをiPadの検索ボタンに被らないよう少し下に配置 */
+        .leaflet-top.leaflet-right { top: 60px !important; }
+
         @media print {
             body { height: auto; overflow: visible; }
-            #search-panel, .side-btn-container, #map, .list-header, .btn-close, .btn-csv, .btn-print, #loading, #mode-overlay, #current-mode-badge { display: none !important; }
+            #search-panel, .side-btn-container, #map, .list-header, .btn-close, .btn-csv, .btn-print, #loading, #mode-overlay, #current-mode-badge, .leaflet-control-layers { display: none !important; }
             #list-container { display: block !important; height: auto !important; border-top: none !important; box-shadow: none !important; position: static !important; }
             .table-wrapper { overflow: visible !important; padding: 0 !important; }
             .result-table { border: 1px solid #000; page-break-inside: auto; }
@@ -152,8 +156,34 @@
     </div>
 
     <script>
-        const map = L.map('map').setView([34.2305, 135.1705], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
+        // 🌟Google マップのタイルレイヤー定義 (&hl=ja で日本語に強制)🌟
+        const googleRoad = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ja&x={x}&y={y}&z={z}', {
+            attribution: '© Google',
+            maxZoom: 21
+        });
+        const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=ja&x={x}&y={y}&z={z}', {
+            attribution: '© Google',
+            maxZoom: 21
+        });
+        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        });
+
+        // 🌟地図の初期化 (デフォルトはGoogle マップ道路地図)🌟
+        const map = L.map('map', {
+            center: [34.2305, 135.1705],
+            zoom: 14,
+            layers: [googleRoad]
+        });
+
+        // 🌟ベースマップ切り替えスイッチを画面右上に追加🌟
+        const baseMaps = {
+            "Google マップ": googleRoad,
+            "Google 航空写真": googleSatellite,
+            "標準地図 (OSM)": osm
+        };
+        L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxIVWN3_EzzvlFTngR7sG2HjZNQTi1-L4HnqyPp3m-Zq6h4f4z5G6WVWwMPNegoziq_Tw/exec";
 
@@ -200,7 +230,7 @@
                 areas.forEach(area => { let option = document.createElement('option'); option.value = option.innerText = area; areaSelect.appendChild(option); });
 
                 currentFilteredData = [...allData];
-                renderMarkers(allData, true); // 初回は自動ズームをスキップ（現在地優先のため）
+                renderMarkers(allData, true); 
                 updateListTable(allData);
 
                 document.getElementById('loading').style.display = 'none';
@@ -211,7 +241,6 @@
             }
         }
 
-        // 🌟改良：skipFit 引数を追加して、送信完了時は広域に戻らないように制御🌟
         function renderMarkers(dataToRender, skipFit) {
             markersGroup.clearLayers(); 
 
@@ -254,7 +283,6 @@
                 L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent).addTo(markersGroup);
             });
             
-            // skipFit が true でない時だけ、全体が収まるように自動ズームする
             if (!skipFit && dataToRender.length > 0) {
                 map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
             }
@@ -303,10 +331,8 @@
 
                     setTimeout(() => {
                         map.closePopup();
-                        // 🌟改良：広域に戻さないように skipFit=true で再描画処理を呼び出す🌟
                         execSearch(true);
                         
-                        // 🌟改良：送信完了と同時に、即座に現在地へ視点を戻す🌟
                         setTimeout(() => {
                             map.locate({setView: true, maxZoom: 17});
                         }, 200);
@@ -359,7 +385,7 @@
 
             currentFilteredData = allData.filter(row => row["前回調査日"] === todayStr1 || row["前回調査日"] === todayStr2);
 
-            renderMarkers(currentFilteredData, false); // 今日の一覧全体が見えるようにズーム
+            renderMarkers(currentFilteredData, false); 
             updateListTable(currentFilteredData);
             toggleList(true); 
 
@@ -380,7 +406,6 @@
             window.print();
         };
 
-        // 🌟改良：検索ロジックを共通関数化し、全体ズームのオンオフ(skipFit)を選べるように分離🌟
         function execSearch(skipFit) {
             let selectedArea = document.getElementById('filter-area').value;
             let selectedStatus = document.getElementById('filter-status').value;
@@ -408,7 +433,6 @@
             if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; document.getElementById('search-toggle-btn').style.backgroundColor = '#f59e0b'; }
         }
 
-        // 手動で検索ボタンを押した時は、全体が収まるようにズーム(skipFit=false)
         document.getElementById('search-btn').addEventListener('click', function() {
             execSearch(false);
         });
@@ -422,6 +446,5 @@
     </script>
 </body>
 </html>
-
 
 ```
