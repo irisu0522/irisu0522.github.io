@@ -18,7 +18,7 @@
         #main-container { position: relative; flex: 1; display: flex; flex-direction: column; height: 100%; }
         #map { flex: 1; width: 100vw; height: 100%; }
         
-        /* 🌟モード選択（トップ画面）のデザイン改良🌟 */
+        /* モード選択（トップ画面） */
         #mode-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background-color: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); overflow-y: auto; padding: 20px 0; }
         .mode-title { font-size: 26px; font-weight: bold; color: #1e293b; margin-bottom: 10px; text-align: center; }
         .mode-subtitle { font-size: 14px; color: #64748b; margin-bottom: 30px; text-align: center; max-width: 80%; line-height: 1.5; }
@@ -41,7 +41,7 @@
         #search-toggle-btn { background-color: #f59e0b; }
         #list-toggle-btn { background-color: #17a2b8; }
         #today-list-btn { background-color: #8b5cf6; } 
-        #help-btn { background-color: #64748b; } /* 🌟新設：ヘルプボタン🌟 */
+        #help-btn { background-color: #64748b; } 
         #gps-btn { background-color: #007bff; }
         #gps-btn.tracking { background-color: #28a745; box-shadow: 0 0 10px #28a745; }
         
@@ -83,7 +83,6 @@
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; }
         .badge-alert { background-color: #ef4444; } .badge-ok { background-color: #3b82f6; }
 
-        /* 🌟説明書（ヘルプモーダル）のデザイン🌟 */
         #help-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .help-content { background: white; width: 90%; max-width: 500px; max-height: 85vh; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
         .help-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; }
@@ -125,11 +124,12 @@
         <button class="mode-btn mode-view" onclick="startApp('view')">👀 閲覧モードで開始</button>
         <div class="mode-desc">データの確認や検索のみ行います（誤操作防止用）</div>
         
-        <button class="mode-btn mode-edit" onclick="startApp('edit')">🛠️ 点検モードで開始</button>
-        <div class="mode-desc">現場でピンをタップし、点検結果を入力・送信します</div>
+        <!-- 🛠️ 暗証番号の確認を追加 🛠️ -->
+        <button class="mode-btn mode-edit" onclick="promptPasscode()">🛠️ 点検モードで開始</button>
+        <div class="mode-desc">現場でピンをタップし、点検結果を入力・送信します（暗証番号が必要）</div>
     </div>
 
-    <!-- 🌟説明書（ヘルプモーダル）🌟 -->
+    <!-- 説明書（ヘルプモーダル） -->
     <div id="help-modal">
         <div class="help-content">
             <div class="help-header">
@@ -177,7 +177,6 @@
         <div id="search-panel">
             <select id="filter-category">
                 <option value="">🏢 すべての設置区分</option>
-                <!-- 🌟「公設のみ」の説明を明確化🌟 -->
                 <option value="公設">公設のみ（私設・空白を除外）</option>
                 <option value="私設">私設のみ</option>
             </select>
@@ -240,6 +239,21 @@
         let isTracking = false;
         let currentLocationMarker = null;
 
+        // 🌟 4桁のセキュリティ暗証番号（必要に応じて変更してください） 🌟
+        const EDIT_MODE_PIN = "1190";
+
+        // 🌟点検モード開始時に暗証番号を求める処理🌟
+        window.promptPasscode = function() {
+            let pass = prompt("点検モード用の4桁の暗証番号を入力してください：");
+            if (pass === null) return; // キャンセルされた場合
+            
+            if (pass === EDIT_MODE_PIN) {
+                startApp('edit');
+            } else {
+                alert("❌ 暗証番号が違います。点検モードは起動できません。");
+            }
+        };
+
         window.startApp = function(mode) {
             appMode = mode;
             document.getElementById('mode-overlay').style.display = 'none';
@@ -251,7 +265,6 @@
             loadData();
         };
 
-        // 🌟説明書（ヘルプモーダル）の開閉🌟
         window.toggleHelp = function(show) {
             document.getElementById('help-modal').style.display = show ? 'flex' : 'none';
         };
@@ -293,6 +306,24 @@
             }
         }
 
+        // 🌟ヘルパー：水利番号の「ハイフン後の頭文字」から公設/私設を自動判別する関数🌟
+        function isPublicWater(suiriNumber) {
+            if (!suiriNumber || !suiriNumber.includes("-")) return true; // ハイフンがなければ暫定で公設扱い
+            let parts = suiriNumber.split("-");
+            if (parts.length < 2) return true;
+            
+            let afterHyphen = parts[1].trim();
+            if (afterHyphen.length === 0) return true;
+            
+            let firstChar = afterHyphen.charAt(0);
+            
+            // 🔥 ルール：ハイフン後の頭1桁が "6" なら「私設」、それ以外(1や4など)は「公設」 🔥
+            if (firstChar === "6") {
+                return false; // 私設
+            }
+            return true; // 公設
+        }
+
         function renderMarkers(dataToRender, skipFit) {
             markersGroup.clearLayers(); 
 
@@ -305,12 +336,15 @@
 
                 let customIcon = L.divIcon({ className: className });
 
+                // ポップアップ内の区分表示をより分かりやすく表示
+                let calculatedCategory = isPublicWater(row["水利番号"]) ? "公設" : "私設";
+
                 let popupContent = `
                     <div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>
                     ${isAlert ? `<div class="popup-alert">⚠️ 要点検</div>` : ''}
                     <table class="popup-table">
                         <tr><th>地区</th><td>${row["地区"] || "-"}</td></tr>
-                        <tr><th>区分</th><td>${row["設置区分"] || "-"}</td></tr>
+                        <tr><th>区分</th><td>${calculatedCategory}（${row["設置区分"] || "台帳未記入"}）</td></tr>
                         <tr><th>前回点検</th><td>${row["前回調査日"] || "未実施"}</td></tr>
                         <tr><th>点検結果</th><td>${row["点検結果"] || "未入力"}</td></tr>
                         <tr><th>異常の種類</th><td>${row["異常の種類"] || "-"}</td></tr>
@@ -408,7 +442,9 @@
             data.forEach(row => {
                 let tr = document.createElement('tr');
                 let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok";
-                tr.innerHTML = `<td style="font-weight:bold;">${row["水利番号"]}</td><td>${row["地区"]||"-"}</td><td>${row["水利種別"]}</td><td>${row["設置区分"]||"-"}</td><td style="font-weight:bold; color:#0369a1;">${row["前回調査日"]||"未実施"}</td><td><span class="badge ${badgeClass}">${row["要調査"]}</span></td><td>${row["点検結果"]||"-"}</td><td>${row["異常の種類"]||"-"}</td><td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"]||"-"}</td>`;
+                let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
+
+                tr.innerHTML = `<td style="font-weight:bold;">${row["水利番号"]}</td><td>${row["地区"]||"-"}</td><td>${row["水利種別"]}</td><td>${categoryText}</td><td style="font-weight:bold; color:#0369a1;">${row["前回調査日"]||"未実施"}</td><td><span class="badge ${badgeClass}">${row["要調査"]}</span></td><td>${row["点検結果"]||"-"}</td><td>${row["異常の種類"]||"-"}</td><td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"]||"-"}</td>`;
                 tr.addEventListener('click', () => {
                     if (row["緯度"] && row["経度"]) {
                         toggleList(false); map.setView([row["緯度"], row["経度"]], 18);
@@ -445,7 +481,10 @@
         window.downloadCSV = function() {
             if (currentFilteredData.length === 0) return alert("リストが空です");
             let csvContent = "\uFEFF水利番号,地区,水利種別,設置区分,前回調査日,要調査,点検結果,異常の種類,塗装レベル,コメント\r\n";
-            currentFilteredData.forEach(row => { csvContent += [row["水利番号"], row["地区"]||"-", row["水利種別"], row["設置区分"]||"-", row["前回調査日"]||"未実施", row["要調査"], row["点検結果"]||"-", row["異常の種類"]||"-", row["塗装レベル"]||"-", (row["コメント"]||"-").replace(/,/g, "，")].join(",") + "\r\n"; });
+            currentFilteredData.forEach(row => { 
+                let catText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
+                csvContent += [row["水利番号"], row["地区"]||"-", row["水利種別"], catText, row["前回調査日"]||"未実施", row["要調査"], row["点検結果"]||"-", row["異常の種類"]||"-", row["塗装レベル"]||"-", (row["コメント"]||"-").replace(/,/g, "，")].join(",") + "\r\n"; 
+            });
             let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
             link.download = `地水利点検リスト_${new Date().toISOString().slice(0,10)}.csv`;
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
@@ -466,12 +505,14 @@
             let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
 
             currentFilteredData = allData.filter(row => {
-                // 🌟修正：公設のみを選んだ場合、「公設」と明記されているものだけ表示（空白は除外）🌟
+                // 🌟 改良：水利番号の「ハイフン後の頭文字」を使った高精度な判別ロジック 🌟
                 let matchCategory = true;
+                let isPublic = isPublicWater(row["水利番号"]); // true=公設, false=私設
+
                 if (selectedCategory === "公設") {
-                    matchCategory = (row["設置区分"] === "公設");
+                    matchCategory = (isPublic === true); // 公設のみを抽出（空白や表記ミスを完全無視）
                 } else if (selectedCategory === "私設") {
-                    matchCategory = (row["設置区分"] === "私設");
+                    matchCategory = (isPublic === false); // 私設のみを抽出
                 }
 
                 let matchArea = (selectedArea === "") || (row["地区"] === selectedArea);
@@ -526,6 +567,5 @@
     </script>
 </body>
 </html>
-
 
 ```
