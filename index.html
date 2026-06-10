@@ -26,22 +26,23 @@
         
         #current-mode-badge { position: absolute; top: 10px; left: 50px; z-index: 1000; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: white; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
-        #search-panel { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 680px; z-index: 1000; display: none; background: rgba(255, 255, 255, 0.95); padding: 12px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); flex-wrap: wrap; gap: 8px; }
-        #search-panel select, #search-panel input { padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; min-width: 110px; }
-        #search-panel .date-group { display: flex; align-items: center; gap: 4px; flex-grow: 1.5; min-width: 210px; }
+        #search-panel { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 780px; z-index: 1000; display: none; background: rgba(255, 255, 255, 0.95); padding: 12px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); flex-wrap: wrap; gap: 8px; }
+        #search-panel select, #search-panel input { padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; min-width: 100px; }
+        #search-panel .date-group { display: flex; align-items: center; gap: 4px; flex-grow: 1.5; min-width: 190px; }
         #search-panel button { padding: 8px 15px; font-size: 13px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; flex-grow: 1; }
 
         #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background-color: rgba(255, 255, 255, 0.95); display: none; padding: 20px 40px; border-radius: 8px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
 
         .side-btn-container { position: absolute; bottom: 30px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
-        .action-btn { padding: 12px 15px; font-size: 14px; font-weight: bold; color: white; border: none; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .action-btn { padding: 12px 15px; font-size: 14px; font-weight: bold; color: white; border: none; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px; transition: background-color 0.2s; }
         
         #search-toggle-btn { background-color: #f59e0b; }
         #list-toggle-btn { background-color: #17a2b8; }
         #today-list-btn { background-color: #8b5cf6; } 
         #gps-btn { background-color: #007bff; }
+        /* GPS追従中のボタンの色 */
+        #gps-btn.tracking { background-color: #28a745; box-shadow: 0 0 10px #28a745; }
         
-        /* カスタムアイコン設定 */
         .marker-hydrant { width: 24px !important; height: 24px !important; margin-left: -12px !important; margin-top: -12px !important; display: flex; align-items: center; justify-content: center; background: transparent; }
         .marker-hydrant::after { content: ''; width: 11px; height: 11px; background-color: #ff3b30; border: 1.5px solid #ffffff; border-radius: 50%; box-shadow: 0 0 3px rgba(0,0,0,0.4); }
         .marker-hydrant.alert-marker::after { border: 1.5px solid #ffcc00; box-shadow: 0 0 5px #ff3b30; animation: pulse 1.5s infinite; }
@@ -80,7 +81,6 @@
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; }
         .badge-alert { background-color: #ef4444; } .badge-ok { background-color: #3b82f6; }
 
-        /* レイヤーコントロールをiPadの検索ボタンに被らないよう少し下に配置 */
         .leaflet-top.leaflet-right { top: 60px !important; }
 
         @media print {
@@ -117,11 +117,18 @@
 
     <div id="main-container">
         <div id="search-panel">
+            <!-- 🌟私設水利を除外するフィルターを追加🌟 -->
+            <select id="filter-category">
+                <option value="">🏢 すべての設置区分</option>
+                <option value="公設">公設のみ（私設を除外）</option>
+                <option value="私設">私設のみ</option>
+            </select>
+            
             <select id="filter-area"><option value="">🌐 すべての地区</option></select>
             <select id="filter-status"><option value="">🟢 すべての状態</option><option value="要点検">🔴 要点検のみ</option><option value="点検済">🔵 点検済のみ</option></select>
             <div class="date-group">
                 <input type="date" id="filter-date" placeholder="点検日">
-                <select id="filter-date-cond" style="min-width: 100px; flex-grow: 0;"><option value="before">以前に点検</option><option value="after">以降に点検</option></select>
+                <select id="filter-date-cond" style="min-width: 90px; flex-grow: 0;"><option value="before">以前に点検</option><option value="after">以降に点検</option></select>
             </div>
             <input type="text" id="search-text" placeholder="水利番号などで検索...">
             <button id="search-btn">検索・絞り込み</button>
@@ -156,33 +163,13 @@
     </div>
 
     <script>
-        // 🌟Google マップのタイルレイヤー定義 (&hl=ja で日本語に強制)🌟
-        const googleRoad = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ja&x={x}&y={y}&z={z}', {
-            attribution: '© Google',
-            maxZoom: 21
-        });
-        const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=ja&x={x}&y={y}&z={z}', {
-            attribution: '© Google',
-            maxZoom: 21
-        });
-        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
-        });
+        const googleRoad = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ja&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 21 });
+        const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=ja&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 21 });
+        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors', maxZoom: 19 });
 
-        // 🌟地図の初期化 (デフォルトはGoogle マップ道路地図)🌟
-        const map = L.map('map', {
-            center: [34.2305, 135.1705],
-            zoom: 14,
-            layers: [googleRoad]
-        });
+        const map = L.map('map', { center: [34.2305, 135.1705], zoom: 14, layers: [googleRoad] });
 
-        // 🌟ベースマップ切り替えスイッチを画面右上に追加🌟
-        const baseMaps = {
-            "Google マップ": googleRoad,
-            "Google 航空写真": googleSatellite,
-            "標準地図 (OSM)": osm
-        };
+        const baseMaps = { "Google マップ": googleRoad, "Google 航空写真": googleSatellite, "標準地図 (OSM)": osm };
         L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxIVWN3_EzzvlFTngR7sG2HjZNQTi1-L4HnqyPp3m-Zq6h4f4z5G6WVWwMPNegoziq_Tw/exec";
@@ -192,6 +179,10 @@
         let appMode = 'view'; 
         let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 });
         map.addLayer(markersGroup);
+
+        // GPS追従管理用の変数
+        let isTracking = false;
+        let currentLocationMarker = null;
 
         window.startApp = function(mode) {
             appMode = mode;
@@ -331,11 +322,12 @@
 
                     setTimeout(() => {
                         map.closePopup();
-                        execSearch(true);
+                        execSearch(true); 
                         
-                        setTimeout(() => {
-                            map.locate({setView: true, maxZoom: 17});
-                        }, 200);
+                        // 送信後、もしGPS追従モードでなければ現在地に戻す
+                        if(!isTracking) {
+                             map.locate({setView: true, maxZoom: 17});
+                        }
                     }, 1500);
 
                 } else {
@@ -407,6 +399,7 @@
         };
 
         function execSearch(skipFit) {
+            let selectedCategory = document.getElementById('filter-category').value;
             let selectedArea = document.getElementById('filter-area').value;
             let selectedStatus = document.getElementById('filter-status').value;
             let keyword = document.getElementById('search-text').value.trim().toLowerCase();
@@ -415,8 +408,16 @@
             let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
 
             currentFilteredData = allData.filter(row => {
+                // 🌟私設水利の除外処理🌟
+                let matchCategory = true;
+                if (selectedCategory === "公設") {
+                    matchCategory = (row["設置区分"] !== "私設"); // 私設以外（公設や空白）を表示
+                } else if (selectedCategory === "私設") {
+                    matchCategory = (row["設置区分"] === "私設"); // 私設のみを表示
+                }
+
                 let matchArea = (selectedArea === "") || (row["地区"] === selectedArea);
-                let matchStatus = (selectedStatus === "") || (row["Ph番号"] === selectedStatus || row["要調査"] === selectedStatus);
+                let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
                 let matchDate = true;
                 if (filterDateTime && row["前回調査日"]) {
                     let rowDateTime = parseLocalDate(row["前回調査日"]).getTime();
@@ -425,7 +426,8 @@
                 }
                 let matchKeyword = true;
                 if (keyword !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
-                return matchArea && matchStatus && matchDate && matchKeyword;
+                
+                return matchCategory && matchArea && matchStatus && matchDate && matchKeyword;
             });
             
             renderMarkers(currentFilteredData, skipFit);
@@ -437,14 +439,46 @@
             execSearch(false);
         });
 
-        let currentLocationMarker = null;
-        document.getElementById('gps-btn').addEventListener('click', function() { map.locate({setView: true, maxZoom: 17}); });
+        // 🌟GPS追従（ナビ）機能のロジック🌟
+        document.getElementById('gps-btn').addEventListener('click', function() {
+            let btn = document.getElementById('gps-btn');
+            
+            if (isTracking) {
+                // 追従モードOFFにする
+                isTracking = false;
+                map.stopLocate();
+                btn.classList.remove('tracking');
+                btn.innerText = "📍 現在地";
+            } else {
+                // 追従モードONにする（継続的にGPSを取得して追従）
+                isTracking = true;
+                btn.classList.add('tracking');
+                btn.innerText = "🟢 追従中";
+                map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true});
+            }
+        });
+
         map.on('locationfound', function(e) {
             if (currentLocationMarker) map.removeLayer(currentLocationMarker);
-            currentLocationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: "#007bff", color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9 }).addTo(map).bindPopup("<b>現在地</b>").openPopup();
+            // 追従モードのときは少し目立つアイコンにする
+            let color = isTracking ? "#28a745" : "#007bff";
+            currentLocationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: color, color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9 }).addTo(map).bindPopup("<b>現在地</b>");
         });
+
+        // ユーザーが手動で地図をドラッグ（動かした）ら、追従モードを解除する
+        map.on('dragstart', function() {
+            if (isTracking) {
+                isTracking = false;
+                map.stopLocate();
+                let btn = document.getElementById('gps-btn');
+                btn.classList.remove('tracking');
+                btn.innerText = "📍 現在地";
+            }
+        });
+
     </script>
 </body>
 </html>
+
 
 ```
