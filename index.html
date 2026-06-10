@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>地水利マップ（複数ピンテスト）</title>
+    <title>地水利マップ（GPSテスト）</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -12,21 +12,42 @@
     <style>
         body { margin: 0; padding: 0; }
         #map { height: 100vh; width: 100vw; }
+        
+        /* 画面右下に表示する現在地ボタンのデザイン */
+        #gps-btn {
+            position: absolute;
+            bottom: 30px;
+            right: 20px;
+            z-index: 1000; /* 地図より上に表示する */
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: #007bff; /* 青色 */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        #gps-btn:active {
+            background-color: #0056b3; /* 押した時に少し暗くする */
+        }
     </style>
 </head>
 <body>
     <div id="map"></div>
+    
+    <!-- 現在地へ移動するためのボタン -->
+    <button id="gps-btn">📍 現在地へ</button>
 
     <script>
-        // 1. 地図の初期設定（和歌山城付近を中心に少し引いた状態）
+        // 1. 地図の初期設定
         const map = L.map('map').setView([34.226, 135.174], 14);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // 2. 地水利のテストデータ（リスト）を作成
-        // ※実際はこれをスプレッドシートなどから読み込みます
+        // 2. 地水利のテストデータ
         const waterSources = [
             { id: 'S-001', type: '消火栓', lat: 34.2305, lng: 135.1705, info: '市役所前 65mm' },
             { id: 'S-002', type: '消火栓', lat: 34.2250, lng: 135.1750, info: '和歌山城北側 65mm' },
@@ -34,13 +55,27 @@
             { id: 'S-003', type: '消火栓', lat: 34.2330, lng: 135.1780, info: '和歌山駅西口 65mm' }
         ];
 
-        // 3. リストのデータを順番に取り出して、地図にピンを立てる
+        // 3. ピンを立てる
         waterSources.forEach(function(source) {
             let markerText = `<b>${source.type} (${source.id})</b><br>${source.info}`;
-            
-            L.marker([source.lat, source.lng])
-                .addTo(map)
-                .bindPopup(markerText);
+            L.marker([source.lat, source.lng]).addTo(map).bindPopup(markerText);
+        });
+
+        // 4. 【追加】GPSで現在地を取得する処理
+        document.getElementById('gps-btn').addEventListener('click', function() {
+            // 現在地を取得して地図を移動
+            map.locate({setView: true, maxZoom: 16});
+        });
+
+        // 現在地が見つかった時の処理
+        map.on('locationfound', function(e) {
+            L.marker(e.latlng).addTo(map)
+                .bindPopup("<b>あなたは今ここにいます</b>").openPopup();
+        });
+
+        // GPS取得に失敗した時の処理
+        map.on('locationerror', function(e) {
+            alert("現在地が取得できませんでした。端末の位置情報設定を確認してください。");
         });
     </script>
 </body>
