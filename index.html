@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -19,13 +18,19 @@
         #map { flex: 1; width: 100vw; height: 100%; }
         
         #mode-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background-color: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); overflow-y: auto; padding: 20px 0; }
-        .mode-title { font-size: 26px; font-weight: bold; color: #1e293b; margin-bottom: 10px; text-align: center; }
-        .mode-subtitle { font-size: 14px; color: #64748b; margin-bottom: 30px; text-align: center; max-width: 80%; line-height: 1.5; }
+        .mode-title { font-size: 26px; font-weight: bold; color: #1e293b; margin-bottom: 5px; text-align: center; }
+        .mode-subtitle { font-size: 13px; color: #64748b; margin-bottom: 20px; text-align: center; max-width: 85%; line-height: 1.5; }
+        
+        /* 更新日表示のデザイン */
+        #data-update-date { font-size: 13px; color: #0369a1; background: #e0f2fe; padding: 6px 16px; border-radius: 20px; font-weight: bold; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
         .mode-btn { width: 85%; max-width: 320px; padding: 18px; margin-bottom: 10px; border-radius: 12px; font-size: 18px; font-weight: bold; border: none; cursor: pointer; color: white; box-shadow: 0 6px 12px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; gap: 10px; }
         .mode-view { background-color: #3b82f6; } .mode-edit { background-color: #ef4444; }
         .mode-desc { font-size: 12px; color: #475569; margin-top: -5px; margin-bottom: 25px; text-align: center; }
         
-        /* 閲覧数とモードバッジのコンテナ */
+        /* LINE等の注意喚起ボックス */
+        .line-warning-box { margin-top: 15px; width: 85%; max-width: 320px; background-color: #fff9db; border: 1px solid #fab005; border-radius: 10px; padding: 14px; font-size: 11px; color: #495057; line-height: 1.6; text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        
         #top-info-container { position: absolute; top: 10px; left: 50px; z-index: 1000; display: none; gap: 10px; align-items: center; }
         #current-mode-badge { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         #view-count-badge { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: #1e293b; background-color: #f1f5f9; border: 1px solid #cbd5e1; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
@@ -106,11 +111,23 @@
     
     <div id="mode-overlay">
         <div class="mode-title">🗺️ 地水利マップシステム</div>
-        <div class="mode-subtitle">和歌山市内の地水利状況を地図上で確認・点検できるシステムです。<br>右上のボタンから航空写真や地理院地図への切り替えも可能です。</div>
+        <div class="mode-subtitle">和歌山市内の地水利状況を地図上で確認・点検できるシステムです。</div>
+        
+        <!-- 自動反映されるデータ最終更新日エリア -->
+        <div id="data-update-date">📅 データ最終更新日: 読込中...</div>
+        
         <button class="mode-btn mode-view" onclick="startApp('view')">👀 閲覧モードで開始</button>
         <div class="mode-desc">データの確認や検索のみ行います（誤操作防止用）</div>
         <button class="mode-btn mode-edit" onclick="startApp('edit')">🛠️ 点検モードで開始</button>
         <div class="mode-desc">現場でピンをタップし、点検結果を入力・送信します</div>
+        
+        <!-- LINE等の内蔵ブラウザ対策の注意書きメッセージ -->
+        <div class="line-warning-box">
+            <b style="color: #e03131; font-size: 12px; display: block; margin-bottom: 4px;">⚠️ 不具合防止のためのお願い</b>
+            LINE等のアプリ内から直接リンクを開くと、現在地取得（GPS）や送信機能が正常に動かない不具合が発生します。<br><br>
+            恐れ入りますが、<b>このページのURLをコピーし、SafariやChrome、Googleアプリなどの「検索アプリ」に貼り付けて</b>開き直してください。<br><br>
+            また、検索アプリで開いた後に<b>「ホーム画面に追加」</b>してデスクトップにショートカットを作ると、次回から全画面アプリとして非常に快適に使用できます。
+        </div>
     </div>
 
     <div id="top-info-container">
@@ -165,24 +182,41 @@
         const baseMaps = { "Google マップ": googleRoad, "Google 航空写真": googleSatellite, "地理院地図 (標準)": gsiStd, "地理院地図 (淡色：ピンが見易い)": gsiPale, "地理院 航空写真": gsiPhoto };
         L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
-        // 🚨 以下に、必ず最新のURLを貼り付けてください！ 🚨
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxhnNJBkhGqQdVmScwg3Vn3_tEJU99Wf4Oc-ok6mwcGbYtUjYFWjN0qi_Nov5SngOaoRw/exec";
+        // 🚨【最重要】取得した新しいGASのURLをここに貼り付けてください！ 🚨
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyRh8CnDChdCeX4_YAyezsgJrKLRrfSy3ualhPbtl8lKbXV66K_5p5QUMpiohyI1zD6sQ/exec";
 
         let allData = []; let currentFilteredData = []; let appMode = 'view'; 
         let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); map.addLayer(markersGroup);
         let isTracking = false; let currentLocationMarker = null;
+        let pendingMode = null; // 先読み待機用のフラグ
 
-        // フリーズの原因になる prompt (パスワード入力) を完全に排除し、すぐ開始するように修正
+        // 🌟 UX強化：起動した瞬間に裏でデータの自動先読みを開始 🌟
+        if (GAS_API_URL && GAS_API_URL.indexOf("http") === 0) {
+            loadData();
+        }
+
         window.startApp = function(mode) {
+            if (allData.length === 0) {
+                // 裏での読み込みがまだ終わっていない場合はローディング画面を出して待つ
+                pendingMode = mode;
+                document.getElementById('loading').style.display = 'block';
+                return;
+            }
+            enterApp(mode);
+        };
+
+        function enterApp(mode) {
             appMode = mode;
             document.getElementById('mode-overlay').style.display = 'none';
-            document.getElementById('top-info-container').style.display = 'flex'; // バッジと閲覧数を表示
+            document.getElementById('top-info-container').style.display = 'flex'; 
             let badge = document.getElementById('current-mode-badge');
             if (mode === 'view') { badge.innerText = '👀 閲覧モード'; badge.style.backgroundColor = '#3b82f6'; } 
             else { badge.innerText = '🛠️ 点検モード'; badge.style.backgroundColor = '#ef4444'; }
-            document.getElementById('loading').style.display = 'block';
-            loadData();
-        };
+            
+            renderMarkers(allData, true); 
+            updateListTable(allData);
+            map.locate({setView: true, maxZoom: 17}); 
+        }
 
         document.getElementById('search-toggle-btn').addEventListener('click', function() {
             let panel = document.getElementById('search-panel');
@@ -199,16 +233,17 @@
 
         async function loadData() {
             try {
-                // 🌟データ取得時に ?action=get_data を付けて閲覧数をカウントさせる🌟
                 let fetchUrl = `${GAS_API_URL}?action=get_data&t=${Date.now()}`;
                 const response = await fetch(fetchUrl);
                 const result = await response.json(); 
                 
-                allData = result.data; // 水利データ
-                let currentViewCount = result.viewCount || 0; // 閲覧数
+                allData = result.data; 
+                let currentViewCount = result.viewCount || 0; 
+                let updateDate = result.updateDate || "未設定";
                 
-                // 閲覧数を画面に反映
+                // 閲覧数とデータ最終更新日をトップ画面とマップに反映
                 document.getElementById('view-count-badge').innerText = `👁️ 閲覧数: ${currentViewCount}`;
+                document.getElementById('data-update-date').innerText = `📅 データ最終更新日: ${updateDate}`;
                 
                 let areas = [...new Set(allData.map(row => row["地区"]).filter(a => a))].sort();
                 let areaSelect = document.getElementById('filter-area');
@@ -216,16 +251,18 @@
                 areas.forEach(area => { let option = document.createElement('option'); option.value = option.innerText = area; areaSelect.appendChild(option); });
 
                 currentFilteredData = [...allData];
-                renderMarkers(allData, true); updateListTable(allData);
-                document.getElementById('loading').style.display = 'none';
-                map.locate({setView: true, maxZoom: 17}); 
+                
+                // もしデータ読み込み中にモード選択ボタンが押されていたら、そのまま即アプリを開始する
+                if (pendingMode) {
+                    document.getElementById('loading').style.display = 'none';
+                    enterApp(pendingMode);
+                }
             } catch (error) {
                 alert("データの読み込みに失敗しました。URLが正しいか確認してください。");
                 document.getElementById('loading').innerText = "❌ 読み込みエラー";
             }
         }
 
-        // 水利番号の「ハイフン後の頭文字」から公設/私設を自動判別
         function isPublicWater(suiriNumber) {
             if (!suiriNumber || !suiriNumber.includes("-")) return true;
             let parts = suiriNumber.split("-"); if (parts.length < 2) return true;
@@ -273,7 +310,6 @@
 
         window.toggleForm = function(id) { let form = document.getElementById("form-" + id); form.style.display = (form.style.display === "block") ? "none" : "block"; };
 
-        // 🌟【送信ボタンIDのタイポを完全に修正】🌟
         window.submitReport = async function(id) {
             let btn = document.getElementById("btn-" + id);
             let resultVal = document.getElementById("input-result-" + id).value; let errorVal = document.getElementById("input-error-" + id).value;
@@ -355,6 +391,3 @@
     </script>
 </body>
 </html>
-
-
-```
