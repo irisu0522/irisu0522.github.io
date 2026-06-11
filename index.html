@@ -17,19 +17,21 @@
         #main-container { position: relative; flex: 1; display: flex; flex-direction: column; height: 100%; }
         #map { flex: 1; width: 100vw; height: 100%; }
         
-        #mode-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background-color: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); overflow-y: auto; padding: 20px 0; }
+        #mode-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background-color: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; backdrop-filter: blur(5px); overflow-y: auto; padding: 40px 0; }
         .mode-title { font-size: 26px; font-weight: bold; color: #1e293b; margin-bottom: 5px; text-align: center; }
         .mode-subtitle { font-size: 13px; color: #64748b; margin-bottom: 20px; text-align: center; max-width: 85%; line-height: 1.5; }
         
-        /* 更新日表示のデザイン */
-        #data-update-date { font-size: 13px; color: #0369a1; background: #e0f2fe; padding: 6px 16px; border-radius: 20px; font-weight: bold; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        #data-update-date { font-size: 13px; color: #0369a1; background: #e0f2fe; padding: 6px 16px; border-radius: 20px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* 🌟 アップデート履歴ボックス 🌟 */
+        .update-history-box { margin-bottom: 20px; width: 85%; max-width: 320px; background-color: #f1f5f9; border-radius: 10px; padding: 12px; font-size: 11px; color: #334155; line-height: 1.5; border-left: 4px solid #3b82f6; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
         .mode-btn { width: 85%; max-width: 320px; padding: 18px; margin-bottom: 10px; border-radius: 12px; font-size: 18px; font-weight: bold; border: none; cursor: pointer; color: white; box-shadow: 0 6px 12px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; gap: 10px; }
         .mode-view { background-color: #3b82f6; } .mode-edit { background-color: #ef4444; }
         .mode-desc { font-size: 12px; color: #475569; margin-top: -5px; margin-bottom: 25px; text-align: center; }
         
-        /* LINE等の注意喚起ボックス */
-        .line-warning-box { margin-top: 15px; width: 85%; max-width: 320px; background-color: #fff9db; border: 1px solid #fab005; border-radius: 10px; padding: 14px; font-size: 11px; color: #495057; line-height: 1.6; text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        /* 🌟 警告・案内ボックス 🌟 */
+        .line-warning-box { margin-bottom: 30px; width: 85%; max-width: 320px; background-color: #fff9db; border: 1px solid #fab005; border-radius: 10px; padding: 14px; font-size: 11px; color: #495057; line-height: 1.6; text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         
         #top-info-container { position: absolute; top: 10px; left: 50px; z-index: 1000; display: none; gap: 10px; align-items: center; }
         #current-mode-badge { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
@@ -38,7 +40,7 @@
         #search-panel { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 780px; z-index: 1000; display: none; background: rgba(255, 255, 255, 0.95); padding: 12px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); flex-wrap: wrap; gap: 8px; }
         #search-panel select, #search-panel input { padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; min-width: 100px; }
         #search-panel .date-group { display: flex; align-items: center; gap: 4px; flex-grow: 1.5; min-width: 190px; }
-        #search-panel button { padding: 8px 15px; font-size: 13px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; flex-grow: 1; }
+        #search-panel button { padding: 8px 15px; font-size: 13px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; flex-grow: 1; width: 100%; }
 
         #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background-color: rgba(255, 255, 255, 0.95); display: none; padding: 20px 40px; border-radius: 8px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
 
@@ -113,20 +115,45 @@
         <div class="mode-title">🗺️ 地水利マップシステム</div>
         <div class="mode-subtitle">和歌山市内の地水利状況を地図上で確認・点検できるシステムです。</div>
         
-        <!-- 自動反映されるデータ最終更新日エリア -->
         <div id="data-update-date">📅 データ最終更新日: 読込中...</div>
+        
+        <!-- 🌟 アップデート履歴表示エリア 🌟 -->
+        <div class="update-history-box">
+            <b style="font-size:12px; color:#1e293b;">📢 最新のアップデート (2026/06/11)</b>
+            <ul style="margin: 5px 0 0; padding-left: 20px;">
+                <li>地図の左下に「ピンの見方（凡例）」を追加しました。</li>
+                <li>検索パネルで「異常の種類」の絞り込み機能を追加しました。</li>
+                <li>点検モードの暗証番号機能を安全な形で復活させました。</li>
+                <li>SNS共有禁止・ブラウザ案内の注意喚起を追加しました。</li>
+            </ul>
+        </div>
         
         <button class="mode-btn mode-view" onclick="startApp('view')">👀 閲覧モードで開始</button>
         <div class="mode-desc">データの確認や検索のみ行います（誤操作防止用）</div>
-        <button class="mode-btn mode-edit" onclick="startApp('edit')">🛠️ 点検モードで開始</button>
+        <button class="mode-btn mode-edit" onclick="promptPasscode()">🛠️ 点検モードで開始</button>
         <div class="mode-desc">現場でピンをタップし、点検結果を入力・送信します</div>
         
-        <!-- LINE等の内蔵ブラウザ対策の注意書きメッセージ -->
+        <!-- 🌟 リンクとSNS共有の禁止文言を強化 🌟 -->
         <div class="line-warning-box">
-            <b style="color: #e03131; font-size: 12px; display: block; margin-bottom: 4px;">⚠️ 不具合防止のためのお願い</b>
-            LINE等のアプリ内から直接リンクを開くと、現在地取得（GPS）や送信機能が正常に動かない不具合が発生します。<br><br>
-            恐れ入りますが、<b>このページのURLをコピーし、SafariやChrome、Googleアプリなどの「検索アプリ」に貼り付けて</b>開き直してください。<br><br>
-            また、検索アプリで開いた後に<b>「ホーム画面に追加」</b>してデスクトップにショートカットを作ると、次回から全画面アプリとして非常に快適に使用できます。
+            <b style="color: #e03131; font-size: 12px; display: block; margin-bottom: 4px;">🚫 SNS等へのリンク共有禁止</b>
+            不特定多数が見られるSNS（X、Instagram、公開のLINEグループ等）へのURL貼り付けは、データ保護のため絶対に禁止します。<br><br>
+            <b style="color: #e03131; font-size: 12px; display: block; margin-bottom: 4px;">⚠️ アプリを利用する際のお願い</b>
+            LINE等のアプリ内から直接リンクを開くと、現在地取得や送信機能が正常に動かない不具合が発生します。<br>
+            恐れ入りますが、<b>このページのURLをコピーし、SafariやChromeなどの「検索アプリ」に貼り付けて</b>開き直してください。<br>
+            検索アプリで開いた後に<b>「ホーム画面に追加」</b>してデスクトップにショートカットを作ると、次回から全画面アプリとして非常に快適に使用できます。
+        </div>
+    </div>
+
+    <!-- 🌟 パスワード専用モーダル（フリーズ回避の自前画面）🌟 -->
+    <div id="pin-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:10001; align-items:center; justify-content:center;">
+        <div style="background:white; padding:20px; border-radius:10px; width:80%; max-width:300px; text-align:center;">
+            <h3 style="margin-top:0; color:#1e293b;">🔐 暗証番号入力</h3>
+            <p style="font-size:12px; color:#555; margin-bottom:15px;">点検モードの4桁の暗証番号を入力してください</p>
+            <input type="number" id="pin-input" style="width:calc(100% - 20px); padding:10px; font-size:20px; text-align:center; border:1px solid #ccc; border-radius:5px; margin-bottom:15px;" placeholder="****">
+            <div style="display:flex; gap:10px;">
+                <button onclick="closePinModal()" style="flex:1; padding:12px; border:none; background:#94a3b8; color:white; border-radius:5px; font-weight:bold; cursor:pointer;">キャンセル</button>
+                <button onclick="checkPin()" style="flex:1; padding:12px; border:none; background:#ef4444; color:white; font-weight:bold; border-radius:5px; cursor:pointer;">開始する</button>
+            </div>
         </div>
     </div>
 
@@ -145,9 +172,20 @@
             <select id="filter-category"><option value="">🏢 すべての設置区分</option><option value="公設">公設のみ（私設・空白を除外）</option><option value="私設">私設のみ</option></select>
             <select id="filter-area"><option value="">🌐 すべての地区</option></select>
             <select id="filter-status"><option value="">🟢 すべての状態</option><option value="要点検">🔴 要点検のみ</option><option value="点検済">🔵 点検済のみ</option></select>
+            
+            <!-- 🌟 異常の種類フィルター追加 🌟 -->
+            <select id="filter-error">
+                <option value="">⚠️ 異常の種類 (すべて)</option>
+                <option value="なし">✅ 異常なし</option>
+                <option value="蓋破損">🔧 蓋の破損</option>
+                <option value="泥溜まり">🍂 土砂・泥溜まり</option>
+                <option value="バルブ不良">⚙️ バルブ開閉不良</option>
+                <option value="その他">❓ その他</option>
+            </select>
+
             <div class="date-group"><input type="date" id="filter-date" placeholder="点検日"><select id="filter-date-cond" style="min-width: 90px; flex-grow: 0;"><option value="before">以前に点検</option><option value="after">以降に点検</option></select></div>
             <input type="text" id="search-text" placeholder="水利番号などで検索...">
-            <button id="search-btn">検索・絞り込み</button>
+            <button id="search-btn">検索・絞り込みを実行</button>
         </div>
 
         <div id="loading">📡 最新データを読み込み中...</div>
@@ -182,25 +220,61 @@
         const baseMaps = { "Google マップ": googleRoad, "Google 航空写真": googleSatellite, "地理院地図 (標準)": gsiStd, "地理院地図 (淡色：ピンが見易い)": gsiPale, "地理院 航空写真": gsiPhoto };
         L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
+        // 🌟 地図左下の「ピンの見方（凡例）」コントロール 🌟
+        const legend = L.control({position: 'bottomleft'});
+        legend.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'info legend');
+            div.innerHTML = `
+                <div style="background: rgba(255,255,255,0.9); padding: 8px; border-radius: 5px; box-shadow: 0 0 15px rgba(0,0,0,0.2); font-size: 11px; margin-bottom: 20px; margin-left: 10px;">
+                    <b style="font-size:12px; color:#1e293b;">📍 ピンの見方</b><br>
+                    <span style="color:#ff3b30; font-size:14px;">●</span> 消火栓<br>
+                    <span style="color:#007aff; font-size:14px;">■</span> 防火水槽<br>
+                    <span style="color:#ffcc00; font-weight:bold;">⚠️</span> は「要点検」<br>
+                    <hr style="margin:4px 0; border:0; border-top:1px solid #ccc;">
+                    <b>📱 基本操作</b><br>
+                    ・ピンをタップで詳細＆点検<br>
+                    ・右上の <span style="font-size:14px;">▤</span> で地図切替
+                </div>
+            `;
+            return div;
+        };
+        legend.addTo(map);
+
         // 🚨【最重要】取得した新しいGASのURLをここに貼り付けてください！ 🚨
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyRh8CnDChdCeX4_YAyezsgJrKLRrfSy3ualhPbtl8lKbXV66K_5p5QUMpiohyI1zD6sQ/exec";
+        const EDIT_MODE_PIN = "1190"; // 🌟 点検モードの暗証番号
 
         let allData = []; let currentFilteredData = []; let appMode = 'view'; 
         let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); map.addLayer(markersGroup);
         let isTracking = false; let currentLocationMarker = null;
-        let pendingMode = null; // 先読み待機用のフラグ
+        let pendingMode = null; 
 
-        // 🌟 UX強化：起動した瞬間に裏でデータの自動先読みを開始 🌟
-        if (GAS_API_URL && GAS_API_URL.indexOf("http") === 0) {
-            loadData();
-        }
+        // 🌟 安全な自作パスワード画面の処理 🌟
+        window.promptPasscode = function() {
+            document.getElementById('pin-input').value = '';
+            document.getElementById('pin-modal').style.display = 'flex';
+        };
+
+        window.closePinModal = function() {
+            document.getElementById('pin-modal').style.display = 'none';
+        };
+
+        window.checkPin = function() {
+            let pass = document.getElementById('pin-input').value;
+            if (pass === EDIT_MODE_PIN) {
+                document.getElementById('pin-modal').style.display = 'none';
+                startApp('edit');
+            } else {
+                alert("❌ 暗証番号が違います。");
+                document.getElementById('pin-input').value = '';
+            }
+        };
+
+        if (GAS_API_URL && GAS_API_URL.indexOf("http") === 0) { loadData(); }
 
         window.startApp = function(mode) {
             if (allData.length === 0) {
-                // 裏での読み込みがまだ終わっていない場合はローディング画面を出して待つ
-                pendingMode = mode;
-                document.getElementById('loading').style.display = 'block';
-                return;
+                pendingMode = mode; document.getElementById('loading').style.display = 'block'; return;
             }
             enterApp(mode);
         };
@@ -213,9 +287,7 @@
             if (mode === 'view') { badge.innerText = '👀 閲覧モード'; badge.style.backgroundColor = '#3b82f6'; } 
             else { badge.innerText = '🛠️ 点検モード'; badge.style.backgroundColor = '#ef4444'; }
             
-            renderMarkers(allData, true); 
-            updateListTable(allData);
-            map.locate({setView: true, maxZoom: 17}); 
+            renderMarkers(allData, true); updateListTable(allData); map.locate({setView: true, maxZoom: 17}); 
         }
 
         document.getElementById('search-toggle-btn').addEventListener('click', function() {
@@ -241,7 +313,6 @@
                 let currentViewCount = result.viewCount || 0; 
                 let updateDate = result.updateDate || "未設定";
                 
-                // 閲覧数とデータ最終更新日をトップ画面とマップに反映
                 document.getElementById('view-count-badge').innerText = `👁️ 閲覧数: ${currentViewCount}`;
                 document.getElementById('data-update-date').innerText = `📅 データ最終更新日: ${updateDate}`;
                 
@@ -252,11 +323,7 @@
 
                 currentFilteredData = [...allData];
                 
-                // もしデータ読み込み中にモード選択ボタンが押されていたら、そのまま即アプリを開始する
-                if (pendingMode) {
-                    document.getElementById('loading').style.display = 'none';
-                    enterApp(pendingMode);
-                }
+                if (pendingMode) { document.getElementById('loading').style.display = 'none'; enterApp(pendingMode); }
             } catch (error) {
                 alert("データの読み込みに失敗しました。URLが正しいか確認してください。");
                 document.getElementById('loading').innerText = "❌ 読み込みエラー";
@@ -365,15 +432,21 @@
 
         window.printReport = function() { document.getElementById('print-date').innerText = `${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日`; window.print(); };
 
+        // 🌟 異常の種類もフィルターに含めるように改良 🌟
         function execSearch(skipFit) {
-            let selectedCategory = document.getElementById('filter-category').value; let selectedArea = document.getElementById('filter-area').value; let selectedStatus = document.getElementById('filter-status').value; let keyword = document.getElementById('search-text').value.trim().toLowerCase(); let filterDateVal = document.getElementById('filter-date').value; let filterDateCond = document.getElementById('filter-date-cond').value; let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
+            let selectedCategory = document.getElementById('filter-category').value; let selectedArea = document.getElementById('filter-area').value; let selectedStatus = document.getElementById('filter-status').value; 
+            let selectedError = document.getElementById('filter-error').value; // 異常の種類
+            let keyword = document.getElementById('search-text').value.trim().toLowerCase(); let filterDateVal = document.getElementById('filter-date').value; let filterDateCond = document.getElementById('filter-date-cond').value; let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
+            
             currentFilteredData = allData.filter(row => {
                 let isPublic = isPublicWater(row["水利番号"]); let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic);
                 let matchArea = (selectedArea === "") || (row["地区"] === selectedArea); let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
+                let matchError = (selectedError === "") || (row["異常の種類"] === selectedError); // 異常の一致確認
                 let matchDate = true;
                 if (filterDateTime && row["前回調査日"]) { let rowDateTime = parseLocalDate(row["前回調査日"]).getTime(); if (filterDateCond === "before") matchDate = (rowDateTime <= filterDateTime); else if (filterDateCond === "after") matchDate = (rowDateTime >= filterDateTime); }
                 let matchKeyword = true; if (keyword !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
-                return matchCategory && matchArea && matchStatus && matchDate && matchKeyword;
+                
+                return matchCategory && matchArea && matchStatus && matchError && matchDate && matchKeyword;
             });
             renderMarkers(currentFilteredData, skipFit); updateListTable(currentFilteredData);
             if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; document.getElementById('search-toggle-btn').style.backgroundColor = '#f59e0b'; }
