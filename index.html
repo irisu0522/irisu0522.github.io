@@ -177,9 +177,13 @@
             <select id="filter-error">
                 <option value="">⚠️ 異常の種類 (すべて)</option>
                 <option value="なし">✅ 異常なし</option>
-                <option value="蓋破損">🔧 蓋の破損</option>
-                <option value="泥溜まり">🍂 土砂・泥溜まり</option>
-                <option value="バルブ不良">⚙️ バルブ開閉不良</option>
+                <option value="蓋開閉困難">🔧 蓋開閉困難</option>
+                <option value="土没">🍂 土没</option>
+                <option value="水没">💧 水没</option>
+                <option value="バルブ開閉不良">⚙️ バルブ開閉不良</option>
+                <option value="道路陥没（大）">🕳️ 道路陥没（大）</option>
+                <option value="道路陥没（小）">🕳️ 道路陥没（小）</option>
+                <option value="塗装剥がれ">🎨 塗装剥がれ</option>
                 <option value="その他">❓ その他</option>
             </select>
 
@@ -363,7 +367,7 @@
                         <button class="form-toggle" onclick="toggleForm('${row["水利番号"]}')">📝 点検結果を入力する</button>
                         <div class="input-form" id="form-${row["水利番号"]}">
                             <div class="form-group"><label>点検結果</label><select id="input-result-${row["水利番号"]}"><option value="点検済">点検済（良好）</option><option value="要対応">要対応（不備あり）</option><option value="未実施">未点検</option></select></div>
-                            <div class="form-group"><label>異常の種類</label><select id="input-error-${row["水利番号"]}"><option value="なし">異常なし</option><option value="蓋破損">蓋の破損</option><option value="泥溜まり">土砂・泥溜まり</option><option value="バルブ不良">バルブ開閉不良</option><option value="その他">その他</option></select></div>
+                            <div class="form-group"><label>異常の種類</label><select id="input-error-${row["水利番号"]}"><option value="なし">異常なし</option><option value="蓋開閉困難">蓋開閉困難</option><option value="土没">土没</option><option value="水没">水没</option><option value="バルブ開閉不良">バルブ開閉不良</option><option value="道路陥没（大）">道路陥没（大）</option><option value="道路陥没（小）">道路陥没（小）</option><option value="塗装剥がれ">塗装剥がれ</option><option value="その他">その他</option></select></div>
                             <div class="form-group"><label>塗装レベル</label><select id="input-paint-${row["水利番号"]}"><option value="良">良（必要なし）</option><option value="普通">普通（経年）</option><option value="要塗装">要塗装（ハゲ）</option></select></div>
                             <div class="form-group"><label>コメント</label><input type="text" id="input-comment-${row["水利番号"]}" placeholder="状況など"></div>
                             <button class="form-submit-btn" id="btn-${row["水利番号"]}" onclick="submitReport('${row["水利番号"]}')">スプレッドシートへ送信</button>
