@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -39,7 +40,6 @@
         #search-toggle-btn { background-color: #f59e0b; }
         #list-toggle-btn { background-color: #17a2b8; }
         #today-list-btn { background-color: #8b5cf6; } 
-        #help-btn { background-color: #64748b; } 
         #gps-btn { background-color: #007bff; }
         #gps-btn.tracking { background-color: #28a745; box-shadow: 0 0 10px #28a745; }
         
@@ -81,22 +81,11 @@
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; }
         .badge-alert { background-color: #ef4444; } .badge-ok { background-color: #3b82f6; }
 
-        #help-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-        .help-content { background: white; width: 90%; max-width: 500px; max-height: 85vh; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
-        .help-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; }
-        .help-header h2 { margin: 0; font-size: 18px; color: #1e293b; }
-        .help-close-btn { background: none; border: none; font-size: 24px; color: #94a3b8; cursor: pointer; line-height: 1; }
-        .help-body { flex: 1; overflow-y: auto; font-size: 13px; color: #334155; line-height: 1.6; padding-right: 5px; }
-        .help-section { margin-bottom: 15px; }
-        .help-section h4 { margin: 0 0 5px 0; color: #0f172a; border-left: 4px solid #3b82f6; padding-left: 8px; }
-        .help-section ul { margin: 0; padding-left: 20px; }
-
-        /* レイヤーコントロールの配置を調整 */
         .leaflet-top.leaflet-right { top: 60px !important; }
 
         @media print {
             body { height: auto; overflow: visible; }
-            #search-panel, .side-btn-container, #map, .list-header, .btn-close, .btn-csv, .btn-print, #loading, #mode-overlay, #current-mode-badge, .leaflet-control-layers, #help-modal { display: none !important; }
+            #search-panel, .side-btn-container, #map, .list-header, .btn-close, .btn-csv, .btn-print, #loading, #mode-overlay, #current-mode-badge, .leaflet-control-layers { display: none !important; }
             #list-container { display: block !important; height: auto !important; border-top: none !important; box-shadow: none !important; position: static !important; }
             .table-wrapper { overflow: visible !important; padding: 0 !important; }
             .result-table { border: 1px solid #000; page-break-inside: auto; }
@@ -112,53 +101,19 @@
 </head>
 <body>
     
+    <!-- 完全にフリーズしない、一番シンプルで安定したモード選択画面 -->
     <div id="mode-overlay">
         <div class="mode-title">🗺️ 地水利マップシステム</div>
         <div class="mode-subtitle">
             和歌山市内の地水利状況を地図上で確認・点検できるシステムです。<br>
             右上のボタンから航空写真や地理院地図への切り替えも可能です。
         </div>
+        
         <button class="mode-btn mode-view" onclick="startApp('view')">👀 閲覧モードで開始</button>
         <div class="mode-desc">データの確認や検索のみ行います（誤操作防止用）</div>
-        <button class="mode-btn mode-edit" onclick="promptPasscode()">🛠️ 点検モードで開始</button>
-        <div class="mode-desc">現場でピンをタップし、点検結果を入力・送信します（暗証番号が必要）</div>
-    </div>
-
-    <div id="help-modal">
-        <div class="help-content">
-            <div class="help-header">
-                <h2>📖 システムの使い方</h2>
-                <button class="help-close-btn" onclick="toggleHelp(false)">&times;</button>
-            </div>
-            <div class="help-body">
-                <div class="help-section">
-                    <h4>📍 ピンの見方</h4>
-                    <ul>
-                        <li><b>🔴 赤い丸：</b> 消火栓（要点検は黄色いフチで点滅）</li>
-                        <li><b>🟦 青い四角：</b> 防火水槽（要点検は黄色いフチで点滅）</li>
-                    </ul>
-                </div>
-                <div class="help-section">
-                    <h4>🔍 検索と絞り込み</h4>
-                    <p>右側の「🔍 検索 / 絞込」ボタンを押すとパネルが開きます。地区、設置区分（公設のみ等）、要点検のみ、特定の日付以前/以降などでピンを絞り込めます。</p>
-                </div>
-                <div class="help-section">
-                    <h4>🛠️ 点検結果の送信（点検モードのみ）</h4>
-                    <p>対象のピンをタップし、「📝 点検結果を入力する」を開きます。状況を選択して「送信」を押すと、台帳が更新されピンが点検済に変わります。</p>
-                </div>
-                <div class="help-section">
-                    <h4>📊 リスト出力と報告書印刷</h4>
-                    <p>「📊 リスト」ボタンを押すと、現在表示されているピンの一覧が表示されます。「📥 CSV出力」でExcel用データとして保存、「🖨️ 報告書印刷」でPDF化や紙への印刷が可能です。</p>
-                </div>
-                <div class="help-section">
-                    <h4>🗺️ ナビ・航空写真</h4>
-                    <ul>
-                        <li><b>航空写真・地理院地図：</b> 画面右上の重なった四角のアイコンから各種地図に切り替えられます。</li>
-                        <li><b>現在地追従：</b> 「📍 現在地」ボタンを押すと緑色に光り、移動に合わせて地図が自動でついてきます。</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+        
+        <button class="mode-btn mode-edit" onclick="startApp('edit')">🛠️ 点検モードで開始</button>
+        <div class="mode-desc">現場でピンをタップし、点検結果を入力・送信します</div>
     </div>
 
     <div id="current-mode-badge"></div>
@@ -191,7 +146,6 @@
             <button id="search-toggle-btn" class="action-btn">🔍 検索 / 絞込</button>
             <button id="list-toggle-btn" class="action-btn">📊 リスト (<span id="list-count">0</span>)</button>
             <button id="today-list-btn" class="action-btn">📅 今日の点検リスト</button>
-            <button id="help-btn" class="action-btn" onclick="toggleHelp(true)">❓ 使い方</button>
             <button id="gps-btn" class="action-btn">📍 現在地</button>
         </div>
     </div>
@@ -214,7 +168,6 @@
     </div>
 
     <script>
-        // 🌟地図タイルの定義（Google＆国土地理院公式）🌟
         const googleRoad = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ja&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 21 });
         const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=ja&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 21 });
         const gsiStd = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>", maxZoom: 18 });
@@ -223,7 +176,6 @@
 
         const map = L.map('map', { center: [34.2305, 135.1705], zoom: 14, layers: [googleRoad] });
 
-        // 🌟右上の切り替えスイッチにすべて登録🌟
         const baseMaps = { 
             "Google マップ": googleRoad, 
             "Google 航空写真": googleSatellite,
@@ -243,15 +195,8 @@
 
         let isTracking = false;
         let currentLocationMarker = null;
-        const EDIT_MODE_PIN = "1190";
 
-        window.promptPasscode = function() {
-            let pass = prompt("点検モード用の4桁の暗証番号を入力してください：");
-            if (pass === null) return;
-            if (pass === EDIT_MODE_PIN) { startApp('edit'); } 
-            else { alert("❌ 暗証番号が違います。点検モードは起動できません。"); }
-        };
-
+        // フリーズの原因になる prompt (パスワード入力) を完全に排除し、すぐ開始するように修正
         window.startApp = function(mode) {
             appMode = mode;
             document.getElementById('mode-overlay').style.display = 'none';
@@ -262,8 +207,6 @@
             document.getElementById('loading').style.display = 'block';
             loadData();
         };
-
-        window.toggleHelp = function(show) { document.getElementById('help-modal').style.display = show ? 'flex' : 'none'; };
 
         document.getElementById('search-toggle-btn').addEventListener('click', function() {
             let panel = document.getElementById('search-panel');
@@ -302,6 +245,7 @@
             }
         }
 
+        // 水利番号の「ハイフン後の頭文字」を使った高精度な判別ロジック
         function isPublicWater(suiriNumber) {
             if (!suiriNumber || !suiriNumber.includes("-")) return true;
             let parts = suiriNumber.split("-");
@@ -362,30 +306,55 @@
             form.style.display = (form.style.display === "block") ? "none" : "block";
         };
 
+        // 🌟【最重要修正】送信ボタンIDの文字化け（タイポ）を完全に修正しました🌟
         window.submitReport = async function(id) {
-            let btn = document.getElementById("btn-%22%20+%20id);");
+            let btn = document.getElementById("btn-" + id);
             let resultVal = document.getElementById("input-result-" + id).value;
             let errorVal = document.getElementById("input-error-" + id).value;
             let paintVal = document.getElementById("input-paint-" + id).value;
             let commentVal = document.getElementById("input-comment-" + id).value;
-            btn.disabled = true; btn.innerText = "送信中...";
+
+            btn.disabled = true;
+            btn.innerText = "送信中...";
+
             let url = `${GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}&t=${Date.now()}`;
+
             try {
                 let response = await fetch(url, { method: 'GET', mode: 'cors' });
                 let res = await response.json();
+
                 if (res.status === "Success") {
-                    btn.innerText = "送信完了！"; btn.style.backgroundColor = "#28a745";
+                    btn.innerText = "送信完了！";
+                    btn.style.backgroundColor = "#28a745";
+
                     let targetIndex = allData.findIndex(row => row["水利番号"] === id);
                     if (targetIndex !== -1) {
                         let today = new Date();
                         let todayStr = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`;
-                        allData[targetIndex]["前回調査日"] = todayStr; allData[targetIndex]["要調査"] = "点検済";
-                        allData[targetIndex]["点検結果"] = resultVal; allData[targetIndex]["異常の種類"] = errorVal;
-                        allData[targetIndex]["塗装レベル"] = paintVal; allData[targetIndex]["コメント"] = commentVal;
+                        
+                        allData[targetIndex]["前回調査日"] = todayStr;
+                        allData[targetIndex]["要調査"] = "点検済";
+                        allData[targetIndex]["点検結果"] = resultVal;
+                        allData[targetIndex]["異常の種類"] = errorVal;
+                        allData[targetIndex]["塗装レベル"] = paintVal;
+                        allData[targetIndex]["コメント"] = commentVal;
                     }
-                    setTimeout(() => { map.closePopup(); execSearch(true); if(!isTracking) { map.locate({setView: true, maxZoom: 17}); } }, 1500);
-                } else { alert("送信エラー: " + res.message); btn.disabled = false; btn.innerText = "送信失敗（再試行）"; }
-            } catch (err) { console.error(err); alert("送信に失敗しました。電波状態を確認してください。"); btn.disabled = false; btn.innerText = "スプレッドシートへ送信"; }
+
+                    setTimeout(() => {
+                        map.closePopup();
+                        execSearch(true); 
+                        if(!isTracking) { map.locate({setView: true, maxZoom: 17}); }
+                    }, 1500);
+
+                } else {
+                    alert("送信エラー: " + res.message);
+                    btn.disabled = false; btn.innerText = "送信失敗（再試行）";
+                }
+            } catch (err) {
+                console.error(err);
+                alert("送信に失敗しました。電波状態を確認してください。");
+                btn.disabled = false; btn.innerText = "スプレッドシートへ送信";
+            }
         };
 
         function updateListTable(data) {
@@ -462,3 +431,6 @@
     </script>
 </body>
 </html>
+
+
+```
