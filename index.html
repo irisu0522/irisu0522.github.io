@@ -25,7 +25,10 @@
         .mode-view { background-color: #3b82f6; } .mode-edit { background-color: #ef4444; }
         .mode-desc { font-size: 12px; color: #475569; margin-top: -5px; margin-bottom: 25px; text-align: center; }
         
-        #current-mode-badge { position: absolute; top: 10px; left: 50px; z-index: 1000; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: white; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        /* 閲覧数とモードバッジのコンテナ */
+        #top-info-container { position: absolute; top: 10px; left: 50px; z-index: 1000; display: none; gap: 10px; align-items: center; }
+        #current-mode-badge { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        #view-count-badge { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: #1e293b; background-color: #f1f5f9; border: 1px solid #cbd5e1; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
         #search-panel { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 780px; z-index: 1000; display: none; background: rgba(255, 255, 255, 0.95); padding: 12px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); flex-wrap: wrap; gap: 8px; }
         #search-panel select, #search-panel input { padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; min-width: 100px; }
@@ -85,7 +88,7 @@
 
         @media print {
             body { height: auto; overflow: visible; }
-            #search-panel, .side-btn-container, #map, .list-header, .btn-close, .btn-csv, .btn-print, #loading, #mode-overlay, #current-mode-badge, .leaflet-control-layers { display: none !important; }
+            #search-panel, .side-btn-container, #map, .list-header, .btn-close, .btn-csv, .btn-print, #loading, #mode-overlay, #top-info-container, .leaflet-control-layers { display: none !important; }
             #list-container { display: block !important; height: auto !important; border-top: none !important; box-shadow: none !important; position: static !important; }
             .table-wrapper { overflow: visible !important; padding: 0 !important; }
             .result-table { border: 1px solid #000; page-break-inside: auto; }
@@ -101,22 +104,20 @@
 </head>
 <body>
     
-    <!-- 完全にフリーズしない、一番シンプルで安定したモード選択画面 -->
     <div id="mode-overlay">
         <div class="mode-title">🗺️ 地水利マップシステム</div>
-        <div class="mode-subtitle">
-            和歌山市内の地水利状況を地図上で確認・点検できるシステムです。<br>
-            右上のボタンから航空写真や地理院地図への切り替えも可能です。
-        </div>
-        
+        <div class="mode-subtitle">和歌山市内の地水利状況を地図上で確認・点検できるシステムです。<br>右上のボタンから航空写真や地理院地図への切り替えも可能です。</div>
         <button class="mode-btn mode-view" onclick="startApp('view')">👀 閲覧モードで開始</button>
         <div class="mode-desc">データの確認や検索のみ行います（誤操作防止用）</div>
-        
         <button class="mode-btn mode-edit" onclick="startApp('edit')">🛠️ 点検モードで開始</button>
         <div class="mode-desc">現場でピンをタップし、点検結果を入力・送信します</div>
     </div>
 
-    <div id="current-mode-badge"></div>
+    <div id="top-info-container">
+        <div id="current-mode-badge"></div>
+        <div id="view-count-badge">👁️ 閲覧数: 取得中...</div>
+    </div>
+
     <div id="print-title">
         <h1 style="font-size: 20px; margin-bottom: 5px;">地水利点検状況 報告書</h1>
         <p style="font-size: 11px; margin: 0; color: #555;">出力日: <span id="print-date"></span> | フィルタ条件適用済リスト</p>
@@ -124,17 +125,10 @@
 
     <div id="main-container">
         <div id="search-panel">
-            <select id="filter-category">
-                <option value="">🏢 すべての設置区分</option>
-                <option value="公設">公設のみ（私設・空白を除外）</option>
-                <option value="私設">私設のみ</option>
-            </select>
+            <select id="filter-category"><option value="">🏢 すべての設置区分</option><option value="公設">公設のみ（私設・空白を除外）</option><option value="私設">私設のみ</option></select>
             <select id="filter-area"><option value="">🌐 すべての地区</option></select>
             <select id="filter-status"><option value="">🟢 すべての状態</option><option value="要点検">🔴 要点検のみ</option><option value="点検済">🔵 点検済のみ</option></select>
-            <div class="date-group">
-                <input type="date" id="filter-date" placeholder="点検日">
-                <select id="filter-date-cond" style="min-width: 90px; flex-grow: 0;"><option value="before">以前に点検</option><option value="after">以降に点検</option></select>
-            </div>
+            <div class="date-group"><input type="date" id="filter-date" placeholder="点検日"><select id="filter-date-cond" style="min-width: 90px; flex-grow: 0;"><option value="before">以前に点検</option><option value="after">以降に点検</option></select></div>
             <input type="text" id="search-text" placeholder="水利番号などで検索...">
             <button id="search-btn">検索・絞り込み</button>
         </div>
@@ -153,17 +147,10 @@
     <div id="list-container">
         <div class="list-header">
             <h3>📊 抽出水利一覧リスト (<span id="table-count">0</span>件)</h3>
-            <div class="list-btn-group">
-                <button class="list-btn btn-csv" onclick="downloadCSV()">📥 Excel/CSV出力</button>
-                <button class="list-btn btn-print" onclick="printReport()">🖨️ 報告書印刷</button>
-                <button class="list-btn btn-close" onclick="toggleList(false)">✕ 閉じる</button>
-            </div>
+            <div class="list-btn-group"><button class="list-btn btn-csv" onclick="downloadCSV()">📥 Excel/CSV出力</button><button class="list-btn btn-print" onclick="printReport()">🖨️ 報告書印刷</button><button class="list-btn btn-close" onclick="toggleList(false)">✕ 閉じる</button></div>
         </div>
         <div class="table-wrapper">
-            <table class="result-table">
-                <thead><tr><th>水利番号</th><th>地区</th><th>種別</th><th>区分</th><th>前回調査日</th><th>要調査</th><th>点検結果</th><th>異常の種類</th><th>コメント</th></tr></thead>
-                <tbody id="table-body"></tbody>
-            </table>
+            <table class="result-table"><thead><tr><th>水利番号</th><th>地区</th><th>種別</th><th>区分</th><th>前回調査日</th><th>要調査</th><th>点検結果</th><th>異常の種類</th><th>コメント</th></tr></thead><tbody id="table-body"></tbody></table>
         </div>
     </div>
 
@@ -175,33 +162,22 @@
         const gsiPhoto = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.png', { attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>", maxZoom: 18 });
 
         const map = L.map('map', { center: [34.2305, 135.1705], zoom: 14, layers: [googleRoad] });
-
-        const baseMaps = { 
-            "Google マップ": googleRoad, 
-            "Google 航空写真": googleSatellite,
-            "地理院地図 (標準)": gsiStd,
-            "地理院地図 (淡色：ピンが見易い)": gsiPale,
-            "地理院 航空写真": gsiPhoto
-        };
+        const baseMaps = { "Google マップ": googleRoad, "Google 航空写真": googleSatellite, "地理院地図 (標準)": gsiStd, "地理院地図 (淡色：ピンが見易い)": gsiPale, "地理院 航空写真": gsiPhoto };
         L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxIVWN3_EzzvlFTngR7sG2HjZNQTi1-L4HnqyPp3m-Zq6h4f4z5G6WVWwMPNegoziq_Tw/exec";
+        // 🚨 以下に、必ず最新のURLを貼り付けてください！ 🚨
+        const GAS_API_URL = "ここに新しく取得したURLを貼り付けてください";
 
-        let allData = []; 
-        let currentFilteredData = [];
-        let appMode = 'view'; 
-        let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 });
-        map.addLayer(markersGroup);
-
-        let isTracking = false;
-        let currentLocationMarker = null;
+        let allData = []; let currentFilteredData = []; let appMode = 'view'; 
+        let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); map.addLayer(markersGroup);
+        let isTracking = false; let currentLocationMarker = null;
 
         // フリーズの原因になる prompt (パスワード入力) を完全に排除し、すぐ開始するように修正
         window.startApp = function(mode) {
             appMode = mode;
             document.getElementById('mode-overlay').style.display = 'none';
+            document.getElementById('top-info-container').style.display = 'flex'; // バッジと閲覧数を表示
             let badge = document.getElementById('current-mode-badge');
-            badge.style.display = 'block';
             if (mode === 'view') { badge.innerText = '👀 閲覧モード'; badge.style.backgroundColor = '#3b82f6'; } 
             else { badge.innerText = '🛠️ 点検モード'; badge.style.backgroundColor = '#ef4444'; }
             document.getElementById('loading').style.display = 'block';
@@ -216,17 +192,23 @@
 
         function parseLocalDate(dateStr) {
             if (!dateStr || dateStr === "00年00月00日" || dateStr === "0") return new Date(2000, 0, 1);
-            let s = String(dateStr).trim();
-            const parts = s.split(/[-/]/);
+            let s = String(dateStr).trim(); const parts = s.split(/[-/]/);
             if (parts.length >= 3) return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-            let d = new Date(s);
-            return isNaN(d.getTime()) ? new Date(2000, 0, 1) : d;
+            let d = new Date(s); return isNaN(d.getTime()) ? new Date(2000, 0, 1) : d;
         }
 
         async function loadData() {
             try {
-                const response = await fetch(GAS_API_URL);
-                allData = await response.json(); 
+                // 🌟データ取得時に ?action=get_data を付けて閲覧数をカウントさせる🌟
+                let fetchUrl = `${GAS_API_URL}?action=get_data&t=${Date.now()}`;
+                const response = await fetch(fetchUrl);
+                const result = await response.json(); 
+                
+                allData = result.data; // 水利データ
+                let currentViewCount = result.viewCount || 0; // 閲覧数
+                
+                // 閲覧数を画面に反映
+                document.getElementById('view-count-badge').innerText = `👁️ 閲覧数: ${currentViewCount}`;
                 
                 let areas = [...new Set(allData.map(row => row["地区"]).filter(a => a))].sort();
                 let areaSelect = document.getElementById('filter-area');
@@ -234,9 +216,7 @@
                 areas.forEach(area => { let option = document.createElement('option'); option.value = option.innerText = area; areaSelect.appendChild(option); });
 
                 currentFilteredData = [...allData];
-                renderMarkers(allData, true); 
-                updateListTable(allData);
-
+                renderMarkers(allData, true); updateListTable(allData);
                 document.getElementById('loading').style.display = 'none';
                 map.locate({setView: true, maxZoom: 17}); 
             } catch (error) {
@@ -245,26 +225,21 @@
             }
         }
 
-        // 水利番号の「ハイフン後の頭文字」を使った高精度な判別ロジック
+        // 水利番号の「ハイフン後の頭文字」から公設/私設を自動判別
         function isPublicWater(suiriNumber) {
             if (!suiriNumber || !suiriNumber.includes("-")) return true;
-            let parts = suiriNumber.split("-");
-            if (parts.length < 2) return true;
-            let afterHyphen = parts[1].trim();
-            if (afterHyphen.length === 0) return true;
+            let parts = suiriNumber.split("-"); if (parts.length < 2) return true;
+            let afterHyphen = parts[1].trim(); if (afterHyphen.length === 0) return true;
             return afterHyphen.charAt(0) !== "6";
         }
 
         function renderMarkers(dataToRender, skipFit) {
             markersGroup.clearLayers(); 
-
             dataToRender.forEach(function(row) {
                 if (!row["緯度"] || !row["経度"]) return;
-
                 let isAlert = (row["要調査"] === "要点検");
                 let className = (row["水利種別"] === "消火栓") ? "marker-hydrant" : "marker-tank";
                 if (isAlert) className += " alert-marker";
-
                 let customIcon = L.divIcon({ className: className });
                 let calculatedCategory = isPublicWater(row["水利番号"]) ? "公設" : "私設";
 
@@ -272,12 +247,9 @@
                     <div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>
                     ${isAlert ? `<div class="popup-alert">⚠️ 要点検</div>` : ''}
                     <table class="popup-table">
-                        <tr><th>地区</th><td>${row["地区"] || "-"}</td></tr>
-                        <tr><th>区分</th><td>${calculatedCategory}（${row["設置区分"] || "台帳未記入"}）</td></tr>
-                        <tr><th>前回点検</th><td>${row["前回調査日"] || "未実施"}</td></tr>
-                        <tr><th>点検結果</th><td>${row["点検結果"] || "未入力"}</td></tr>
-                        <tr><th>異常の種類</th><td>${row["異常の種類"] || "-"}</td></tr>
-                        <tr><th>塗装レベル</th><td>${row["塗装レベル"] || "-"}</td></tr>
+                        <tr><th>地区</th><td>${row["地区"] || "-"}</td></tr><tr><th>区分</th><td>${calculatedCategory}（${row["設置区分"] || "台帳未記入"}）</td></tr>
+                        <tr><th>前回点検</th><td>${row["前回調査日"] || "未実施"}</td></tr><tr><th>点検結果</th><td>${row["点検結果"] || "未入力"}</td></tr>
+                        <tr><th>異常の種類</th><td>${row["異常の種類"] || "-"}</td></tr><tr><th>塗装レベル</th><td>${row["塗装レベル"] || "-"}</td></tr>
                         <tr><th>コメント</th><td>${row["コメント"] || "-"}</td></tr>
                     </table>
                 `;
@@ -294,75 +266,44 @@
                         </div>
                     `;
                 }
-
                 L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent).addTo(markersGroup);
             });
-            
             if (!skipFit && dataToRender.length > 0) { map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] }); }
         }
 
-        window.toggleForm = function(id) {
-            let form = document.getElementById("form-" + id);
-            form.style.display = (form.style.display === "block") ? "none" : "block";
-        };
+        window.toggleForm = function(id) { let form = document.getElementById("form-" + id); form.style.display = (form.style.display === "block") ? "none" : "block"; };
 
-        // 🌟【最重要修正】送信ボタンIDの文字化け（タイポ）を完全に修正しました🌟
+        // 🌟【送信ボタンIDのタイポを完全に修正】🌟
         window.submitReport = async function(id) {
             let btn = document.getElementById("btn-" + id);
-            let resultVal = document.getElementById("input-result-" + id).value;
-            let errorVal = document.getElementById("input-error-" + id).value;
-            let paintVal = document.getElementById("input-paint-" + id).value;
-            let commentVal = document.getElementById("input-comment-" + id).value;
+            let resultVal = document.getElementById("input-result-" + id).value; let errorVal = document.getElementById("input-error-" + id).value;
+            let paintVal = document.getElementById("input-paint-" + id).value; let commentVal = document.getElementById("input-comment-" + id).value;
 
-            btn.disabled = true;
-            btn.innerText = "送信中...";
-
+            btn.disabled = true; btn.innerText = "送信中...";
             let url = `${GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}&t=${Date.now()}`;
 
             try {
                 let response = await fetch(url, { method: 'GET', mode: 'cors' });
                 let res = await response.json();
-
                 if (res.status === "Success") {
-                    btn.innerText = "送信完了！";
-                    btn.style.backgroundColor = "#28a745";
-
+                    btn.innerText = "送信完了！"; btn.style.backgroundColor = "#28a745";
                     let targetIndex = allData.findIndex(row => row["水利番号"] === id);
                     if (targetIndex !== -1) {
-                        let today = new Date();
-                        let todayStr = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`;
-                        
-                        allData[targetIndex]["前回調査日"] = todayStr;
-                        allData[targetIndex]["要調査"] = "点検済";
-                        allData[targetIndex]["点検結果"] = resultVal;
-                        allData[targetIndex]["異常の種類"] = errorVal;
-                        allData[targetIndex]["塗装レベル"] = paintVal;
-                        allData[targetIndex]["コメント"] = commentVal;
+                        let today = new Date(); let todayStr = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`;
+                        allData[targetIndex]["前回調査日"] = todayStr; allData[targetIndex]["要調査"] = "点検済";
+                        allData[targetIndex]["点検結果"] = resultVal; allData[targetIndex]["異常の種類"] = errorVal;
+                        allData[targetIndex]["塗装レベル"] = paintVal; allData[targetIndex]["コメント"] = commentVal;
                     }
-
-                    setTimeout(() => {
-                        map.closePopup();
-                        execSearch(true); 
-                        if(!isTracking) { map.locate({setView: true, maxZoom: 17}); }
-                    }, 1500);
-
-                } else {
-                    alert("送信エラー: " + res.message);
-                    btn.disabled = false; btn.innerText = "送信失敗（再試行）";
-                }
-            } catch (err) {
-                console.error(err);
-                alert("送信に失敗しました。電波状態を確認してください。");
-                btn.disabled = false; btn.innerText = "スプレッドシートへ送信";
-            }
+                    setTimeout(() => { map.closePopup(); execSearch(true); if(!isTracking) { map.locate({setView: true, maxZoom: 17}); } }, 1500);
+                } else { alert("送信エラー: " + res.message); btn.disabled = false; btn.innerText = "送信失敗（再試行）"; }
+            } catch (err) { console.error(err); alert("送信に失敗しました。電波状態を確認してください。"); btn.disabled = false; btn.innerText = "スプレッドシートへ送信"; }
         };
 
         function updateListTable(data) {
             let tbody = document.getElementById('table-body'); tbody.innerHTML = '';
             document.getElementById('list-count').innerText = data.length; document.getElementById('table-count').innerText = data.length;
             data.forEach(row => {
-                let tr = document.createElement('tr'); let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok";
-                let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
+                let tr = document.createElement('tr'); let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok"; let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
                 tr.innerHTML = `<td style="font-weight:bold;">${row["水利番号"]}</td><td>${row["地区"]||"-"}</td><td>${row["水利種別"]}</td><td>${categoryText}</td><td style="font-weight:bold; color:#0369a1;">${row["前回調査日"]||"未実施"}</td><td><span class="badge ${badgeClass}">${row["要調査"]}</span></td><td>${row["点検結果"]||"-"}</td><td>${row["異常の種類"]||"-"}</td><td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"]||"-"}</td>`;
                 tr.addEventListener('click', () => { if (row["緯度"] && row["経度"]) { toggleList(false); map.setView([row["緯度"], row["経度"]], 18); setTimeout(() => { markersGroup.eachLayer(marker => { if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) marker.openPopup(); }); }, 300); } });
                 tbody.appendChild(tr);
@@ -373,9 +314,7 @@
         document.getElementById('list-toggle-btn').addEventListener('click', () => toggleList());
 
         document.getElementById('today-list-btn').addEventListener('click', function() {
-            let today = new Date();
-            let todayStr1 = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`;
-            let todayStr2 = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
+            let today = new Date(); let todayStr1 = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`; let todayStr2 = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
             currentFilteredData = allData.filter(row => row["前回調査日"] === todayStr1 || row["前回調査日"] === todayStr2);
             renderMarkers(currentFilteredData, false); updateListTable(currentFilteredData); toggleList(true);
             if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; document.getElementById('search-toggle-btn').style.backgroundColor = '#f59e0b'; }
@@ -391,33 +330,18 @@
         window.printReport = function() { document.getElementById('print-date').innerText = `${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日`; window.print(); };
 
         function execSearch(skipFit) {
-            let selectedCategory = document.getElementById('filter-category').value;
-            let selectedArea = document.getElementById('filter-area').value;
-            let selectedStatus = document.getElementById('filter-status').value;
-            let keyword = document.getElementById('search-text').value.trim().toLowerCase();
-            let filterDateVal = document.getElementById('filter-date').value;
-            let filterDateCond = document.getElementById('filter-date-cond').value;
-            let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
-
+            let selectedCategory = document.getElementById('filter-category').value; let selectedArea = document.getElementById('filter-area').value; let selectedStatus = document.getElementById('filter-status').value; let keyword = document.getElementById('search-text').value.trim().toLowerCase(); let filterDateVal = document.getElementById('filter-date').value; let filterDateCond = document.getElementById('filter-date-cond').value; let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
             currentFilteredData = allData.filter(row => {
-                let isPublic = isPublicWater(row["水利番号"]);
-                let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic);
-                let matchArea = (selectedArea === "") || (row["地区"] === selectedArea);
-                let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
+                let isPublic = isPublicWater(row["水利番号"]); let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic);
+                let matchArea = (selectedArea === "") || (row["地区"] === selectedArea); let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
                 let matchDate = true;
-                if (filterDateTime && row["前回調査日"]) {
-                    let rowDateTime = parseLocalDate(row["前回調査日"]).getTime();
-                    if (filterDateCond === "before") matchDate = (rowDateTime <= filterDateTime);
-                    else if (filterDateCond === "after") matchDate = (rowDateTime >= filterDateTime);
-                }
-                let matchKeyword = true;
-                if (keyword !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
+                if (filterDateTime && row["前回調査日"]) { let rowDateTime = parseLocalDate(row["前回調査日"]).getTime(); if (filterDateCond === "before") matchDate = (rowDateTime <= filterDateTime); else if (filterDateCond === "after") matchDate = (rowDateTime >= filterDateTime); }
+                let matchKeyword = true; if (keyword !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
                 return matchCategory && matchArea && matchStatus && matchDate && matchKeyword;
             });
             renderMarkers(currentFilteredData, skipFit); updateListTable(currentFilteredData);
             if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; document.getElementById('search-toggle-btn').style.backgroundColor = '#f59e0b'; }
         }
-
         document.getElementById('search-btn').addEventListener('click', function() { execSearch(false); });
 
         document.getElementById('gps-btn').addEventListener('click', function() {
