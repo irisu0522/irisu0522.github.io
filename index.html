@@ -23,14 +23,12 @@
         
         #data-update-date { font-size: 13px; color: #0369a1; background: #e0f2fe; padding: 6px 16px; border-radius: 20px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
-        /* 🌟 アップデート履歴ボックス 🌟 */
         .update-history-box { margin-bottom: 20px; width: 85%; max-width: 320px; background-color: #f1f5f9; border-radius: 10px; padding: 12px; font-size: 11px; color: #334155; line-height: 1.5; border-left: 4px solid #3b82f6; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
         .mode-btn { width: 85%; max-width: 320px; padding: 18px; margin-bottom: 10px; border-radius: 12px; font-size: 18px; font-weight: bold; border: none; cursor: pointer; color: white; box-shadow: 0 6px 12px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; gap: 10px; }
         .mode-view { background-color: #3b82f6; } .mode-edit { background-color: #ef4444; }
         .mode-desc { font-size: 12px; color: #475569; margin-top: -5px; margin-bottom: 25px; text-align: center; }
         
-        /* 🌟 警告・案内ボックス 🌟 */
         .line-warning-box { margin-bottom: 30px; width: 85%; max-width: 320px; background-color: #fff9db; border: 1px solid #fab005; border-radius: 10px; padding: 14px; font-size: 11px; color: #495057; line-height: 1.6; text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         
         #top-info-container { position: absolute; top: 10px; left: 50px; z-index: 1000; display: none; gap: 10px; align-items: center; }
@@ -117,14 +115,13 @@
         
         <div id="data-update-date">📅 データ最終更新日: 読込中...</div>
         
-        <!-- 🌟 アップデート履歴表示エリア 🌟 -->
         <div class="update-history-box">
-            <b style="font-size:12px; color:#1e293b;">📢 最新のアップデート (2026/06/11)</b>
+            <b style="font-size:12px; color:#1e293b;">📢 最新のアップデート</b>
             <ul style="margin: 5px 0 0; padding-left: 20px;">
-                <li>地図の左下に「ピンの見方（凡例）」を追加しました。</li>
-                <li>検索パネルで「異常の種類」の絞り込み機能を追加しました。</li>
-                <li>点検モードの暗証番号機能を安全な形で復活させました。</li>
-                <li>SNS共有禁止・ブラウザ案内の注意喚起を追加しました。</li>
+                <li>地図の左下に「ピンの見方（凡例）」を追加。</li>
+                <li>異常の種類に「塗装間違い」「異常あり」等のフィルターを追加。</li>
+                <li>塗装レベルを「100% / 50% / 0%」に変更しました。</li>
+                <li>SNS共有禁止・ブラウザ案内の注意喚起を追加。</li>
             </ul>
         </div>
         
@@ -133,7 +130,6 @@
         <button class="mode-btn mode-edit" onclick="promptPasscode()">🛠️ 点検モードで開始</button>
         <div class="mode-desc">現場でピンをタップし、点検結果を入力・送信します</div>
         
-        <!-- 🌟 リンクとSNS共有の禁止文言を強化 🌟 -->
         <div class="line-warning-box">
             <b style="color: #e03131; font-size: 12px; display: block; margin-bottom: 4px;">🚫 SNS等へのリンク共有禁止</b>
             不特定多数が見られるSNS（X、Instagram、公開のLINEグループ等）へのURL貼り付けは、データ保護のため絶対に禁止します。<br><br>
@@ -144,7 +140,7 @@
         </div>
     </div>
 
-    <!-- 🌟 パスワード専用モーダル（フリーズ回避の自前画面）🌟 -->
+    <!-- 安全な自前パスワード入力モーダル -->
     <div id="pin-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:10001; align-items:center; justify-content:center;">
         <div style="background:white; padding:20px; border-radius:10px; width:80%; max-width:300px; text-align:center;">
             <h3 style="margin-top:0; color:#1e293b;">🔐 暗証番号入力</h3>
@@ -173,9 +169,9 @@
             <select id="filter-area"><option value="">🌐 すべての地区</option></select>
             <select id="filter-status"><option value="">🟢 すべての状態</option><option value="要点検">🔴 要点検のみ</option><option value="点検済">🔵 点検済のみ</option></select>
             
-            <!-- 🌟 異常の種類フィルター追加 🌟 -->
             <select id="filter-error">
                 <option value="">⚠️ 異常の種類 (すべて)</option>
+                <option value="異常あり">🚨 何らかの異常あり</option>
                 <option value="なし">✅ 異常なし</option>
                 <option value="蓋開閉困難">🔧 蓋開閉困難</option>
                 <option value="土没">🍂 土没</option>
@@ -184,7 +180,15 @@
                 <option value="道路陥没（大）">🕳️ 道路陥没（大）</option>
                 <option value="道路陥没（小）">🕳️ 道路陥没（小）</option>
                 <option value="塗装剥がれ">🎨 塗装剥がれ</option>
+                <option value="塗装間違い">❌ 塗装間違い</option>
                 <option value="その他">❓ その他</option>
+            </select>
+
+            <select id="filter-paint">
+                <option value="">🎨 塗装レベル (すべて)</option>
+                <option value="100%">100%</option>
+                <option value="50%">50%</option>
+                <option value="0%">0%</option>
             </select>
 
             <div class="date-group"><input type="date" id="filter-date" placeholder="点検日"><select id="filter-date-cond" style="min-width: 90px; flex-grow: 0;"><option value="before">以前に点検</option><option value="after">以降に点検</option></select></div>
@@ -224,7 +228,6 @@
         const baseMaps = { "Google マップ": googleRoad, "Google 航空写真": googleSatellite, "地理院地図 (標準)": gsiStd, "地理院地図 (淡色：ピンが見易い)": gsiPale, "地理院 航空写真": gsiPhoto };
         L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
-        // 🌟 地図左下の「ピンの見方（凡例）」コントロール 🌟
         const legend = L.control({position: 'bottomleft'});
         legend.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'info legend');
@@ -233,7 +236,7 @@
                     <b style="font-size:12px; color:#1e293b;">📍 ピンの見方</b><br>
                     <span style="color:#ff3b30; font-size:14px;">●</span> 消火栓<br>
                     <span style="color:#007aff; font-size:14px;">■</span> 防火水槽<br>
-                    <span style="color:#ffcc00; font-weight:bold;">⚠️</span> は「要点検」<br>
+                    <span style="color:#ffcc00; font-weight:bold;">⚠️</span> 点滅は「1年以内に点検していないもの」<br>
                     <hr style="margin:4px 0; border:0; border-top:1px solid #ccc;">
                     <b>📱 基本操作</b><br>
                     ・ピンをタップで詳細＆点検<br>
@@ -246,14 +249,13 @@
 
         // 🚨【最重要】取得した新しいGASのURLをここに貼り付けてください！ 🚨
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyRh8CnDChdCeX4_YAyezsgJrKLRrfSy3ualhPbtl8lKbXV66K_5p5QUMpiohyI1zD6sQ/exec";
-        const EDIT_MODE_PIN = "1190"; // 🌟 点検モードの暗証番号
+        const EDIT_MODE_PIN = "1190"; 
 
         let allData = []; let currentFilteredData = []; let appMode = 'view'; 
         let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); map.addLayer(markersGroup);
         let isTracking = false; let currentLocationMarker = null;
         let pendingMode = null; 
 
-        // 🌟 安全な自作パスワード画面の処理 🌟
         window.promptPasscode = function() {
             document.getElementById('pin-input').value = '';
             document.getElementById('pin-modal').style.display = 'flex';
@@ -367,8 +369,8 @@
                         <button class="form-toggle" onclick="toggleForm('${row["水利番号"]}')">📝 点検結果を入力する</button>
                         <div class="input-form" id="form-${row["水利番号"]}">
                             <div class="form-group"><label>点検結果</label><select id="input-result-${row["水利番号"]}"><option value="点検済">点検済（良好）</option><option value="要対応">要対応（不備あり）</option><option value="未実施">未点検</option></select></div>
-                            <div class="form-group"><label>異常の種類</label><select id="input-error-${row["水利番号"]}"><option value="なし">異常なし</option><option value="蓋開閉困難">蓋開閉困難</option><option value="土没">土没</option><option value="水没">水没</option><option value="バルブ開閉不良">バルブ開閉不良</option><option value="道路陥没（大）">道路陥没（大）</option><option value="道路陥没（小）">道路陥没（小）</option><option value="塗装剥がれ">塗装剥がれ</option><option value="その他">その他</option></select></div>
-                            <div class="form-group"><label>塗装レベル</label><select id="input-paint-${row["水利番号"]}"><option value="良">良（必要なし）</option><option value="普通">普通（経年）</option><option value="要塗装">要塗装（ハゲ）</option></select></div>
+                            <div class="form-group"><label>異常の種類</label><select id="input-error-${row["水利番号"]}"><option value="なし">異常なし</option><option value="蓋開閉困難">蓋開閉困難</option><option value="土没">土没</option><option value="水没">水没</option><option value="バルブ開閉不良">バルブ開閉不良</option><option value="道路陥没（大）">道路陥没（大）</option><option value="道路陥没（小）">道路陥没（小）</option><option value="塗装剥がれ">塗装剥がれ</option><option value="塗装間違い">塗装間違い</option><option value="その他">その他</option></select></div>
+                            <div class="form-group"><label>塗装レベル</label><select id="input-paint-${row["水利番号"]}"><option value="100%">100%</option><option value="50%">50%</option><option value="0%">0%</option></select></div>
                             <div class="form-group"><label>コメント</label><input type="text" id="input-comment-${row["水利番号"]}" placeholder="状況など"></div>
                             <button class="form-submit-btn" id="btn-${row["水利番号"]}" onclick="submitReport('${row["水利番号"]}')">スプレッドシートへ送信</button>
                         </div>
@@ -436,21 +438,26 @@
 
         window.printReport = function() { document.getElementById('print-date').innerText = `${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日`; window.print(); };
 
-        // 🌟 異常の種類もフィルターに含めるように改良 🌟
         function execSearch(skipFit) {
             let selectedCategory = document.getElementById('filter-category').value; let selectedArea = document.getElementById('filter-area').value; let selectedStatus = document.getElementById('filter-status').value; 
-            let selectedError = document.getElementById('filter-error').value; // 異常の種類
+            let selectedError = document.getElementById('filter-error').value; let selectedPaint = document.getElementById('filter-paint').value; 
             let keyword = document.getElementById('search-text').value.trim().toLowerCase(); let filterDateVal = document.getElementById('filter-date').value; let filterDateCond = document.getElementById('filter-date-cond').value; let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
             
             currentFilteredData = allData.filter(row => {
                 let isPublic = isPublicWater(row["水利番号"]); let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic);
                 let matchArea = (selectedArea === "") || (row["地区"] === selectedArea); let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
-                let matchError = (selectedError === "") || (row["異常の種類"] === selectedError); // 異常の一致確認
+                
+                let matchError = true;
+                if (selectedError === "異常あり") { matchError = (row["異常の種類"] !== "" && row["異常の種類"] !== "なし"); } 
+                else if (selectedError !== "") { matchError = (row["異常の種類"] === selectedError); }
+
+                let matchPaint = (selectedPaint === "") || (row["塗装レベル"] === selectedPaint);
+                
                 let matchDate = true;
                 if (filterDateTime && row["前回調査日"]) { let rowDateTime = parseLocalDate(row["前回調査日"]).getTime(); if (filterDateCond === "before") matchDate = (rowDateTime <= filterDateTime); else if (filterDateCond === "after") matchDate = (rowDateTime >= filterDateTime); }
                 let matchKeyword = true; if (keyword !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
                 
-                return matchCategory && matchArea && matchStatus && matchError && matchDate && matchKeyword;
+                return matchCategory && matchArea && matchStatus && matchError && matchPaint && matchDate && matchKeyword;
             });
             renderMarkers(currentFilteredData, skipFit); updateListTable(currentFilteredData);
             if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; document.getElementById('search-toggle-btn').style.backgroundColor = '#f59e0b'; }
