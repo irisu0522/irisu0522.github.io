@@ -48,6 +48,7 @@
         #search-toggle-btn { background-color: #f59e0b; }
         #list-toggle-btn { background-color: #17a2b8; }
         #today-list-btn { background-color: #8b5cf6; } 
+        #survey-btn { background-color: #dc3545; }
         #gps-btn { background-color: #007bff; }
         #gps-btn.tracking { background-color: #28a745; box-shadow: 0 0 10px #28a745; }
         
@@ -118,7 +119,7 @@
         <div class="update-history-box">
             <b style="font-size:12px; color:#1e293b;">📢 最新のアップデート</b>
             <ul style="margin: 5px 0 0; padding-left: 20px;">
-                <li>地図の左下に「ピンの見方（凡例）」を追加。</li>
+                <li>地図の左下に「ピンの見方（凡例）」を追加。点滅条件も記載。</li>
                 <li>異常の種類に「塗装間違い」「異常あり」等のフィルターを追加。</li>
                 <li>塗装レベルを「100% / 50% / 0%」に変更しました。</li>
                 <li>SNS共有禁止・ブラウザ案内の注意喚起を追加。</li>
@@ -193,7 +194,10 @@
 
             <div class="date-group"><input type="date" id="filter-date" placeholder="点検日"><select id="filter-date-cond" style="min-width: 90px; flex-grow: 0;"><option value="before">以前に点検</option><option value="after">以降に点検</option></select></div>
             <input type="text" id="search-text" placeholder="水利番号などで検索...">
-            <button id="search-btn">検索・絞り込みを実行</button>
+            <div style="display: flex; gap: 8px; width: 100%;">
+                <button id="search-btn" style="flex: 2;">検索・絞り込みを実行</button>
+                <button id="reset-btn" style="flex: 1; background-color: #6c757d;">リセット</button>
+            </div>
         </div>
 
         <div id="loading">📡 最新データを読み込み中...</div>
@@ -201,6 +205,7 @@
         
         <div class="side-btn-container">
             <button id="search-toggle-btn" class="action-btn">🔍 検索 / 絞込</button>
+            <button id="survey-btn" class="action-btn" style="background-color: #dc3545;">🚨 5月全数調査</button>
             <button id="list-toggle-btn" class="action-btn">📊 リスト (<span id="list-count">0</span>)</button>
             <button id="today-list-btn" class="action-btn">📅 今日の点検リスト</button>
             <button id="gps-btn" class="action-btn">📍 現在地</button>
@@ -248,7 +253,7 @@
         legend.addTo(map);
 
         // 🚨【最重要】取得した新しいGASのURLをここに貼り付けてください！ 🚨
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyRh8CnDChdCeX4_YAyezsgJrKLRrfSy3ualhPbtl8lKbXV66K_5p5QUMpiohyI1zD6sQ/exec";
+        const GAS_API_URL = "ここに新しく取得したURLを貼り付けてください";
         const EDIT_MODE_PIN = "1190"; 
 
         let allData = []; let currentFilteredData = []; let appMode = 'view'; 
@@ -369,8 +374,23 @@
                         <button class="form-toggle" onclick="toggleForm('${row["水利番号"]}')">📝 点検結果を入力する</button>
                         <div class="input-form" id="form-${row["水利番号"]}">
                             <div class="form-group"><label>点検結果</label><select id="input-result-${row["水利番号"]}"><option value="点検済">点検済（良好）</option><option value="要対応">要対応（不備あり）</option><option value="未実施">未点検</option></select></div>
-                            <div class="form-group"><label>異常の種類</label><select id="input-error-${row["水利番号"]}"><option value="なし">異常なし</option><option value="蓋開閉困難">蓋開閉困難</option><option value="土没">土没</option><option value="水没">水没</option><option value="バルブ開閉不良">バルブ開閉不良</option><option value="道路陥没（大）">道路陥没（大）</option><option value="道路陥没（小）">道路陥没（小）</option><option value="塗装剥がれ">塗装剥がれ</option><option value="塗装間違い">塗装間違い</option><option value="その他">その他</option></select></div>
-                            <div class="form-group"><label>塗装レベル</label><select id="input-paint-${row["水利番号"]}"><option value="100%">100%</option><option value="50%">50%</option><option value="0%">0%</option></select></div>
+                            <div class="form-group"><label>異常の種類</label><select id="input-error-${row["水利番号"]}">
+                                <option value="なし">異常なし</option>
+                                <option value="蓋開閉困難">蓋開閉困難</option>
+                                <option value="土没">土没</option>
+                                <option value="水没">水没</option>
+                                <option value="バルブ開閉不良">バルブ開閉不良</option>
+                                <option value="道路陥没（大）">道路陥没（大）</option>
+                                <option value="道路陥没（小）">道路陥没（小）</option>
+                                <option value="塗装剥がれ">塗装剥がれ</option>
+                                <option value="塗装間違い">塗装間違い</option>
+                                <option value="その他">その他</option>
+                            </select></div>
+                            <div class="form-group"><label>塗装レベル</label><select id="input-paint-${row["水利番号"]}">
+                                <option value="100%">100%</option>
+                                <option value="50%">50%</option>
+                                <option value="0%">0%</option>
+                            </select></div>
                             <div class="form-group"><label>コメント</label><input type="text" id="input-comment-${row["水利番号"]}" placeholder="状況など"></div>
                             <button class="form-submit-btn" id="btn-${row["水利番号"]}" onclick="submitReport('${row["水利番号"]}')">スプレッドシートへ送信</button>
                         </div>
@@ -463,6 +483,41 @@
             if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; document.getElementById('search-toggle-btn').style.backgroundColor = '#f59e0b'; }
         }
         document.getElementById('search-btn').addEventListener('click', function() { execSearch(false); });
+
+        // 検索リセットボタンの処理
+        document.getElementById('reset-btn').addEventListener('click', function() {
+            document.getElementById('filter-category').value = "";
+            document.getElementById('filter-area').value = "";
+            document.getElementById('filter-status').value = "";
+            document.getElementById('filter-error').value = "";
+            document.getElementById('filter-paint').value = "";
+            document.getElementById('filter-date').value = "";
+            document.getElementById('filter-date-cond').value = "before";
+            document.getElementById('search-text').value = "";
+            execSearch(false);
+        });
+
+        // 5月全数調査（未実施抽出）ボタンの処理
+        document.getElementById('survey-btn').addEventListener('click', function() {
+            let year = new Date().getFullYear();
+            let targetDate = `${year}-05-01`; 
+            
+            document.getElementById('filter-category').value = "公設";
+            document.getElementById('filter-area').value = "";
+            document.getElementById('filter-status').value = "";
+            document.getElementById('filter-error').value = "";
+            document.getElementById('filter-paint').value = "";
+            document.getElementById('filter-date').value = targetDate;
+            document.getElementById('filter-date-cond').value = "before";
+            document.getElementById('search-text').value = "";
+            
+            let panel = document.getElementById('search-panel');
+            let toggleBtn = document.getElementById('search-toggle-btn');
+            panel.style.display = 'flex';
+            toggleBtn.style.backgroundColor = '#d97706';
+
+            execSearch(false);
+        });
 
         document.getElementById('gps-btn').addEventListener('click', function() {
             let btn = document.getElementById('gps-btn');
