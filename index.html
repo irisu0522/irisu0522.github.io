@@ -42,15 +42,18 @@
 
         #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background-color: rgba(255, 255, 255, 0.95); display: none; padding: 20px 40px; border-radius: 8px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
 
+        /* 🌟PC・iPad用ボタンデザイン🌟 */
         .side-btn-container { position: absolute; bottom: 30px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
-        .action-btn { padding: 12px 15px; font-size: 14px; font-weight: bold; color: white; border: none; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px; transition: background-color 0.2s; }
-        
-        #search-toggle-btn { background-color: #f59e0b; }
-        #list-toggle-btn { background-color: #17a2b8; }
-        #today-list-btn { background-color: #8b5cf6; } 
-        #survey-btn { background-color: #dc3545; }
-        #gps-btn { background-color: #007bff; }
-        #gps-btn.tracking { background-color: #28a745; box-shadow: 0 0 10px #28a745; }
+        .action-btn { padding: 10px 14px; font-size: 13px; font-weight: bold; color: white; border: none; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: flex-start; gap: 8px; transition: all 0.2s; }
+        .btn-icon { font-size: 16px; line-height: 1; display: flex; align-items: center; justify-content: center; }
+        .btn-text { white-space: nowrap; }
+
+        .btn-search { background-color: #f59e0b; }
+        .btn-survey { background-color: #dc3545; }
+        .btn-list { background-color: #17a2b8; }
+        .btn-today { background-color: #8b5cf6; }
+        .btn-gps { background-color: #007bff; }
+        .btn-gps.tracking { background-color: #28a745 !important; box-shadow: 0 0 10px #28a745; }
         
         .marker-hydrant { width: 24px !important; height: 24px !important; margin-left: -12px !important; margin-top: -12px !important; display: flex; align-items: center; justify-content: center; background: transparent; }
         .marker-hydrant::after { content: ''; width: 11px; height: 11px; background-color: #ff3b30; border: 1.5px solid #ffffff; border-radius: 50%; box-shadow: 0 0 3px rgba(0,0,0,0.4); }
@@ -105,7 +108,46 @@
         }
         #print-title { display: none; }
 
-        @media (max-width: 600px) { #search-panel select { width: calc(50% - 4px); } #search-panel .date-group { width: 100%; } #search-panel input { width: 100%; } .leaflet-top { top: 60px; } }
+        /* 🌟スマホ用デザイン（ボトムナビゲーション化）🌟 */
+        @media (max-width: 600px) { 
+            #search-panel select { width: calc(50% - 4px); } 
+            #search-panel .date-group { width: 100%; } 
+            #search-panel input { width: 100%; } 
+            .leaflet-top { top: 60px; }
+            .leaflet-control-attribution { margin-bottom: 55px !important; } /* ナビゲーションの上に逃がす */
+
+            /* 右下のボタンを画面下部のバーに変形 */
+            .side-btn-container {
+                bottom: 0; right: 0; width: 100%;
+                flex-direction: row; gap: 0;
+                background-color: white;
+                padding-bottom: env(safe-area-inset-bottom);
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+                border-top: 1px solid #e2e8f0;
+            }
+            .action-btn {
+                flex: 1; border-radius: 0; box-shadow: none;
+                flex-direction: column; justify-content: center; gap: 4px;
+                padding: 8px 2px;
+                background-color: transparent !important; /* 個別の背景色を消す */
+                color: #64748b !important; /* 文字をグレーに統一 */
+                border-right: 1px solid #f1f5f9;
+            }
+            .action-btn:last-child { border-right: none; }
+            .btn-icon { font-size: 20px; }
+            .btn-text { font-size: 10px; transform: scale(0.9); }
+            
+            /* スマホの時はアイコンにだけ色をつけて目立たせる */
+            .btn-search .btn-icon { filter: drop-shadow(0px 1px 2px rgba(245, 158, 11, 0.4)); }
+            .btn-survey .btn-icon { filter: drop-shadow(0px 1px 2px rgba(220, 53, 69, 0.4)); }
+            .btn-list .btn-icon { filter: drop-shadow(0px 1px 2px rgba(23, 162, 184, 0.4)); }
+            .btn-today .btn-icon { filter: drop-shadow(0px 1px 2px rgba(139, 92, 246, 0.4)); }
+            .btn-gps .btn-icon { filter: drop-shadow(0px 1px 2px rgba(0, 123, 255, 0.4)); }
+            
+            /* 追従中のみ色と背景を変える */
+            .btn-gps.tracking { background-color: #ecfdf5 !important; color: #16a34a !important; border-top: 2px solid #16a34a; }
+            .btn-gps.tracking .btn-icon { filter: none; }
+        }
     </style>
 </head>
 <body>
@@ -119,10 +161,10 @@
         <div class="update-history-box">
             <b style="font-size:12px; color:#1e293b;">📢 最新のアップデート</b>
             <ul style="margin: 5px 0 0; padding-left: 20px;">
-                <li>地図の左下に「ピンの見方（凡例）」を追加。点滅条件も記載。</li>
+                <li>スマホ画面を広く使える「下部メニュー（ボトムナビ）」デザインを導入しました！</li>
+                <li>陥没調査フィルターボタンを作成。地区を選択するだけになりました。</li>
                 <li>異常の種類に「塗装間違い」「異常あり」等のフィルターを追加。</li>
                 <li>塗装レベルを「100% / 50% / 0%」に変更しました。</li>
-                <li>SNS共有禁止・ブラウザ案内の注意喚起を追加。</li>
             </ul>
         </div>
         
@@ -203,12 +245,13 @@
         <div id="loading">📡 最新データを読み込み中...</div>
         <div id="map"></div>
         
+        <!-- 🌟 アイコンと文字を分離し、スマホ向けレイアウトに対応したボタン群 🌟 -->
         <div class="side-btn-container">
-            <button id="search-toggle-btn" class="action-btn">🔍 検索 / 絞込</button>
-            <button id="survey-btn" class="action-btn" style="background-color: #dc3545;">🚨 5月全数調査</button>
-            <button id="list-toggle-btn" class="action-btn">📊 リスト (<span id="list-count">0</span>)</button>
-            <button id="today-list-btn" class="action-btn">📅 今日の点検リスト</button>
-            <button id="gps-btn" class="action-btn">📍 現在地</button>
+            <button id="search-toggle-btn" class="action-btn btn-search"><span class="btn-icon">🔍</span><span class="btn-text">検索/絞込</span></button>
+            <button id="survey-btn" class="action-btn btn-survey"><span class="btn-icon">🚨</span><span class="btn-text">全数調査</span></button>
+            <button id="list-toggle-btn" class="action-btn btn-list"><span class="btn-icon">📊</span><span class="btn-text">リスト(<span id="list-count">0</span>)</span></button>
+            <button id="today-list-btn" class="action-btn btn-today"><span class="btn-icon">📅</span><span class="btn-text">今日の点検</span></button>
+            <button id="gps-btn" class="action-btn btn-gps"><span class="btn-icon">📍</span><span class="btn-text">現在地</span></button>
         </div>
     </div>
 
@@ -303,8 +346,8 @@
 
         document.getElementById('search-toggle-btn').addEventListener('click', function() {
             let panel = document.getElementById('search-panel');
-            if (panel.style.display === 'flex') { panel.style.display = 'none'; this.style.backgroundColor = '#f59e0b'; } 
-            else { panel.style.display = 'flex'; this.style.backgroundColor = '#d97706'; }
+            if (panel.style.display === 'flex') { panel.style.display = 'none'; this.classList.remove('tracking'); } 
+            else { panel.style.display = 'flex'; this.classList.add('tracking'); }
         });
 
         function parseLocalDate(dateStr) {
@@ -446,7 +489,7 @@
             let today = new Date(); let todayStr1 = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`; let todayStr2 = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
             currentFilteredData = allData.filter(row => row["前回調査日"] === todayStr1 || row["前回調査日"] === todayStr2);
             renderMarkers(currentFilteredData, false); updateListTable(currentFilteredData); toggleList(true);
-            if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; document.getElementById('search-toggle-btn').style.backgroundColor = '#f59e0b'; }
+            if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; }
         });
 
         window.downloadCSV = function() {
@@ -480,7 +523,7 @@
                 return matchCategory && matchArea && matchStatus && matchError && matchPaint && matchDate && matchKeyword;
             });
             renderMarkers(currentFilteredData, skipFit); updateListTable(currentFilteredData);
-            if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; document.getElementById('search-toggle-btn').style.backgroundColor = '#f59e0b'; }
+            if (window.innerWidth <= 600) { document.getElementById('search-panel').style.display = 'none'; }
         }
         document.getElementById('search-btn').addEventListener('click', function() { execSearch(false); });
 
@@ -512,21 +555,34 @@
             document.getElementById('search-text').value = "";
             
             let panel = document.getElementById('search-panel');
-            let toggleBtn = document.getElementById('search-toggle-btn');
             panel.style.display = 'flex';
-            toggleBtn.style.backgroundColor = '#d97706';
 
             execSearch(false);
         });
 
         document.getElementById('gps-btn').addEventListener('click', function() {
             let btn = document.getElementById('gps-btn');
-            if (isTracking) { isTracking = false; map.stopLocate(); btn.classList.remove('tracking'); btn.innerText = "📍 現在地"; } 
-            else { isTracking = true; btn.classList.add('tracking'); btn.innerText = "🟢 追従中"; map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true}); }
+            if (isTracking) { 
+                isTracking = false; map.stopLocate(); 
+                btn.classList.remove('tracking'); 
+                btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text">現在地</span>'; 
+            } else { 
+                isTracking = true; 
+                btn.classList.add('tracking'); 
+                btn.innerHTML = '<span class="btn-icon">🟢</span><span class="btn-text">追従中</span>'; 
+                map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true}); 
+            }
         });
 
         map.on('locationfound', function(e) { if (currentLocationMarker) map.removeLayer(currentLocationMarker); let color = isTracking ? "#28a745" : "#007bff"; currentLocationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: color, color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9 }).addTo(map).bindPopup("<b>現在地</b>"); });
-        map.on('dragstart', function() { if (isTracking) { isTracking = false; map.stopLocate(); let btn = document.getElementById('gps-btn'); btn.classList.remove('tracking'); btn.innerText = "📍 現在地"; } });
+        map.on('dragstart', function() { 
+            if (isTracking) { 
+                isTracking = false; map.stopLocate(); 
+                let btn = document.getElementById('gps-btn'); 
+                btn.classList.remove('tracking'); 
+                btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text">現在地</span>'; 
+            } 
+        });
     </script>
 </body>
 </html>
