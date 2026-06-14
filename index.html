@@ -41,6 +41,14 @@
         #search-panel .date-group { display: flex; align-items: center; gap: 4px; flex-grow: 1.5; min-width: 190px; }
         #search-panel button { padding: 8px 15px; font-size: 13px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; flex-grow: 1; width: 100%; }
 
+        /* 🌟 複数選択ドロップダウン用スタイル 🌟 */
+        .multi-select-container { position: relative; flex-grow: 1; min-width: 120px; }
+        .multi-select-button { padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; background: white; cursor: pointer; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; display: block; width: 100%; box-sizing: border-box; height: 37px; line-height: 1.2; color: #333;}
+        .multi-select-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; border-radius: 4px; max-height: 250px; overflow-y: auto; z-index: 1001; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .multi-select-dropdown label { display: block; padding: 8px 10px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #eee; margin: 0; color: #333; }
+        .multi-select-dropdown label:hover { background: #f8fafc; }
+        .multi-select-dropdown input[type="checkbox"] { margin-right: 8px; transform: scale(1.2); }
+
         #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background-color: rgba(255, 255, 255, 0.95); display: none; padding: 20px 40px; border-radius: 8px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
 
         .side-btn-container { position: absolute; bottom: 30px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
@@ -123,7 +131,7 @@
 
         @media (max-width: 600px) { 
             .pc-only { display: none; } .sp-only { display: inline; }
-            #search-panel select { width: calc(50% - 4px); } #search-panel .date-group { width: 100%; } #search-panel input { width: 100%; } .leaflet-top { top: 60px; } .leaflet-control-attribution { margin-bottom: 55px !important; } 
+            #search-panel select, .multi-select-container { width: calc(50% - 4px); } #search-panel .date-group { width: 100%; } #search-panel input { width: 100%; } .leaflet-top { top: 60px; } .leaflet-control-attribution { margin-bottom: 55px !important; } 
             .side-btn-container { bottom: 0; right: 0; width: 100%; flex-direction: row; gap: 0; background-color: white; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -2px 10px rgba(0,0,0,0.15); border-top: 1px solid #e2e8f0; }
             .action-btn { flex: 1; border-radius: 0; box-shadow: none; flex-direction: column; justify-content: center; gap: 4px; padding: 8px 1px; background-color: transparent !important; color: #64748b !important; border-right: 1px solid #f1f5f9; }
             .action-btn:last-child { border-right: none; }
@@ -155,11 +163,11 @@
         <div id="data-update-date">📅 データ最終更新日: 読込中...</div>
         
         <div class="update-history-box">
-            <b style="font-size:12px; color:#1e293b;">📢 最新のアップデート</b>
+            <b style="font-size:12px; color:#1e293b;">📢 システムの使い方・便利機能</b>
             <ul style="margin: 5px 0 0; padding-left: 20px;">
-                <li>テストモードで<b style="color:#e83e8c;">「全回答後に答え合わせを一斉表示し、タップするまでじっくり確認できる」</b>仕様に変更しました！</li>
-                <li>🔥テストの条件を「半径200m以内の水利を5ヶ所指定」するルールに進化させました。</li>
-                <li>テスト開始の隠しコマンドを「トリプルタップ（3回連続）」に変更しました。</li>
+                <li><b style="color:#dc3545;">🚨全数調査</b>ボタン：右下のボタンを押すと「公設」「今年の5月1日以前に点検」が自動セットされ、今年点検すべき水利が一発で抽出されます。</li>
+                <li><b style="color:#17a2b8;">📊リスト</b>表示：抽出した水利を一覧で確認し、行をタップすると地図上の位置へ瞬時に移動します。</li>
+                <li>検索パネルの「地区」で<b>複数選択</b>ができるようになりました。</li>
             </ul>
         </div>
         
@@ -280,7 +288,14 @@
     <div id="main-container">
         <div id="search-panel">
             <select id="filter-category"><option value="">🏢 すべての設置区分</option><option value="公設">公設のみ（私設・空白を除外）</option><option value="私設">私設のみ</option></select>
-            <select id="filter-area"><option value="">🌐 すべての地区</option></select>
+            
+            <div class="multi-select-container" id="filter-area-container">
+                <div class="multi-select-button" id="filter-area-btn" onclick="document.getElementById('filter-area-dropdown').style.display = document.getElementById('filter-area-dropdown').style.display === 'block' ? 'none' : 'block';">🌐 すべての地区</div>
+                <div class="multi-select-dropdown" id="filter-area-dropdown">
+                    <!-- JSで動的に追加されます -->
+                </div>
+            </div>
+
             <select id="filter-status"><option value="">🟢 すべての状態</option><option value="要点検">🔴 要点検のみ</option><option value="点検済">🔵 点検済のみ</option></select>
             <select id="filter-error"><option value="">⚠️ 異常の種類 (すべて)</option><option value="異常あり">🚨 何らかの異常あり</option><option value="なし">✅ 異常なし</option><option value="蓋開閉困難">🔧 蓋開閉困難</option><option value="土没">🍂 土没</option><option value="水没">💧 水没</option><option value="バルブ開閉不良">⚙️ バルブ開閉不良</option><option value="道路陥没（大）">🕳️ 道路陥没（大）</option><option value="道路陥没（小）">🕳️ 道路陥没（小）</option><option value="塗装剥がれ">🎨 塗装剥がれ</option><option value="塗装間違い">❌ 塗装間違い</option><option value="その他">❓ その他</option></select>
             <select id="filter-paint"><option value="">🎨 塗装レベル (すべて)</option><option value="100%">100%</option><option value="50%">50%</option><option value="0%">0%</option></select>
@@ -369,6 +384,15 @@
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyRh8CnDChdCeX4_YAyezsgJrKLRrfSy3ualhPbtl8lKbXV66K_5p5QUMpiohyI1zD6sQ/exec";
         const EDIT_MODE_PIN = "1190"; 
 
+        // 🌟 ドロップダウン外クリックで閉じる処理 🌟
+        document.addEventListener('click', function(e) {
+            let container = document.getElementById('filter-area-container');
+            let dropdown = document.getElementById('filter-area-dropdown');
+            if (container && dropdown && !container.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
         let allData = []; let currentFilteredData = []; let appMode = 'view'; 
         let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); map.addLayer(markersGroup);
         let isTracking = false; let currentLocationMarker = null; let pendingMode = null; 
@@ -421,17 +445,45 @@
                 document.getElementById('data-update-date').innerText = `📅 データ最終更新日: ${result.updateDate || "未設定"}`;
                 
                 let areas = [...new Set(allData.map(row => row["地区"]).filter(a => a))].sort();
-                let areaSelect = document.getElementById('filter-area');
+                
+                let areaDropdown = document.getElementById('filter-area-dropdown');
+                areaDropdown.innerHTML = '<label><input type="checkbox" id="area-all-checkbox" checked onchange="toggleAllAreas(this.checked)"> <b>🌐 すべて選択</b></label>';
+                areas.forEach(area => { 
+                    areaDropdown.innerHTML += `<label><input type="checkbox" class="area-checkbox" value="${area}" checked onchange="updateAreaBtnText()"> ${area}</label>`;
+                });
+                updateAreaBtnText();
+
                 let testAreaSelect = document.getElementById('test-area-select');
-                areaSelect.innerHTML = '<option value="">🌐 すべての地区</option>';
                 testAreaSelect.innerHTML = '<option value="">すべての地区（広域テスト）</option>';
                 areas.forEach(area => { 
-                    areaSelect.appendChild(new Option(area, area)); testAreaSelect.appendChild(new Option(area, area));
+                    testAreaSelect.appendChild(new Option(area, area));
                 });
                 currentFilteredData = [...allData];
                 if (pendingMode) { document.getElementById('loading').style.display = 'none'; enterApp(pendingMode); }
             } catch (error) { showMessage("データの読み込みに失敗。URLを確認してください。"); document.getElementById('loading').innerText = "❌ エラー"; }
         }
+
+        window.toggleAllAreas = function(isChecked) {
+            document.querySelectorAll('.area-checkbox').forEach(cb => cb.checked = isChecked);
+            updateAreaBtnText();
+        };
+
+        window.updateAreaBtnText = function() {
+            let checkboxes = document.querySelectorAll('.area-checkbox');
+            let checkedBoxes = document.querySelectorAll('.area-checkbox:checked');
+            let btn = document.getElementById('filter-area-btn');
+            document.getElementById('area-all-checkbox').checked = (checkboxes.length === checkedBoxes.length);
+            
+            if (checkedBoxes.length === checkboxes.length) {
+                btn.innerText = '🌐 すべての地区';
+            } else if (checkedBoxes.length === 0) {
+                btn.innerText = '⚠️ 地区未選択';
+            } else if (checkedBoxes.length === 1) {
+                btn.innerText = '📍 ' + checkedBoxes[0].value;
+            } else {
+                btn.innerText = `📍 ${checkedBoxes.length}地区を選択中`;
+            }
+        };
 
         function isPublicWater(suiriNumber) {
             if (!suiriNumber || !suiriNumber.includes("-")) return true;
@@ -775,13 +827,17 @@
         window.printReport = function() { document.getElementById('print-date').innerText = `${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日`; window.print(); };
 
         function execSearch(skipFit) {
-            let selectedCategory = document.getElementById('filter-category').value; let selectedArea = document.getElementById('filter-area').value; let selectedStatus = document.getElementById('filter-status').value; 
+            let selectedCategory = document.getElementById('filter-category').value; 
+            let selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value);
+            let isAllAreas = document.querySelectorAll('.area-checkbox').length === selectedAreas.length;
+            let selectedStatus = document.getElementById('filter-status').value; 
             let selectedError = document.getElementById('filter-error').value; let selectedPaint = document.getElementById('filter-paint').value; 
             let keyword = document.getElementById('search-text').value.trim().toLowerCase(); let filterDateVal = document.getElementById('filter-date').value; let filterDateCond = document.getElementById('filter-date-cond').value; let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
             
             currentFilteredData = allData.filter(row => {
                 let isPublic = isPublicWater(row["水利番号"]); let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic);
-                let matchArea = (selectedArea === "") || (row["地区"] === selectedArea); let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
+                let matchArea = isAllAreas || selectedAreas.includes(row["地区"]); 
+                let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
                 let matchError = true; if (selectedError === "異常あり") { matchError = (row["異常の種類"] !== "" && row["異常の種類"] !== "なし"); } else if (selectedError !== "") { matchError = (row["異常の種類"] === selectedError); }
                 let matchPaint = (selectedPaint === "") || (row["塗装レベル"] === selectedPaint);
                 let matchDate = true; if (filterDateTime && row["前回調査日"]) { let rowDateTime = parseLocalDate(row["前回調査日"]).getTime(); if (filterDateCond === "before") matchDate = (rowDateTime <= filterDateTime); else if (filterDateCond === "after") matchDate = (rowDateTime >= filterDateTime); }
@@ -792,14 +848,34 @@
             if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none';
         }
         document.getElementById('search-btn').addEventListener('click', function() { execSearch(false); });
-        document.getElementById('reset-btn').addEventListener('click', function() { document.getElementById('filter-category').value = ""; document.getElementById('filter-area').value = ""; document.getElementById('filter-status').value = ""; document.getElementById('filter-error').value = ""; document.getElementById('filter-paint').value = ""; document.getElementById('filter-date').value = ""; document.getElementById('filter-date-cond').value = "before"; document.getElementById('search-text').value = ""; execSearch(false); });
-        document.getElementById('survey-btn').addEventListener('click', function() { document.getElementById('filter-category').value = "公設"; document.getElementById('filter-area').value = ""; document.getElementById('filter-status').value = ""; document.getElementById('filter-error').value = ""; document.getElementById('filter-paint').value = ""; document.getElementById('filter-date').value = `${new Date().getFullYear()}-05-01`; document.getElementById('filter-date-cond').value = "before"; document.getElementById('search-text').value = ""; document.getElementById('search-panel').style.display = 'flex'; execSearch(false); });
+        document.getElementById('reset-btn').addEventListener('click', function() { 
+            document.getElementById('filter-category').value = ""; 
+            toggleAllAreas(true); // 地区選択をリセット
+            document.getElementById('filter-status').value = ""; 
+            document.getElementById('filter-error').value = ""; 
+            document.getElementById('filter-paint').value = ""; 
+            document.getElementById('filter-date').value = ""; 
+            document.getElementById('filter-date-cond').value = "before"; 
+            document.getElementById('search-text').value = ""; 
+            execSearch(false); 
+        });
+        document.getElementById('survey-btn').addEventListener('click', function() { 
+            document.getElementById('filter-category').value = "公設"; 
+            toggleAllAreas(true); // 地区選択をリセット
+            document.getElementById('filter-status').value = ""; 
+            document.getElementById('filter-error').value = ""; 
+            document.getElementById('filter-paint').value = ""; 
+            document.getElementById('filter-date').value = `${new Date().getFullYear()}-05-01`; 
+            document.getElementById('filter-date-cond').value = "before"; 
+            document.getElementById('search-text').value = ""; 
+            document.getElementById('search-panel').style.display = 'flex'; 
+            execSearch(false); 
+        });
         document.getElementById('gps-btn').addEventListener('click', function() { let btn = document.getElementById('gps-btn'); if (isTracking) { isTracking = false; map.stopLocate(); btn.classList.remove('tracking'); btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; } else { isTracking = true; btn.classList.add('tracking'); btn.innerHTML = '<span class="btn-icon">🟢</span><span class="btn-text pc-only">追従中</span><span class="btn-text sp-only">追従中</span>'; map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true}); } });
         map.on('locationfound', function(e) { if (currentLocationMarker) map.removeLayer(currentLocationMarker); currentLocationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: isTracking ? "#28a745" : "#007bff", color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9 }).addTo(map).bindPopup("<b>現在地</b>"); });
         map.on('dragstart', function() { if (isTracking) { isTracking = false; map.stopLocate(); let btn = document.getElementById('gps-btn'); btn.classList.remove('tracking'); btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; } });
     </script>
 </body>
 </html>
-
 
 ```
