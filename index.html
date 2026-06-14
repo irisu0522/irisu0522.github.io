@@ -50,24 +50,26 @@
 
         .btn-search { background-color: #f59e0b; }
         .btn-survey { background-color: #dc3545; }
+        .btn-test { background-color: #e83e8c; }
         .btn-list { background-color: #17a2b8; }
         .btn-today { background-color: #8b5cf6; }
         .btn-gps { background-color: #007bff; }
         .btn-gps.tracking { background-color: #28a745 !important; box-shadow: 0 0 10px #28a745; }
         
-        .marker-hydrant { width: 24px !important; height: 24px !important; margin-left: -12px !important; margin-top: -12px !important; display: flex; align-items: center; justify-content: center; background: transparent; }
+        /* マーカーの中心位置を正確に合わせる設定 */
+        .marker-hydrant { display: flex; align-items: center; justify-content: center; background: transparent; }
         .marker-hydrant::after { content: ''; width: 11px; height: 11px; background-color: #ff3b30; border: 1.5px solid #ffffff; border-radius: 50%; box-shadow: 0 0 3px rgba(0,0,0,0.4); }
         .marker-hydrant.alert-marker::after { border: 1.5px solid #ffcc00; box-shadow: 0 0 5px #ff3b30; animation: pulse 1.5s infinite; }
-        .marker-tank { width: 24px !important; height: 24px !important; margin-left: -12px !important; margin-top: -12px !important; display: flex; align-items: center; justify-content: center; background: transparent; }
+        .marker-tank { display: flex; align-items: center; justify-content: center; background: transparent; }
         .marker-tank::after { content: ''; width: 10px; height: 10px; background-color: #007aff; border: 1.5px solid #ffffff; border-radius: 2px; box-shadow: 0 0 3px rgba(0,0,0,0.4); }
         .marker-tank.alert-marker::after { border: 1.5px solid #ffcc00; box-shadow: 0 0 5px #007aff; animation: pulse 1.5s infinite; }
 
         /* 🔥 火災現場マーカー */
-        .marker-fire { font-size: 34px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6)); display: flex; align-items: center; justify-content: center; margin-left: -17px !important; margin-top: -17px !important; animation: bounce 0.6s infinite alternate; }
-        @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-8px); } }
+        .marker-fire { font-size: 34px; line-height: 34px; text-align: center; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6)); animation: bounce 0.6s infinite alternate; transform-origin: bottom center; }
+        @keyframes bounce { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(-8px) scale(1.05); } }
 
         /* ❌ ミスマーカー＆未発見マーカー */
-        .marker-miss { color: #dc3545; font-size: 20px; text-shadow: 0 0 4px white; display: flex; align-items: center; justify-content: center; margin-left: -10px !important; margin-top: -10px !important; }
+        .marker-miss { color: #dc3545; font-size: 20px; line-height: 20px; text-shadow: 0 0 4px white; display: flex; align-items: center; justify-content: center; }
         .missed-marker { opacity: 0.3 !important; filter: grayscale(100%); }
 
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
@@ -136,6 +138,7 @@
 </head>
 <body>
     
+    <!-- カスタムメッセージボックス -->
     <div id="custom-alert" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:10006; align-items:center; justify-content:center;">
         <div style="background:white; padding:20px; border-radius:10px; width:80%; max-width:300px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
             <p id="custom-alert-msg" style="font-size:14px; font-weight:bold; color:#334155; line-height:1.5; margin-bottom:20px;"></p>
@@ -426,7 +429,9 @@
                 let isAlert = (row["要調査"] === "要点検");
                 let className = (row["水利種別"] === "消火栓") ? "marker-hydrant" : "marker-tank";
                 if (isAlert) className += " alert-marker";
-                let customIcon = L.divIcon({ className: className });
+                
+                // アイコンの中心を正確に座標に合わせる指定
+                let customIcon = L.divIcon({ className: className, iconSize: [24, 24], iconAnchor: [12, 12] });
                 
                 let popupContent = `
                     <div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>
@@ -537,7 +542,8 @@
             document.getElementById('test-instruction').innerText = `地図上の「ここだ！」と思う場所をタップしてください`;
             
             if(currentFireMarker) map.removeLayer(currentFireMarker);
-            currentFireMarker = L.marker([q.fireLat, q.fireLng], {icon: L.divIcon({ className: 'marker-fire', html: '🔥' })}).addTo(map);
+            // 🔥アンカーポイントを固定
+            currentFireMarker = L.marker([q.fireLat, q.fireLng], {icon: L.divIcon({ className: 'marker-fire', html: '🔥', iconSize: [34, 34], iconAnchor: [17, 34] })}).addTo(map);
             map.setView([q.fireLat, q.fireLng], 16); 
             setTimeout(() => { isTestActive = true; }, 500);
         }
@@ -553,7 +559,7 @@
             if(isCorrect) testCorrectCount++; testTotalError += dist;
 
             let userMarker = L.circleMarker(e.latlng, {radius: 8, color: '#ffffff', fillColor: '#3b82f6', fillOpacity: 1, weight: 2}).addTo(map);
-            let ansIcon = L.divIcon({ className: (q.targetType === "消火栓") ? 'marker-hydrant' : 'marker-tank' });
+            let ansIcon = L.divIcon({ className: (q.targetType === "消火栓") ? 'marker-hydrant' : 'marker-tank', iconSize: [24, 24], iconAnchor: [12, 12] });
             let ansMarker = L.marker(targetLatlng, {icon: ansIcon}).addTo(map);
             let routeLine = L.polyline([[q.fireLat, q.fireLng], targetLatlng], {color: '#f59e0b', weight: 4, opacity: 0.5}).addTo(map);
             let errLine = L.polyline([e.latlng, targetLatlng], {color: isCorrect ? '#28a745' : '#dc3545', dashArray: '5, 5', weight: 3}).addTo(map);
@@ -610,12 +616,12 @@
 
             if (hitIndex !== -1) {
                 let q = testExcavatePool[hitIndex]; q.excavated = true; testHitCount++;
-                let ansIcon = L.divIcon({ className: (q["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank' });
+                let ansIcon = L.divIcon({ className: (q["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank', iconSize: [24, 24], iconAnchor: [12, 12] });
                 testElements.push(L.marker([q["緯度"], q["経度"]], {icon: ansIcon}).addTo(map));
                 showFeedback(true, `⭕️ 発見！<br><span style="font-size:16px;">${q["水利種別"]} (${q["水利番号"]})</span>`);
             } else {
                 testMissCount++;
-                testElements.push(L.marker(e.latlng, {icon: L.divIcon({ className: 'marker-miss', html: '❌', iconSize: [20,20] })}).addTo(map));
+                testElements.push(L.marker(e.latlng, {icon: L.divIcon({ className: 'marker-miss', html: '❌', iconSize: [20, 20], iconAnchor: [10, 10] })}).addTo(map));
                 showFeedback(false, `❌ そこにはない！<br><span style="font-size:16px;">お手つき</span>`);
             }
 
@@ -633,7 +639,7 @@
             
             // 答え合わせ（未発見を薄く表示）
             testExcavatePool.forEach(q => {
-                if (!q.excavated) testElements.push(L.marker([q["緯度"], q["経度"]], {icon: L.divIcon({ className: ((q["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank') + ' missed-marker' })}).addTo(map));
+                if (!q.excavated) testElements.push(L.marker([q["緯度"], q["経度"]], {icon: L.divIcon({ className: ((q["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank') + ' missed-marker', iconSize: [24, 24], iconAnchor: [12, 12] })}).addTo(map));
             });
 
             showResultModal("発掘率", score, `${testExcavatePool.length}個中 ${testHitCount}個 発見！`, `お手つき: ${testMissCount} 回<br><br>${isCleared ? "🏆 完全制覇！このエリアの水利配置は完璧です！" : "💀 お手つき上限に達しました...。配置を覚え直しましょう！"}`);
