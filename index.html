@@ -201,7 +201,7 @@
     <!-- 🎓 テスト設定画面モーダル（トリプルタップの隠し機能） -->
     <div id="test-setup-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:10001; align-items:center; justify-content:center;">
         <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width:350px; text-align:center;">
-            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 秘密の効果測定</h2>
+            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓効果測定</h2>
             
             <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <button id="btn-mode-nearest" onclick="selectTestMode('nearest')" style="flex:1; padding:10px 5px; background:#e83e8c; color:white; border:none; border-radius:5px; font-weight:bold; font-size:13px; transition:0.2s;">🔥 周辺5ヶ所当て</button>
@@ -260,6 +260,9 @@
         <div id="test-instruction" style="font-size:12px; color:#f59e0b; font-weight:bold;"></div>
         <button onclick="quitTestMode()" style="position:absolute; right:15px; top:12px; background:rgba(255,255,255,0.2); border:none; color:white; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">やめる</button>
     </div>
+
+    <!-- 🎓 テスト：判定フィードバック トースト -->
+    <div id="test-feedback" style="display:none; position:fixed; top:100px; left:50%; transform:translateX(-50%); z-index:10005; padding:15px 30px; border-radius:10px; font-size:20px; font-weight:bold; text-align:center; color:white; pointer-events:none; transition: opacity 0.2s; box-shadow:0 10px 30px rgba(0,0,0,0.3); white-space:nowrap;"></div>
 
     <!-- 🎓 テスト結果発表モーダル -->
     <div id="test-result-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:10003; align-items:center; justify-content:center;">
@@ -400,7 +403,7 @@
         // 🌟 テストモード管理変数 🌟
         let currentTestModeType = 'nearest'; 
         let testQuestions = []; let currentTestIndex = 0; let testCorrectCount = 0; let testTotalError = 0; 
-        let isTestActive = false; let testElements = []; let currentFireMarker = null;
+        let isTestActive = false; let testElements = []; let currentFireMarker = null; let currentFireCircle = null;
         
         let testExcavatePool = []; let testHitCount = 0; let testMissCount = 0; let testMissLimit = 5;
         let nearestTotalTargets = 0; let userTapsForNearest = [];
@@ -603,6 +606,7 @@
             }
             
             currentTestIndex = 0; testCorrectCount = 0; testTotalError = 0; isTestActive = false; testElements = [];
+            if(currentFireCircle) { map.removeLayer(currentFireCircle); currentFireCircle = null; }
             startTestUI();
             map.on('click', onMapClickForNearest);
             showNextNearestQuestion();
@@ -619,8 +623,15 @@
             document.getElementById('test-instruction').innerText = `現在：0 / ${q.targets.length} ヶ所 指定完了`;
             
             if(currentFireMarker) map.removeLayer(currentFireMarker);
+            if(currentFireCircle) map.removeLayer(currentFireCircle);
+            
             currentFireMarker = L.marker([q.fireLat, q.fireLng], {
                 icon: L.divIcon({ className: 'marker-fire-wrapper', html: '<div class="marker-fire-anim">🔥</div>', iconSize: [34, 34], iconAnchor: [17, 34] })
+            }).addTo(map);
+            
+            // 🌟 200mの円（サークル）を描画 🌟
+            currentFireCircle = L.circle([q.fireLat, q.fireLng], {
+                radius: 200, color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.1, dashArray: '5, 5'
             }).addTo(map);
             
             map.setView([q.fireLat, q.fireLng], 16); 
@@ -789,6 +800,7 @@
 
         window.quitTestMode = function() {
             if(currentFireMarker) { map.removeLayer(currentFireMarker); currentFireMarker = null; }
+            if(currentFireCircle) { map.removeLayer(currentFireCircle); currentFireCircle = null; }
             map.off('click', onMapClickForNearest); map.off('click', onMapClickForExcavate);
             testElements.forEach(el => map.removeLayer(el)); testElements = [];
             document.getElementById('test-header').style.display = 'none'; document.getElementById('test-result-modal').style.display = 'none'; document.getElementById('test-setup-modal').style.display = 'none';
@@ -877,5 +889,6 @@
     </script>
 </body>
 </html>
+
 
 ```
