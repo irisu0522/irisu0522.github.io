@@ -58,7 +58,6 @@
 
         .btn-search { background-color: #f59e0b; }
         .btn-survey { background-color: #dc3545; }
-        .btn-test { background-color: #e83e8c; }
         .btn-list { background-color: #17a2b8; }
         .btn-today { background-color: #8b5cf6; }
         .btn-gps { background-color: #007bff; }
@@ -335,6 +334,14 @@
             document.getElementById('custom-alert').style.display = 'flex';
         }
 
+        // 🌟 復活させた最重要の計算関数（検索用） 🌟
+        function parseLocalDate(dateStr) {
+            if (!dateStr || dateStr === "00年00月00日" || dateStr === "0") return new Date(2000, 0, 1);
+            let s = String(dateStr).trim(); const parts = s.split(/[-/]/);
+            if (parts.length >= 3) return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            let d = new Date(s); return isNaN(d.getTime()) ? new Date(2000, 0, 1) : d;
+        }
+
         const googleRoad = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ja&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 21 });
         const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=ja&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 21 });
         const gsiStd = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>", maxZoom: 18 });
@@ -345,7 +352,6 @@
         const baseMaps = { "Google マップ": googleRoad, "Google 航空写真": googleSatellite, "地理院地図 (標準)": gsiStd, "地理院地図 (淡色：ピンが見易い)": gsiPale, "地理院 航空写真": gsiPhoto };
         L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
-        // 🌟 隠しコマンド（凡例の【トリプルタップ】）実装 🌟
         const legend = L.control({position: 'bottomleft'});
         legend.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'info legend');
@@ -384,7 +390,6 @@
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyRh8CnDChdCeX4_YAyezsgJrKLRrfSy3ualhPbtl8lKbXV66K_5p5QUMpiohyI1zD6sQ/exec";
         const EDIT_MODE_PIN = "1190"; 
 
-        // 🌟 ドロップダウン外クリックで閉じる処理 🌟
         document.addEventListener('click', function(e) {
             let container = document.getElementById('filter-area-container');
             let dropdown = document.getElementById('filter-area-dropdown');
@@ -397,7 +402,6 @@
         let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); map.addLayer(markersGroup);
         let isTracking = false; let currentLocationMarker = null; let pendingMode = null; 
 
-        // 🌟 テストモード管理変数 🌟
         let currentTestModeType = 'nearest'; 
         let testQuestions = []; let currentTestIndex = 0; let testCorrectCount = 0; let testTotalError = 0; 
         let isTestActive = false; let testElements = []; let currentFireMarker = null; let currentFireCircle = null;
@@ -436,7 +440,6 @@
             else { panel.style.display = 'flex'; this.classList.add('tracking'); }
         });
 
-        // 🌟 【修正】地区の複数選択用データを正しくセット 🌟
         async function loadData() {
             try {
                 let fetchUrl = `${GAS_API_URL}?action=get_data&t=${Date.now()}`;
@@ -473,8 +476,9 @@
             let checkboxes = document.querySelectorAll('.area-checkbox');
             let checkedBoxes = document.querySelectorAll('.area-checkbox:checked');
             let btn = document.getElementById('filter-area-btn');
-            document.getElementById('area-all-checkbox').checked = (checkboxes.length === checkedBoxes.length);
-            
+            if(document.getElementById('area-all-checkbox')) {
+                document.getElementById('area-all-checkbox').checked = (checkboxes.length === checkedBoxes.length);
+            }
             if (checkedBoxes.length === checkboxes.length) {
                 btn.innerText = '🌐 すべての地区';
             } else if (checkedBoxes.length === 0) {
@@ -493,7 +497,7 @@
 
         function renderMarkers(dataToRender, skipFit) {
             markersGroup.clearLayers(); 
-            if (appMode === 'test') return; // テスト中はピン全消去
+            if (appMode === 'test') return; 
 
             dataToRender.forEach(function(row) {
                 if (!row["緯度"] || !row["経度"]) return;
@@ -568,15 +572,13 @@
             else initExcavateTest();
         };
 
-        // 🌟 🔥【モード1：まとめ答え合わせ版】半径200m以内の5ヶ所指定テスト 🌟
         function initNearestTest() {
             let area = document.getElementById('test-area-select').value;
             let count = parseInt(document.getElementById('test-count-select').value);
             let pool = allData.filter(row => (area === "" || row["地区"] === area) && row["緯度"] && row["経度"]);
             if(pool.length < 5) return showMessage(`この地区には水利が ${pool.length} 件しかありません。最低5件以上のデータが必要です。`);
 
-            testQuestions = [];
-            nearestTotalTargets = 0; 
+            testQuestions = []; nearestTotalTargets = 0; 
             
             for(let i=0; i<count; i++) {
                 let base = pool[Math.floor(Math.random() * pool.length)];
@@ -584,7 +586,6 @@
                 let fireLng = parseFloat(base["経度"]) + (Math.random() - 0.5) * 0.002; 
                 let fireLatLng = L.latLng(fireLat, fireLng);
                 
-                // 火点から半径200m以内の水利を取得
                 let inRadius = pool.map(r => {
                     return { row: r, dist: map.distance(fireLatLng, L.latLng(r["緯度"], r["経度"])) };
                 }).filter(r => r.dist <= 200).sort((a, b) => a.dist - b.dist);
@@ -626,9 +627,9 @@
                 icon: L.divIcon({ className: 'marker-fire-wrapper', html: '<div class="marker-fire-anim">🔥</div>', iconSize: [34, 34], iconAnchor: [17, 34] })
             }).addTo(map);
             
-            // 🌟 200mの円（サークル）を描画 🌟
+            // 🌟 半径200mの円（サークル）を赤い半透明で描画 🌟
             currentFireCircle = L.circle([q.fireLat, q.fireLng], {
-                radius: 200, color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.1, dashArray: '5, 5'
+                radius: 200, color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.15, dashArray: '5, 5'
             }).addTo(map);
             
             map.setView([q.fireLat, q.fireLng], 16); 
@@ -689,14 +690,12 @@
             let allLatLngs = [...userTaps, ...q.targets.map(t => L.latLng(t.row["緯度"], t.row["経度"])), L.latLng(q.fireLat, q.fireLng)];
             map.fitBounds(L.latLngBounds(allLatLngs), {padding: [50,50], maxZoom: 18});
             
-            // 🌟 答え合わせ完了！タップするまで結果が残る 🌟
-            document.getElementById('test-instruction').innerHTML = `<span style="color:#10b981; font-size:14px; background:#fff; padding:2px 8px; border-radius:10px;">${q.targets.length}ヶ所中 ${roundCorrect}ヶ所正解！ 地図をタップして次へ👉</span>`;
+            document.getElementById('test-instruction').innerHTML = `<span style="color:#10b981; font-size:14px; background:#fff; padding:2px 8px; border-radius:10px; cursor:pointer;">${q.targets.length}ヶ所中 ${roundCorrect}ヶ所正解！ 地図をタップして次へ👉</span>`;
             
             setTimeout(() => {
                 map.once('click', () => {
                     testElements.forEach(el => map.removeLayer(el)); testElements = [];
-                    currentTestIndex++;
-                    showNextNearestQuestion();
+                    currentTestIndex++; showNextNearestQuestion();
                 });
             }, 800);
         }
@@ -708,7 +707,6 @@
             showResultModal("総合正答率", score, `計 ${nearestTotalTargets}ヶ所中 ${testCorrectCount}ヶ所 正解！`, `平均誤差: ${avgError} メートル<br><br>${score >= 80 ? "🏆 完璧です！現場到着時の水利確保はあなたに任せます！" : score >= 50 ? "👍 素晴らしい！さらに直近水利の記憶を固めましょう！" : "💪 伸びしろしかありません！何度も挑戦して記憶を叩き込みましょう！"}`);
         }
 
-        // 🌟 🗺️【モード2】エリア内水利全発掘テスト ロジック 🌟
         function initExcavateTest() {
             let bounds = map.getBounds();
             testExcavatePool = allData.filter(row => row["緯度"] && row["経度"] && bounds.contains(L.latLng(row["緯度"], row["経度"])));
@@ -750,16 +748,11 @@
             }
 
             updateExcavateHeader();
-            
-            // 🌟 すぐに消えずに、タップで結果発表へ進むように変更 🌟
             if (testHitCount >= testExcavatePool.length || testMissCount >= testMissLimit) { 
                 isTestActive = false; 
                 let isCleared = testHitCount >= testExcavatePool.length;
-                document.getElementById('test-instruction').innerHTML = `<span style="color:#10b981; font-size:14px; background:#fff; padding:2px 8px; border-radius:10px;">${isCleared ? '完全制覇！' : 'ゲームオーバー！'} 地図をタップして結果発表へ👉</span>`;
-                
-                setTimeout(() => {
-                    map.once('click', () => showExcavateResult(isCleared));
-                }, 1000);
+                document.getElementById('test-instruction').innerHTML = `<span style="color:#10b981; font-size:14px; background:#fff; padding:2px 8px; border-radius:10px; cursor:pointer;">${isCleared ? '完全制覇！' : 'ゲームオーバー！'} 地図をタップして結果発表へ👉</span>`;
+                setTimeout(() => { map.once('click', () => showExcavateResult(isCleared)); }, 1000);
             }
         }
 
@@ -774,13 +767,13 @@
             showResultModal("発掘率", score, `${testExcavatePool.length}個中 ${testHitCount}個 発見！`, `お手つき: ${testMissCount} 回<br><br>${isCleared ? "🏆 完全制覇！このエリアの水利配置は完璧です！" : "💀 お手つき上限に達しました...。配置を覚え直しましょう！"}`);
         }
 
-        // 🌟 テスト共通UI操作 🌟
         function startTestUI() {
             appMode = 'test';
             document.getElementById('test-setup-modal').style.display = 'none'; document.getElementById('main-side-btns').style.display = 'none'; document.getElementById('top-info-container').style.display = 'none';
             document.getElementById('test-header').style.display = 'block';
-            renderMarkers([], true); // ピン全消去
+            renderMarkers([], true); 
         }
+
         function showResultModal(label, score, correctText, msgText) {
             document.getElementById('test-score-label').innerText = label;
             document.getElementById('test-score-display').innerText = `${score}%`; document.getElementById('test-score-display').style.color = score >= 80 ? '#e83e8c' : '#f59e0b';
@@ -799,7 +792,7 @@
             execSearch(true); map.locate({setView: true, maxZoom: 17});
         };
 
-        // --- 🌟 【修正完了】通常の検索・複数選択機能 🌟 ---
+        // --- 通常の検索処理 ---
         function updateListTable(data) {
             let tbody = document.getElementById('table-body'); tbody.innerHTML = ''; document.getElementById('list-count').innerText = data.length; document.getElementById('table-count').innerText = data.length;
             data.forEach(row => {
@@ -830,21 +823,16 @@
 
         function execSearch(skipFit) {
             let selectedCategory = document.getElementById('filter-category').value; 
-            
-            // 🌟 複数選択した地区の判定ロジック 🌟
             let selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value);
             let isAllAreas = document.querySelectorAll('.area-checkbox').length === selectedAreas.length;
-            
             let selectedStatus = document.getElementById('filter-status').value; 
             let selectedError = document.getElementById('filter-error').value; let selectedPaint = document.getElementById('filter-paint').value; 
-            let keyword = document.getElementById('search-text').value.trim().toLowerCase(); let filterDateVal = document.getElementById('filter-date').value; let filterDateCond = document.getElementById('filter-date-cond').value; let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
+            let keyword = document.getElementById('search-text').value.trim().toLowerCase(); let filterDateVal = document.getElementById('filter-date').value; let filterDateCond = document.getElementById('filter-date-cond').value; 
+            let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
             
             currentFilteredData = allData.filter(row => {
                 let isPublic = isPublicWater(row["水利番号"]); let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic);
-                
-                // 🌟 複数地区のいずれかに含まれているか判定 🌟
                 let matchArea = isAllAreas || selectedAreas.includes(row["地区"]); 
-                
                 let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
                 let matchError = true; if (selectedError === "異常あり") { matchError = (row["異常の種類"] !== "" && row["異常の種類"] !== "なし"); } else if (selectedError !== "") { matchError = (row["異常の種類"] === selectedError); }
                 let matchPaint = (selectedPaint === "") || (row["塗装レベル"] === selectedPaint);
@@ -858,27 +846,14 @@
         document.getElementById('search-btn').addEventListener('click', function() { execSearch(false); });
         
         document.getElementById('reset-btn').addEventListener('click', function() { 
-            document.getElementById('filter-category').value = ""; 
-            toggleAllAreas(true); // 🌟 リセット時は「すべて選択」に戻す 🌟
-            document.getElementById('filter-status').value = ""; 
-            document.getElementById('filter-error').value = ""; 
-            document.getElementById('filter-paint').value = ""; 
-            document.getElementById('filter-date').value = ""; 
-            document.getElementById('filter-date-cond').value = "before"; 
-            document.getElementById('search-text').value = ""; 
+            document.getElementById('filter-category').value = ""; toggleAllAreas(true);
+            document.getElementById('filter-status').value = ""; document.getElementById('filter-error').value = ""; document.getElementById('filter-paint').value = ""; document.getElementById('filter-date').value = ""; document.getElementById('filter-date-cond').value = "before"; document.getElementById('search-text').value = ""; 
             execSearch(false); 
         });
         
         document.getElementById('survey-btn').addEventListener('click', function() { 
-            document.getElementById('filter-category').value = "公設"; 
-            toggleAllAreas(true); // 🌟 全数調査時は「すべて選択」に戻す 🌟
-            document.getElementById('filter-status').value = ""; 
-            document.getElementById('filter-error').value = ""; 
-            document.getElementById('filter-paint').value = ""; 
-            document.getElementById('filter-date').value = `${new Date().getFullYear()}-05-01`; 
-            document.getElementById('filter-date-cond').value = "before"; 
-            document.getElementById('search-text').value = ""; 
-            document.getElementById('search-panel').style.display = 'flex'; 
+            document.getElementById('filter-category').value = "公設"; toggleAllAreas(true); 
+            document.getElementById('filter-status').value = ""; document.getElementById('filter-error').value = ""; document.getElementById('filter-paint').value = ""; document.getElementById('filter-date').value = `${new Date().getFullYear()}-05-01`; document.getElementById('filter-date-cond').value = "before"; document.getElementById('search-text').value = ""; document.getElementById('search-panel').style.display = 'flex'; 
             execSearch(false); 
         });
         
