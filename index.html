@@ -201,7 +201,7 @@
     <!-- 🎓 テスト設定画面モーダル（トリプルタップの隠し機能） -->
     <div id="test-setup-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:10001; align-items:center; justify-content:center;">
         <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width:350px; text-align:center;">
-            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓効果測定</h2>
+            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 秘密の効果測定</h2>
             
             <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <button id="btn-mode-nearest" onclick="selectTestMode('nearest')" style="flex:1; padding:10px 5px; background:#e83e8c; color:white; border:none; border-radius:5px; font-weight:bold; font-size:13px; transition:0.2s;">🔥 周辺5ヶ所当て</button>
@@ -260,9 +260,6 @@
         <div id="test-instruction" style="font-size:12px; color:#f59e0b; font-weight:bold;"></div>
         <button onclick="quitTestMode()" style="position:absolute; right:15px; top:12px; background:rgba(255,255,255,0.2); border:none; color:white; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">やめる</button>
     </div>
-
-    <!-- 🎓 テスト：判定フィードバック トースト -->
-    <div id="test-feedback" style="display:none; position:fixed; top:100px; left:50%; transform:translateX(-50%); z-index:10005; padding:15px 30px; border-radius:10px; font-size:20px; font-weight:bold; text-align:center; color:white; pointer-events:none; transition: opacity 0.2s; box-shadow:0 10px 30px rgba(0,0,0,0.3); white-space:nowrap;"></div>
 
     <!-- 🎓 テスト結果発表モーダル -->
     <div id="test-result-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:10003; align-items:center; justify-content:center;">
@@ -361,21 +358,21 @@
                 </div>
             `;
             
-            L.DomEvent.disableClickPropagation(div); // 地図へのクリック貫通を防ぐ
+            L.DomEvent.disableClickPropagation(div); 
             let tapCount = 0;
             let lastTap = 0;
             div.addEventListener('click', function(e) {
                 let now = Date.now();
                 if (now - lastTap < 500) { 
                     tapCount++;
-                    if (tapCount === 3) { // 🌟 3回連続タップで起動！
+                    if (tapCount === 3) { 
                         if (appMode !== 'test') {
                             document.getElementById('test-setup-modal').style.display = 'flex';
                         }
                         tapCount = 0;
                     }
                 } else {
-                    tapCount = 1; // 間隔が空いたらリセットして1から
+                    tapCount = 1; 
                 }
                 lastTap = now;
             });
@@ -439,6 +436,7 @@
             else { panel.style.display = 'flex'; this.classList.add('tracking'); }
         });
 
+        // 🌟 【修正】地区の複数選択用データを正しくセット 🌟
         async function loadData() {
             try {
                 let fetchUrl = `${GAS_API_URL}?action=get_data&t=${Date.now()}`;
@@ -578,7 +576,7 @@
             if(pool.length < 5) return showMessage(`この地区には水利が ${pool.length} 件しかありません。最低5件以上のデータが必要です。`);
 
             testQuestions = [];
-            nearestTotalTargets = 0; // 全問でのターゲット総数
+            nearestTotalTargets = 0; 
             
             for(let i=0; i<count; i++) {
                 let base = pool[Math.floor(Math.random() * pool.length)];
@@ -593,7 +591,6 @@
                 
                 let targetCount = Math.min(5, inRadius.length);
                 if (targetCount === 0) {
-                    // 万が一200m以内になければ一番近い5つにする
                     inRadius = pool.map(r => {
                         return { row: r, dist: map.distance(fireLatLng, L.latLng(r["緯度"], r["経度"])) };
                     }).sort((a, b) => a.dist - b.dist);
@@ -649,7 +646,6 @@
             
             document.getElementById('test-instruction').innerText = `現在：${userTapsForNearest.length} / ${q.targets.length} ヶ所 指定完了`;
             
-            // 🌟 規定回数タップしたら自動で答え合わせへ 🌟
             if(userTapsForNearest.length >= q.targets.length) {
                 isTestActive = false; 
                 showNearestAnswers(q, userTapsForNearest);
@@ -660,7 +656,6 @@
             let isHardMode = document.getElementById('test-hard-mode').checked;
             let limitDist = isHardMode ? 10 : 20;
             
-            // タップと正解を最も近い順にマッチング
             let pairs = [];
             for(let i=0; i<q.targets.length; i++) {
                 let tLatLng = L.latLng(q.targets[i].row["緯度"], q.targets[i].row["経度"]);
@@ -691,14 +686,12 @@
                 testElements.push(ansMarker, errLine);
             });
             
-            // 全体を画面に収める
             let allLatLngs = [...userTaps, ...q.targets.map(t => L.latLng(t.row["緯度"], t.row["経度"])), L.latLng(q.fireLat, q.fireLng)];
             map.fitBounds(L.latLngBounds(allLatLngs), {padding: [50,50], maxZoom: 18});
             
             // 🌟 答え合わせ完了！タップするまで結果が残る 🌟
             document.getElementById('test-instruction').innerHTML = `<span style="color:#10b981; font-size:14px; background:#fff; padding:2px 8px; border-radius:10px;">${q.targets.length}ヶ所中 ${roundCorrect}ヶ所正解！ 地図をタップして次へ👉</span>`;
             
-            // 0.8秒後からタップで次へ進めるようにする
             setTimeout(() => {
                 map.once('click', () => {
                     testElements.forEach(el => map.removeLayer(el)); testElements = [];
@@ -712,7 +705,6 @@
             map.off('click', onMapClickForNearest); document.getElementById('test-header').style.display = 'none';
             let score = Math.round((testCorrectCount / nearestTotalTargets) * 100);
             let avgError = (testTotalError / nearestTotalTargets).toFixed(1);
-            
             showResultModal("総合正答率", score, `計 ${nearestTotalTargets}ヶ所中 ${testCorrectCount}ヶ所 正解！`, `平均誤差: ${avgError} メートル<br><br>${score >= 80 ? "🏆 完璧です！現場到着時の水利確保はあなたに任せます！" : score >= 50 ? "👍 素晴らしい！さらに直近水利の記憶を固めましょう！" : "💪 伸びしろしかありません！何度も挑戦して記憶を叩き込みましょう！"}`);
         }
 
@@ -739,7 +731,6 @@
 
         function onMapClickForExcavate(e) {
             if (!isTestActive) return;
-            // 🌟 発掘モードも誤差判定を通常20m、鬼モード10mに変更 🌟
             let limitDist = document.getElementById('test-hard-mode').checked ? 10 : 20;
             let hitIndex = -1; let minDist = Infinity;
 
@@ -766,7 +757,6 @@
                 let isCleared = testHitCount >= testExcavatePool.length;
                 document.getElementById('test-instruction').innerHTML = `<span style="color:#10b981; font-size:14px; background:#fff; padding:2px 8px; border-radius:10px;">${isCleared ? '完全制覇！' : 'ゲームオーバー！'} 地図をタップして結果発表へ👉</span>`;
                 
-                // 1秒後からタップで結果画面へ
                 setTimeout(() => {
                     map.once('click', () => showExcavateResult(isCleared));
                 }, 1000);
@@ -809,7 +799,7 @@
             execSearch(true); map.locate({setView: true, maxZoom: 17});
         };
 
-        // --- 通常の検索・その他機能 ---
+        // --- 🌟 【修正完了】通常の検索・複数選択機能 🌟 ---
         function updateListTable(data) {
             let tbody = document.getElementById('table-body'); tbody.innerHTML = ''; document.getElementById('list-count').innerText = data.length; document.getElementById('table-count').innerText = data.length;
             data.forEach(row => {
@@ -840,15 +830,21 @@
 
         function execSearch(skipFit) {
             let selectedCategory = document.getElementById('filter-category').value; 
+            
+            // 🌟 複数選択した地区の判定ロジック 🌟
             let selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value);
             let isAllAreas = document.querySelectorAll('.area-checkbox').length === selectedAreas.length;
+            
             let selectedStatus = document.getElementById('filter-status').value; 
             let selectedError = document.getElementById('filter-error').value; let selectedPaint = document.getElementById('filter-paint').value; 
             let keyword = document.getElementById('search-text').value.trim().toLowerCase(); let filterDateVal = document.getElementById('filter-date').value; let filterDateCond = document.getElementById('filter-date-cond').value; let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
             
             currentFilteredData = allData.filter(row => {
                 let isPublic = isPublicWater(row["水利番号"]); let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic);
+                
+                // 🌟 複数地区のいずれかに含まれているか判定 🌟
                 let matchArea = isAllAreas || selectedAreas.includes(row["地区"]); 
+                
                 let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
                 let matchError = true; if (selectedError === "異常あり") { matchError = (row["異常の種類"] !== "" && row["異常の種類"] !== "なし"); } else if (selectedError !== "") { matchError = (row["異常の種類"] === selectedError); }
                 let matchPaint = (selectedPaint === "") || (row["塗装レベル"] === selectedPaint);
@@ -860,9 +856,10 @@
             if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none';
         }
         document.getElementById('search-btn').addEventListener('click', function() { execSearch(false); });
+        
         document.getElementById('reset-btn').addEventListener('click', function() { 
             document.getElementById('filter-category').value = ""; 
-            toggleAllAreas(true); // 地区選択をリセット
+            toggleAllAreas(true); // 🌟 リセット時は「すべて選択」に戻す 🌟
             document.getElementById('filter-status').value = ""; 
             document.getElementById('filter-error').value = ""; 
             document.getElementById('filter-paint').value = ""; 
@@ -871,9 +868,10 @@
             document.getElementById('search-text').value = ""; 
             execSearch(false); 
         });
+        
         document.getElementById('survey-btn').addEventListener('click', function() { 
             document.getElementById('filter-category').value = "公設"; 
-            toggleAllAreas(true); // 地区選択をリセット
+            toggleAllAreas(true); // 🌟 全数調査時は「すべて選択」に戻す 🌟
             document.getElementById('filter-status').value = ""; 
             document.getElementById('filter-error').value = ""; 
             document.getElementById('filter-paint').value = ""; 
@@ -883,6 +881,7 @@
             document.getElementById('search-panel').style.display = 'flex'; 
             execSearch(false); 
         });
+        
         document.getElementById('gps-btn').addEventListener('click', function() { let btn = document.getElementById('gps-btn'); if (isTracking) { isTracking = false; map.stopLocate(); btn.classList.remove('tracking'); btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; } else { isTracking = true; btn.classList.add('tracking'); btn.innerHTML = '<span class="btn-icon">🟢</span><span class="btn-text pc-only">追従中</span><span class="btn-text sp-only">追従中</span>'; map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true}); } });
         map.on('locationfound', function(e) { if (currentLocationMarker) map.removeLayer(currentLocationMarker); currentLocationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: isTracking ? "#28a745" : "#007bff", color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9 }).addTo(map).bindPopup("<b>現在地</b>"); });
         map.on('dragstart', function() { if (isTracking) { isTracking = false; map.stopLocate(); let btn = document.getElementById('gps-btn'); btn.classList.remove('tracking'); btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; } });
