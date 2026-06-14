@@ -50,6 +50,7 @@
 
         .btn-search { background-color: #f59e0b; }
         .btn-survey { background-color: #dc3545; }
+        .btn-test { background-color: #e83e8c; }
         .btn-list { background-color: #17a2b8; }
         .btn-today { background-color: #8b5cf6; }
         .btn-gps { background-color: #007bff; }
@@ -188,19 +189,19 @@
         </div>
     </div>
 
-    <!-- 🎓 テスト設定画面モーダル（隠し機能） -->
+    <!-- 🎓 テスト設定画面モーダル -->
     <div id="test-setup-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:10001; align-items:center; justify-content:center;">
         <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width:350px; text-align:center;">
-            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 秘密の効果測定</h2>
+            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 効果測定</h2>
             
             <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button id="btn-mode-nearest" onclick="selectTestMode('nearest')" style="flex:1; padding:10px 5px; background:#e83e8c; color:white; border:none; border-radius:5px; font-weight:bold; font-size:13px; transition:0.2s;">🔥 連続・最寄り当て</button>
+                <button id="btn-mode-nearest" onclick="selectTestMode('nearest')" style="flex:1; padding:10px 5px; background:#e83e8c; color:white; border:none; border-radius:5px; font-weight:bold; font-size:13px; transition:0.2s;">🔥 200m圏内当て</button>
                 <button id="btn-mode-excavate" onclick="selectTestMode('excavate')" style="flex:1; padding:10px 5px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; font-weight:bold; font-size:13px; transition:0.2s;">🗺️ エリア発掘</button>
             </div>
 
-            <!-- 🔥 最寄り当て設定 -->
+            <!-- 🔥 半径200m圏内当て設定 -->
             <div id="setup-nearest" style="display:block;">
-                <p style="font-size:12px; color:#475569; margin-bottom:15px; text-align:left;">火災現場（🔥）から種別を問わず<b style="color:#e83e8c;">「近い順に5つの水利」</b>を順番にタップしていく超実践テストです。</p>
+                <p style="font-size:12px; color:#475569; margin-bottom:15px; text-align:left;">火災現場（🔥）から<b style="color:#e83e8c;">半径200m以内にある水利を5つ</b>タップで指定し、最後にまとめて答え合わせをする超実践テストです。</p>
                 <div style="text-align:left; margin-bottom:10px;">
                     <label style="font-size:12px; font-weight:bold;">📍 出題エリア</label>
                     <select id="test-area-select" style="width:100%; padding:8px; margin-top:5px; border:1px solid #cbd5e1; border-radius:5px;"></select>
@@ -247,7 +248,7 @@
     <div id="test-header" style="display:none; position:fixed; top:0; left:0; width:100%; background:#1e293b; color:white; z-index:10002; padding:12px 20px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.3);">
         <div id="test-progress" style="font-size:12px; color:#cbd5e1; font-weight:bold; margin-bottom:4px;"></div>
         <div id="test-question" style="font-size:16px; font-weight:bold; margin-bottom:4px;"></div>
-        <div id="test-instruction" style="font-size:11px; color:#f59e0b; font-weight:bold;"></div>
+        <div id="test-instruction" style="font-size:12px; color:#f59e0b; font-weight:bold;"></div>
         <button onclick="quitTestMode()" style="position:absolute; right:15px; top:12px; background:rgba(255,255,255,0.2); border:none; color:white; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">やめる</button>
     </div>
 
@@ -331,7 +332,7 @@
         const baseMaps = { "Google マップ": googleRoad, "Google 航空写真": googleSatellite, "地理院地図 (標準)": gsiStd, "地理院地図 (淡色：ピンが見易い)": gsiPale, "地理院 航空写真": gsiPhoto };
         L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
-        // 🌟 隠しコマンド（凡例のダブルタップ）実装 🌟
+        // 🌟 隠しコマンド（凡例のトリプルタップ）実装 🌟
         const legend = L.control({position: 'bottomleft'});
         legend.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'info legend');
@@ -344,17 +345,25 @@
                 </div>
             `;
             
-            // スマホ対応のダブルタップ判定
+            // トリプルタップ判定
             L.DomEvent.disableClickPropagation(div); // 地図のズームを防ぐ
-            let lastTap = 0;
+            let tapCount = 0;
+            let lastTapTime = 0;
             div.addEventListener('click', function(e) {
                 let now = Date.now();
-                if (now - lastTap < 400) { // 0.4秒以内の連続タップで発動
+                if (now - lastTapTime < 400) { 
+                    tapCount++;
+                } else {
+                    tapCount = 1;
+                }
+                lastTapTime = now;
+                
+                if (tapCount === 3) {
                     if (appMode !== 'test') {
                         document.getElementById('test-setup-modal').style.display = 'flex';
                     }
+                    tapCount = 0; // リセット
                 }
-                lastTap = now;
             });
             return div;
         };
@@ -371,9 +380,9 @@
         // 🌟 テストモード管理変数 🌟
         let currentTestModeType = 'nearest'; // 'nearest' or 'excavate'
         let testQuestions = []; let currentTestIndex = 0; let testCorrectCount = 0; let testTotalError = 0; 
-        let isTestActive = false; let testElements = []; let currentFireMarker = null;
+        let isTestActive = false; let testElements = []; let currentFireMarker = null; let currentFireCircle = null;
         let testExcavatePool = []; let testHitCount = 0; let testMissCount = 0; let testMissLimit = 5;
-        let currentTargetRank = 0; // 最寄り当て（1〜5番目）用
+        let currentTaps = []; // 半径200m当て用ユーザーのタップ管理
 
         window.promptPasscode = function() { document.getElementById('pin-input').value = ''; document.getElementById('pin-modal').style.display = 'flex'; };
         window.closePinModal = function() { document.getElementById('pin-modal').style.display = 'none'; };
@@ -509,7 +518,7 @@
             else initExcavateTest();
         };
 
-        // 🌟 🔥【モード1：進化版】直近5つ連続当てテスト 🌟
+        // 🌟 🔥【モード1：進化版】半径200m圏内の5か所当て一括答え合わせ 🌟
         function initNearestTest() {
             let area = document.getElementById('test-area-select').value;
             let count = parseInt(document.getElementById('test-count-select').value);
@@ -517,22 +526,39 @@
             if(pool.length < 5) return showMessage(`この地区には水利が ${pool.length} 件しかありません。最低5件以上のデータが必要です。`);
 
             testQuestions = [];
-            for(let i=0; i<count; i++) {
-                // 適当な水利を基準に火災現場を作る
-                let base = pool[Math.floor(Math.random() * pool.length)];
-                let fireLat = parseFloat(base["緯度"]) + (Math.random() - 0.5) * 0.004; 
-                let fireLng = parseFloat(base["経度"]) + (Math.random() - 0.5) * 0.004; 
-                let fireLatLng = L.latLng(fireLat, fireLng);
-                
-                // 消火栓・防火水槽の区別なく、火点から近い順に5個の水利リストを作成（直線距離）
-                let nearest5 = pool.map(r => {
-                    return { row: r, dist: map.distance(fireLatLng, L.latLng(r["緯度"], r["経度"])) };
-                }).sort((a, b) => a.dist - b.dist).slice(0, 5);
+            let maxAttempts = 200; // 良い火点が見つかるまで試行
 
-                testQuestions.push({ fireLat: fireLat, fireLng: fireLng, nearest5: nearest5 });
+            for(let i=0; i<count; i++) {
+                let found = false;
+                for(let attempt=0; attempt<maxAttempts; attempt++) {
+                    let base = pool[Math.floor(Math.random() * pool.length)];
+                    let fireLat = parseFloat(base["緯度"]) + (Math.random() - 0.5) * 0.002; // 近めにずらす
+                    let fireLng = parseFloat(base["経度"]) + (Math.random() - 0.5) * 0.002; 
+                    let fireLatLng = L.latLng(fireLat, fireLng);
+                    
+                    // 🔥から半径200m以内の水利を探す
+                    let within200m = [];
+                    pool.forEach(r => {
+                        let d = map.distance(fireLatLng, L.latLng(r["緯度"], r["経度"]));
+                        if(d <= 200) within200m.push({ row: r, dist: d });
+                    });
+                    
+                    // 200m以内に5つ以上水利があれば採用（近い順に5つを正解リストにする）
+                    if(within200m.length >= 5) {
+                        let target5 = within200m.sort((a, b) => a.dist - b.dist).slice(0, 5);
+                        testQuestions.push({ fireLat: fireLat, fireLng: fireLng, target5: target5 });
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found) {
+                    return showMessage(`この地区では「半径200m以内に5つの水利が密集している場所」を見つけられませんでした。より広いエリアを選択するか、問題数を減らしてください。`);
+                }
             }
             
-            currentTestIndex = 0; currentTargetRank = 0; testCorrectCount = 0; testTotalError = 0; isTestActive = false; testElements = [];
+            currentTestIndex = 0; testCorrectCount = 0; testTotalError = 0; isTestActive = false; 
+            testElements = []; currentTaps = [];
+            
             startTestUI();
             map.on('click', onMapClickForNearest);
             showNextNearestQuestion();
@@ -543,61 +569,102 @@
             
             let q = testQuestions[currentTestIndex];
             document.getElementById('test-progress').innerText = `🔥 第 ${currentTestIndex + 1} 問 / 全 ${testQuestions.length} 問`;
-            document.getElementById('test-question').innerText = `【${currentTargetRank + 1}番目】に近い水利はどこ？`;
-            document.getElementById('test-instruction').innerText = `地図上の「ここだ！」と思う場所をタップしてください`;
+            document.getElementById('test-question').innerText = `🔥 200m圏内の水利を【5つ】探せ！`;
+            document.getElementById('test-instruction').innerHTML = `タップして指定中：<b style="color:#e83e8c; font-size:16px;">0 / 5</b> か所`;
             
-            // 初回（1番手）の時だけ火災マーカーを描画し、ズームを合わせる
-            if(currentTargetRank === 0) {
-                if(currentFireMarker) map.removeLayer(currentFireMarker);
-                currentFireMarker = L.marker([q.fireLat, q.fireLng], {
-                    icon: L.divIcon({ className: 'marker-fire-wrapper', html: '<div class="marker-fire-anim">🔥</div>', iconSize: [34, 34], iconAnchor: [17, 34] })
-                }).addTo(map);
-                map.setView([q.fireLat, q.fireLng], 16); 
-            }
+            if(currentFireMarker) map.removeLayer(currentFireMarker);
+            if(currentFireCircle) map.removeLayer(currentFireCircle);
             
-            setTimeout(() => { isTestActive = true; }, 300);
+            currentFireMarker = L.marker([q.fireLat, q.fireLng], {
+                icon: L.divIcon({ className: 'marker-fire-wrapper', html: '<div class="marker-fire-anim">🔥</div>', iconSize: [34, 34], iconAnchor: [17, 34] })
+            }).addTo(map);
+
+            // 200mの赤い円を描画
+            currentFireCircle = L.circle([q.fireLat, q.fireLng], {radius: 200, color: '#e83e8c', weight: 2, fillOpacity: 0.05, dashArray: '5, 5'}).addTo(map);
+            
+            map.fitBounds(currentFireCircle.getBounds(), {padding: [20,20]}); 
+            
+            setTimeout(() => { isTestActive = true; }, 500);
         }
 
         function onMapClickForNearest(e) {
-            if(!isTestActive) return; isTestActive = false; 
-            
-            let q = testQuestions[currentTestIndex];
-            let targetData = q.nearest5[currentTargetRank]; // 今回当てるべきN番目の水利データ
-            let targetLatlng = L.latLng(targetData.row["緯度"], targetData.row["経度"]);
-            
-            // ユーザーのタップ位置との誤差を計測（通常20m、鬼モード10mに緩和）
-            let dist = map.distance(e.latlng, targetLatlng);
-            let limitDist = document.getElementById('test-hard-mode').checked ? 10 : 20;
-            let isCorrect = dist <= limitDist;
+            if(!isTestActive) return; 
 
-            if(isCorrect) testCorrectCount++; 
-            testTotalError += dist;
-
-            // 答え合わせの描画
+            // ユーザーのタップ位置にマーカー配置
             let userMarker = L.circleMarker(e.latlng, {radius: 8, color: '#ffffff', fillColor: '#3b82f6', fillOpacity: 1, weight: 2}).addTo(map);
-            let ansIcon = L.divIcon({ className: (targetData.row["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank', iconSize: [24, 24], iconAnchor: [12, 12] });
-            let ansMarker = L.marker(targetLatlng, {icon: ansIcon}).addTo(map);
-            let errLine = L.polyline([e.latlng, targetLatlng], {color: isCorrect ? '#28a745' : '#dc3545', dashArray: '5, 5', weight: 3}).addTo(map);
-            
-            testElements.push(userMarker, ansMarker, errLine);
+            currentTaps.push(userMarker);
+            testElements.push(userMarker);
 
-            showFeedback(isCorrect, isCorrect ? `⭕️ ${currentTargetRank + 1}番目 正解！<br><span style="font-size:16px;">誤差: ${dist.toFixed(1)}m</span>` : `❌ 不正解！<br><span style="font-size:16px;">正解はココでした (${limitDist}m以内で正解)</span>`);
-            
-            // テンポアップ：1.2秒で次の順位へ
+            document.getElementById('test-instruction').innerHTML = `タップして指定中：<b style="color:#e83e8c; font-size:16px;">${currentTaps.length} / 5</b> か所`;
+
+            if (currentTaps.length >= 5) {
+                isTestActive = false; // 5回タップでロック
+                judgeNearest();
+            }
+        }
+
+        function judgeNearest() {
+            let q = testQuestions[currentTestIndex];
+            // 誤差は通常20m、鬼モードは10mに緩和
+            let limitDist = document.getElementById('test-hard-mode').checked ? 10 : 20;
+
+            // ユーザーの5回のタップと、正解の5つをマッチング（近い順にペアを作る）
+            let pairs = [];
+            currentTaps.forEach((tapMarker, uIdx) => {
+                q.target5.forEach((t, tIdx) => {
+                    pairs.push({
+                        uIdx: uIdx,
+                        tIdx: tIdx,
+                        dist: map.distance(tapMarker.getLatLng(), L.latLng(t.row["緯度"], t.row["経度"]))
+                    });
+                });
+            });
+            pairs.sort((a, b) => a.dist - b.dist);
+
+            let usedU = new Set(); let usedT = new Set();
+            let results = []; let qCorrectCount = 0;
+
+            pairs.forEach(p => {
+                if(!usedU.has(p.uIdx) && !usedT.has(p.tIdx)) {
+                    usedU.add(p.uIdx); usedT.add(p.tIdx);
+                    let isCorrect = p.dist <= limitDist;
+                    if(isCorrect) { qCorrectCount++; testCorrectCount++; }
+                    testTotalError += p.dist;
+
+                    results.push({
+                        userMarker: currentTaps[p.uIdx],
+                        targetRow: q.target5[p.tIdx].row,
+                        dist: p.dist,
+                        isCorrect: isCorrect
+                    });
+                }
+            });
+
+            // 答え合わせの一斉描画
+            let boundsPoints = [[q.fireLat, q.fireLng]];
+            results.forEach(res => {
+                let targetLatlng = L.latLng(res.targetRow["緯度"], res.targetRow["経度"]);
+                boundsPoints.push(targetLatlng);
+                boundsPoints.push(res.userMarker.getLatLng());
+
+                let ansIcon = L.divIcon({ className: (res.targetRow["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank', iconSize: [24, 24], iconAnchor: [12, 12] });
+                let ansMarker = L.marker(targetLatlng, {icon: ansIcon}).addTo(map);
+                let errLine = L.polyline([res.userMarker.getLatLng(), targetLatlng], {color: res.isCorrect ? '#28a745' : '#dc3545', dashArray: '5, 5', weight: 3}).addTo(map);
+                
+                testElements.push(ansMarker, errLine);
+            });
+
+            showFeedback(qCorrectCount >= 3, qCorrectCount >= 3 ? `⭕️ ${qCorrectCount}か所正解！` : `❌ ${qCorrectCount}か所正解...`);
+            map.fitBounds(L.latLngBounds(boundsPoints), {padding: [50,50], maxZoom: 18});
+
+            // 4.5秒間 答え合わせの画面を見せてから次へ
             setTimeout(() => {
                 hideFeedback();
                 setTimeout(() => { 
-                    currentTargetRank++;
-                    if(currentTargetRank >= 5) {
-                        // 5番手まで終わったら、線やピンを消して次の火点問題へ
-                        testElements.forEach(el => map.removeLayer(el)); testElements = [];
-                        currentTargetRank = 0; currentTestIndex++; showNextNearestQuestion(); 
-                    } else {
-                        // 同じ火点で次の順位へ（ピンは残したまま）
-                        showNextNearestQuestion();
-                    }
-                }, 200);
-            }, 1200);
+                    testElements.forEach(el => map.removeLayer(el)); testElements = []; currentTaps = [];
+                    currentTestIndex++; showNextNearestQuestion(); 
+                }, 300);
+            }, 4500);
         }
 
         function showNearestResult() {
@@ -692,8 +759,9 @@
 
         window.quitTestMode = function() {
             if(currentFireMarker) { map.removeLayer(currentFireMarker); currentFireMarker = null; }
+            if(currentFireCircle) { map.removeLayer(currentFireCircle); currentFireCircle = null; }
             map.off('click', onMapClickForNearest); map.off('click', onMapClickForExcavate);
-            testElements.forEach(el => map.removeLayer(el)); testElements = [];
+            testElements.forEach(el => map.removeLayer(el)); testElements = []; currentTaps = [];
             document.getElementById('test-header').style.display = 'none'; document.getElementById('test-result-modal').style.display = 'none'; document.getElementById('test-setup-modal').style.display = 'none'; document.getElementById('test-feedback').style.display = 'none';
             document.getElementById('main-side-btns').style.display = 'flex'; document.getElementById('top-info-container').style.display = 'flex';
             appMode = 'view'; document.getElementById('current-mode-badge').innerText = '👀 閲覧モード'; document.getElementById('current-mode-badge').style.backgroundColor = '#3b82f6';
