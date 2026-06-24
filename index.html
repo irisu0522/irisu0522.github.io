@@ -16,79 +16,36 @@
         /* ==========================================
            1. 基本設定・レイアウト
            ========================================== */
-        body { 
-            margin: 0; 
-            padding: 0; 
-            font-family: 'Helvetica Neue', Arial, sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            /* スマホバー隠れ対策：100dvh（動的ビューポート）を適用 */
-            height: 100vh; 
-            height: 100dvh; 
-            overflow: hidden; 
-            background-color: #f8fafc; 
-        }
-        #main-container { 
-            position: relative; 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            height: 100%; 
-        }
-        #map { 
-            flex: 1; 
-            width: 100vw; 
-            height: 100%; 
-        }
+        body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; background-color: #f8fafc; }
+        #main-container { position: relative; flex: 1; display: flex; flex-direction: column; height: 100%; }
+        #map { flex: 1; width: 100vw; height: 100%; }
         
         /* ==========================================
            2. モーダル・オーバーレイ画面
            ========================================== */
-        #mode-overlay { 
-            position: fixed; 
-            top: 0; left: 0; width: 100vw; 
-            height: 100vh; height: 100dvh; 
-            z-index: 9999; 
-            background-color: rgba(255, 255, 255, 0.95); 
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-start; 
-            backdrop-filter: blur(5px); overflow-y: auto; padding: 40px 0; 
-        }
+        #mode-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; z-index: 9999; background-color: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; backdrop-filter: blur(5px); overflow-y: auto; padding: 40px 0; }
         .mode-title { font-size: 26px; font-weight: bold; color: #1e293b; margin-bottom: 5px; text-align: center; }
         .mode-subtitle { font-size: 13px; color: #64748b; margin-bottom: 20px; text-align: center; max-width: 85%; line-height: 1.5; }
         #data-update-date { font-size: 13px; color: #0369a1; background: #e0f2fe; padding: 6px 16px; border-radius: 20px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.3s ease; }
         .update-history-box { margin-bottom: 20px; width: 85%; max-width: 320px; background-color: #f1f5f9; border-radius: 10px; padding: 12px; font-size: 11px; color: #334155; line-height: 1.5; border-left: 4px solid #3b82f6; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        
-        .mode-btn { 
-            width: 85%; max-width: 320px; padding: 18px; margin-bottom: 10px; border-radius: 12px; 
-            font-size: 18px; font-weight: bold; border: none; cursor: pointer; color: white; 
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; gap: 10px; 
-        }
-        .mode-view { background-color: #3b82f6; } 
-        .mode-edit { background-color: #ef4444; }
+        .mode-btn { width: 85%; max-width: 320px; padding: 18px; margin-bottom: 10px; border-radius: 12px; font-size: 18px; font-weight: bold; border: none; cursor: pointer; color: white; box-shadow: 0 6px 12px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .mode-view { background-color: #3b82f6; } .mode-edit { background-color: #ef4444; }
         .mode-desc { font-size: 12px; color: #475569; margin-top: -5px; margin-bottom: 25px; text-align: center; }
         .line-warning-box { margin-bottom: 30px; width: 85%; max-width: 320px; background-color: #fff9db; border: 1px solid #fab005; border-radius: 10px; padding: 14px; font-size: 11px; color: #495057; line-height: 1.6; text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         
-        /* トップ情報のバッジ */
         #top-info-container { position: absolute; top: 10px; left: 50px; z-index: 1000; display: none; gap: 10px; align-items: center; }
         #current-mode-badge { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         #view-count-badge { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: #1e293b; background-color: #f1f5f9; border: 1px solid #cbd5e1; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-
-        /* ロード画面 */
         #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background-color: rgba(255, 255, 255, 0.95); display: none; padding: 20px 40px; border-radius: 8px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
 
         /* ==========================================
            3. 検索パネル・フィルター
            ========================================== */
-        #search-panel { 
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%); 
-            width: 92%; max-width: 780px; z-index: 1000; display: none; background: rgba(255, 255, 255, 0.95); 
-            padding: 12px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); flex-wrap: wrap; gap: 8px; 
-        }
+        #search-panel { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 780px; z-index: 1000; display: none; background: rgba(255, 255, 255, 0.95); padding: 12px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); flex-wrap: wrap; gap: 8px; }
         #search-panel select, #search-panel input { padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; min-width: 100px; }
         #search-panel .date-group { display: flex; align-items: center; gap: 4px; flex-grow: 1.5; min-width: 190px; }
         #search-panel button { padding: 8px 15px; font-size: 13px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; flex-grow: 1; width: 100%; }
 
-        /* 複数選択ドロップダウン */
         .multi-select-container { position: relative; flex-grow: 1; min-width: 120px; }
         .multi-select-button { padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; background: white; cursor: pointer; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; display: block; width: 100%; box-sizing: border-box; height: 37px; line-height: 1.2; color: #333;}
         .multi-select-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; border-radius: 4px; max-height: 250px; overflow-y: auto; z-index: 1001; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -104,12 +61,7 @@
         .btn-icon { font-size: 16px; line-height: 1; display: flex; align-items: center; justify-content: center; }
         .btn-text { white-space: nowrap; }
 
-        .btn-search { background-color: #f59e0b; }
-        .btn-survey { background-color: #dc3545; }
-        .btn-list { background-color: #17a2b8; }
-        .btn-today { background-color: #8b5cf6; }
-        .btn-gps { background-color: #007bff; }
-        .btn-gps.tracking { background-color: #28a745 !important; box-shadow: 0 0 10px #28a745; }
+        .btn-search { background-color: #f59e0b; } .btn-survey { background-color: #dc3545; } .btn-list { background-color: #17a2b8; } .btn-today { background-color: #8b5cf6; } .btn-gps { background-color: #007bff; } .btn-gps.tracking { background-color: #28a745 !important; box-shadow: 0 0 10px #28a745; }
         
         /* ==========================================
            5. 地図マーカーデザイン（CSS）
@@ -122,25 +74,21 @@
         .marker-tank::after { content: ''; width: 10px; height: 10px; background-color: #007aff; border: 1.5px solid #ffffff; border-radius: 2px; box-shadow: 0 0 3px rgba(0,0,0,0.4); }
         .marker-tank.alert-marker::after { border: 1.5px solid #ffcc00; box-shadow: 0 0 5px #007aff; animation: pulse 1.5s infinite; }
 
-        /* 🔥 火災現場マーカー */
         .marker-fire-wrapper { background: transparent; border: none; }
         .marker-fire-anim { font-size: 34px; line-height: 34px; text-align: center; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6)); animation: bounce 0.6s infinite alternate; transform-origin: bottom center; display: block; }
         @keyframes bounce { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(-8px) scale(1.05); } }
 
-        /* ❌ ミスマーカー＆未発見マーカー */
         .marker-miss { color: #dc3545; font-size: 20px; line-height: 20px; text-shadow: 0 0 4px white; display: flex; align-items: center; justify-content: center; background: transparent; border: none;}
         .missed-marker { opacity: 0.3 !important; filter: grayscale(100%); }
 
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
-        /* ポップアップ内装 */
         .popup-title { font-size: 15px; font-weight: bold; color: #333; border-bottom: 2px solid #007bff; margin-bottom: 8px; padding-bottom: 5px; text-align: center; }
         .popup-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
         .popup-table th { background-color: #f8f9fa; text-align: left; padding: 5px; border-bottom: 1px solid #ddd; width: 35%; color: #555;}
         .popup-table td { padding: 5px; border-bottom: 1px solid #ddd; color: #222;}
         .popup-alert { color: white; background-color: #dc3545; padding: 4px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 8px; font-size: 11px; }
 
-        /* 編集フォーム内装 */
         .form-toggle { display: block; width: 100%; padding: 6px; background: #e2e8f0; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; text-align: center; cursor: pointer; color: #475569; margin-top: 5px; }
         .input-form { display: none; background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 4px; margin-top: 5px; }
         .form-group { margin-bottom: 6px; }
@@ -157,9 +105,7 @@
         .list-header h3 { margin: 0; font-size: 15px; color: #1e293b; display: flex; align-items: center; gap: 8px; }
         .list-btn-group { display: flex; gap: 8px; }
         .list-btn { padding: 5px 12px; font-size: 12px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px; color: white; }
-        .btn-csv { background-color: #28a745; } 
-        .btn-print { background-color: #6c757d; } 
-        .btn-close { background-color: #ef4444; }
+        .btn-csv { background-color: #28a745; } .btn-print { background-color: #6c757d; } .btn-close { background-color: #ef4444; }
         .table-wrapper { flex: 1; overflow-y: auto; padding: 0 15px 15px 15px; }
         .result-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
         .result-table th { background: #334155; color: white; position: sticky; top: 0; padding: 8px; text-align: left; }
@@ -259,16 +205,17 @@
     </div>
 
     <div id="test-setup-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.7); z-index:10001; align-items:center; justify-content:center;">
-        <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width:350px; text-align:center;">
+        <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width:360px; text-align:center;">
             <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 秘密の効果測定</h2>
             
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button id="btn-mode-nearest" onclick="selectTestMode('nearest')" style="flex:1; padding:10px 5px; background:#e83e8c; color:white; border:none; border-radius:5px; font-weight:bold; font-size:13px; transition:0.2s;">🔥 周辺5ヶ所当て</button>
-                <button id="btn-mode-excavate" onclick="selectTestMode('excavate')" style="flex:1; padding:10px 5px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; font-weight:bold; font-size:13px; transition:0.2s;">🗺️ エリア全発掘</button>
+            <div style="display:flex; gap:6px; margin-bottom:15px;">
+                <button id="btn-mode-nearest" onclick="selectTestMode('nearest')" style="flex:1; padding:10px 2px; background:#e83e8c; color:white; border:none; border-radius:5px; font-weight:bold; font-size:12px; transition:0.2s;">🔥 5ヶ所当て</button>
+                <button id="btn-mode-excavate" onclick="selectTestMode('excavate')" style="flex:1; padding:10px 2px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; font-weight:bold; font-size:12px; transition:0.2s;">🗺️ 全発掘</button>
+                <button id="btn-mode-target" onclick="selectTestMode('target')" style="flex:1; padding:10px 2px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; font-weight:bold; font-size:12px; transition:0.2s;">📍 目標物当て</button>
             </div>
 
             <div id="setup-nearest" style="display:block;">
-                <p style="font-size:12px; color:#475569; margin-bottom:15px; text-align:left;">火災現場（🔥）から<b style="color:#e83e8c;">半径200m以内にある水利をすべて（最大5ヶ所）</b>タップで指定するモードです。すべて指定後に一斉に答え合わせをします。</p>
+                <p style="font-size:12px; color:#475569; margin-bottom:15px; text-align:left;">火災現場（🔥）から<b style="color:#e83e8c;">半径200m以内にある水利（最大5ヶ所）</b>をタップで指定するモードです。</p>
                 <div style="text-align:left; margin-bottom:10px;">
                     <label style="font-size:12px; font-weight:bold;">📍 出題エリア</label>
                     <select id="test-area-select" style="width:100%; padding:8px; margin-top:5px; border:1px solid #cbd5e1; border-radius:5px;"></select>
@@ -287,11 +234,27 @@
                 </div>
             </div>
 
+            <div id="setup-target" style="display:none;">
+                <p style="font-size:12px; color:#475569; margin-bottom:15px; text-align:left;">指定した管轄・種別の「目標物（交差点など）」の正確な位置をマップ上でタップして当てる訓練です。</p>
+                <div style="text-align:left; margin-bottom:10px;">
+                    <label style="font-size:12px; font-weight:bold;">🏢 管轄署</label>
+                    <select id="test-jurisdiction-select" style="width:100%; padding:8px; margin-top:5px; border:1px solid #cbd5e1; border-radius:5px;">
+                        <option value="">すべての管轄（和歌山市全域）</option>
+                    </select>
+                </div>
+                <div style="text-align:left; margin-bottom:10px;">
+                    <label style="font-size:12px; font-weight:bold;">🏷️ 目標物の種別</label>
+                    <select id="test-target-type-select" style="width:100%; padding:8px; margin-top:5px; border:1px solid #cbd5e1; border-radius:5px;">
+                        <option value="">すべての種別</option>
+                    </select>
+                </div>
+            </div>
+
             <div style="text-align:left; margin-bottom:20px; background:#fff1f2; padding:10px; border-radius:5px; border:1px solid #fecdd3;">
                 <label style="font-size:12px; font-weight:bold; color:#be123c; display:flex; align-items:center; gap:8px;">
-                    <input type="checkbox" id="test-hard-mode" style="transform:scale(1.2);"> 🔥 鬼モード（誤差10m以内で正解）
+                    <input type="checkbox" id="test-hard-mode" style="transform:scale(1.2);"> 🔥 鬼モード（許容誤差の半減）
                 </label>
-                <p style="font-size:10px; color:#be123c; margin:5px 0 0 0;">※通常は誤差20m以内で正解となりますが、鬼モードは実際の場所から10m以内でなければ不正解になるガチ勢向け設定です。</p>
+                <p style="font-size:10px; color:#be123c; margin:5px 0 0 0;">※鬼モード時は正解の判定エリアが大幅に狭くなり、より正確な位置記憶が求められます。</p>
             </div>
 
             <div style="display:flex; gap:10px;">
@@ -307,8 +270,6 @@
         <div id="test-instruction" style="font-size:12px; color:#f59e0b; font-weight:bold;"></div>
         <button onclick="quitTestMode()" style="position:absolute; right:15px; top:12px; background:rgba(255,255,255,0.2); border:none; color:white; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">やめる</button>
     </div>
-
-    <div id="test-feedback" style="display:none; position:fixed; top:100px; left:50%; transform:translateX(-50%); z-index:10005; padding:15px 30px; border-radius:10px; font-size:20px; font-weight:bold; text-align:center; color:white; pointer-events:none; transition: opacity 0.2s; box-shadow:0 10px 30px rgba(0,0,0,0.3); white-space:nowrap;"></div>
 
     <div id="test-result-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.8); z-index:10003; align-items:center; justify-content:center;">
         <div style="background:white; padding:30px; border-radius:15px; width:85%; max-width:350px; text-align:center;">
@@ -383,9 +344,9 @@
     </div>
 
     <script>
-        // 🚨【最重要】取得した新しいGASのURLをここに貼り付けてください！
+        // 🚨 取得した新しいGASのURLに更新済み
         const CONFIG = {
-            GAS_API_URL: "https://script.google.com/macros/s/AKfycbz1-hdEZMgSKThiuUtYnYr-wIQ_rP7MKOg1005slSD3ukPxZuwTDtCU6np7EykvqbO4lA/exec",
+            GAS_API_URL: "https://script.google.com/macros/s/AKfycbxVwj1ObPjK1al4yx_3prbc6okookqbVsf1T-Jkjc2oqawJxHQQruuAhs8djN3gyTgxDg/exec",
             EDIT_MODE_PIN: "1190"
         };
 
@@ -453,9 +414,12 @@
         let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); 
         map.addLayer(markersGroup);
 
+        // 🌟Stateの拡張：目標物データと対応表を追加🌟
         const State = {
             allData: [],
             currentFilteredData: [],
+            targetsData: [], 
+            areaMapping: {}, 
             appMode: 'view',
             isTracking: false,
             currentLocationMarker: null,
@@ -472,39 +436,28 @@
             } else { showMessage("❌ 暗証番号が違います。"); document.getElementById('pin-input').value = ''; }
         };
 
-        // 🚨 データ読み込み処理を強化（エラーの原因を特定しやすく改良）
         async function loadData() {
             try {
-                // 1. URLが初期値のままでないかチェック
                 if (!CONFIG.GAS_API_URL || !CONFIG.GAS_API_URL.startsWith("http")) {
                     throw new Error("GASのURLが設定されていません。");
                 }
 
                 const fetchUrl = `${CONFIG.GAS_API_URL}?action=get_data&t=${Date.now()}`;
+                const response = await fetch(fetchUrl, { method: 'GET', redirect: 'follow', headers: { 'Accept': 'application/json' } }); 
                 
-                // 2. 通信実行（GAS特有のリダイレクトを自動追従させる）
-                const response = await fetch(fetchUrl, { 
-                    method: 'GET', 
-                    redirect: 'follow',
-                    headers: { 'Accept': 'application/json' }
-                }); 
-                
-                if (!response.ok) {
-                    throw new Error(`HTTPエラー (${response.status})が発生しました`);
-                }
+                if (!response.ok) throw new Error(`HTTPエラー (${response.status})が発生しました`);
 
-                // 3. データ形式が正しいJSONかチェック（ログイン画面のHTMLが返ってくる事があるため）
                 const textData = await response.text();
                 let result;
                 try {
                     result = JSON.parse(textData);
                 } catch (e) {
-                    console.error("受信データ内容:", textData);
                     throw new Error("正しいデータが取得できませんでした。\nGASのデプロイ設定で「アクセスできるユーザー」が【全員】になっているか確認してください。");
                 }
                 
-                // 4. 正常にデータ格納
                 State.allData = result.data || []; 
+                State.targetsData = result.targets || [];   // 目標物データ格納
+                State.areaMapping = result.mapping || {};   // 対応表データ格納
                 State.currentFilteredData = [...State.allData];
                 
                 document.getElementById('view-count-badge').innerText = `👁️ 閲覧数: ${result.viewCount || 0}`;
@@ -513,24 +466,26 @@
                 let areas = [...new Set(State.allData.map(row => row["地区"]).filter(a => a))].sort();
                 setupAreaDropdowns(areas);
 
+                // 🌟管轄署と種別のプルダウンを自動生成🌟
+                let jurisdictions = [...new Set(State.targetsData.map(t => t["管轄署"]).filter(Boolean))].sort();
+                let jSelect = document.getElementById('test-jurisdiction-select');
+                jurisdictions.forEach(j => jSelect.appendChild(new Option(j, j)));
+
+                let targetTypes = [...new Set(State.targetsData.map(t => t["種別"]).filter(Boolean))].sort();
+                let tSelect = document.getElementById('test-target-type-select');
+                targetTypes.forEach(t => tSelect.appendChild(new Option(t, t)));
+
                 if (State.pendingMode) { 
                     document.getElementById('loading').style.display = 'none'; 
                     enterApp(State.pendingMode); 
                 }
             } catch (error) { 
-                // エラー時の処理を強化
                 console.error("通信エラー詳細:", error);
-                
-                // 最終更新日のバッジをエラー表示に変更
                 let updateBadge = document.getElementById('data-update-date');
                 updateBadge.innerText = "📅 データの取得に失敗しました";
                 updateBadge.style.backgroundColor = "#fee2e2";
                 updateBadge.style.color = "#b91c1c";
-                
-                // ポップアップでエラー原因のヒントを表示
-                let errorMsg = `データの読み込みに失敗しました。\nURLを取得できませんでした。\n\n【詳細】\n${error.message}\n\n【確認事項】\n1. スクリプトのURLが正しく貼り付けられているか\n2. ネットワーク接続が安定しているか`;
-                showMessage(errorMsg); 
-                
+                showMessage(`データの読み込みに失敗しました。\n\n【詳細】\n${error.message}`); 
                 document.getElementById('loading').innerText = "❌ 読み込みエラー"; 
             }
         }
@@ -567,11 +522,9 @@
             
             let badge = document.getElementById('current-mode-badge');
             if (mode === 'view') { 
-                badge.innerText = '👀 閲覧モード'; 
-                badge.style.backgroundColor = '#3b82f6'; 
+                badge.innerText = '👀 閲覧モード'; badge.style.backgroundColor = '#3b82f6'; 
             } else { 
-                badge.innerText = '🛠️ 点検モード'; 
-                badge.style.backgroundColor = '#ef4444'; 
+                badge.innerText = '🛠️ 点検モード'; badge.style.backgroundColor = '#ef4444'; 
             }
             
             renderMarkers(State.allData, true); 
@@ -590,27 +543,18 @@
             let btn = document.getElementById('filter-area-btn');
             let allCheckbox = document.getElementById('area-all-checkbox');
             
-            if(allCheckbox) {
-                allCheckbox.checked = (checkboxes.length === checkedBoxes.length);
-            }
+            if(allCheckbox) { allCheckbox.checked = (checkboxes.length === checkedBoxes.length); }
             
-            if (checkedBoxes.length === checkboxes.length) {
-                btn.innerText = '🌐 すべての地区';
-            } else if (checkedBoxes.length === 0) {
-                btn.innerText = '⚠️ 地区未選択';
-            } else if (checkedBoxes.length === 1) {
-                btn.innerText = '📍 ' + checkedBoxes[0].value;
-            } else {
-                btn.innerText = `📍 ${checkedBoxes.length}地区を選択中`;
-            }
+            if (checkedBoxes.length === checkboxes.length) btn.innerText = '🌐 すべての地区';
+            else if (checkedBoxes.length === 0) btn.innerText = '⚠️ 地区未選択';
+            else if (checkedBoxes.length === 1) btn.innerText = '📍 ' + checkedBoxes[0].value;
+            else btn.innerText = `📍 ${checkedBoxes.length}地区を選択中`;
         };
 
         document.addEventListener('click', function(e) {
             let container = document.getElementById('filter-area-container');
             let dropdown = document.getElementById('filter-area-dropdown');
-            if (container && dropdown && !container.contains(e.target)) {
-                dropdown.style.display = 'none';
-            }
+            if (container && dropdown && !container.contains(e.target)) dropdown.style.display = 'none';
         });
 
         function isPublicWater(suiriNumber) {
@@ -625,7 +569,6 @@
 
             dataToRender.forEach(function(row) {
                 if (!row["緯度"] || !row["経度"]) return;
-                
                 let isAlert = (row["要調査"] === "要点検");
                 let className = (row["水利種別"] === "消火栓") ? "marker-hydrant" : "marker-tank";
                 if (isAlert) className += " alert-marker";
@@ -651,57 +594,21 @@
                     popupContent += `
                         <button class="form-toggle" onclick="toggleForm('${row["水利番号"]}')">📝 点検結果を入力する</button>
                         <div class="input-form" id="form-${row["水利番号"]}">
-                            <div class="form-group">
-                                <label>点検結果</label>
-                                <select id="input-result-${row["水利番号"]}">
-                                    <option value="点検済">点検済（良好）</option>
-                                    <option value="要対応">要対応（不備あり）</option>
-                                    <option value="未実施">未点検</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>異常の種類</label>
-                                <select id="input-error-${row["水利番号"]}">
-                                    <option value="なし">異常なし</option>
-                                    <option value="蓋開閉困難">蓋開閉困難</option>
-                                    <option value="土没">土没</option>
-                                    <option value="水没">水没</option>
-                                    <option value="バルブ開閉不良">バルブ開閉不良</option>
-                                    <option value="道路陥没（大）">道路陥没（大）</option>
-                                    <option value="道路陥没（小）">道路陥没（小）</option>
-                                    <option value="塗装剥がれ">塗装剥がれ</option>
-                                    <option value="塗装間違い">塗装間違い</option>
-                                    <option value="その他">その他</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>塗装レベル</label>
-                                <select id="input-paint-${row["水利番号"]}">
-                                    <option value="100%">100%</option>
-                                    <option value="50%">50%</option>
-                                    <option value="0%">0%</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>コメント</label>
-                                <input type="text" id="input-comment-${row["水利番号"]}" placeholder="状況など">
-                            </div>
+                            <div class="form-group"><label>点検結果</label><select id="input-result-${row["水利番号"]}"><option value="点検済">点検済（良好）</option><option value="要対応">要対応（不備あり）</option><option value="未実施">未点検</option></select></div>
+                            <div class="form-group"><label>異常の種類</label><select id="input-error-${row["水利番号"]}"><option value="なし">異常なし</option><option value="蓋開閉困難">蓋開閉困難</option><option value="土没">土没</option><option value="水没">水没</option><option value="バルブ開閉不良">バルブ開閉不良</option><option value="道路陥没（大）">道路陥没（大）</option><option value="道路陥没（小）">道路陥没（小）</option><option value="塗装剥がれ">塗装剥がれ</option><option value="塗装間違い">塗装間違い</option><option value="その他">その他</option></select></div>
+                            <div class="form-group"><label>塗装レベル</label><select id="input-paint-${row["水利番号"]}"><option value="100%">100%</option><option value="50%">50%</option><option value="0%">0%</option></select></div>
+                            <div class="form-group"><label>コメント</label><input type="text" id="input-comment-${row["水利番号"]}" placeholder="状況など"></div>
                             <button class="form-submit-btn" id="btn-${row["水利番号"]}" onclick="submitReport('${row["水利番号"]}')">スプレッドシートへ送信</button>
                         </div>
                     `;
                 }
-                
                 L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent).addTo(markersGroup);
             });
-            
-            if (!skipFit && dataToRender.length > 0) { 
-                map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] }); 
-            }
+            if (!skipFit && dataToRender.length > 0) map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] }); 
         }
 
         window.toggleForm = function(id) { 
-            let form = document.getElementById("form-" + id); 
-            form.style.display = (form.style.display === "block") ? "none" : "block"; 
+            let form = document.getElementById("form-" + id); form.style.display = (form.style.display === "block") ? "none" : "block"; 
         };
 
         window.submitReport = async function(id) {
@@ -711,82 +618,50 @@
             let paintVal = document.getElementById("input-paint-" + id).value; 
             let commentVal = document.getElementById("input-comment-" + id).value;
             
-            btn.disabled = true; 
-            btn.innerText = "送信中...";
-            
+            btn.disabled = true; btn.innerText = "送信中...";
             let requestUrl = `${CONFIG.GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}&t=${Date.now()}`;
             
             try {
                 let res = await (await fetch(requestUrl)).json();
                 if (res.status === "Success") {
-                    btn.innerText = "送信完了！"; 
-                    btn.style.backgroundColor = "#28a745";
-                    
+                    btn.innerText = "送信完了！"; btn.style.backgroundColor = "#28a745";
                     let targetIndex = State.allData.findIndex(row => row["水利番号"] === id);
                     if (targetIndex !== -1) {
                         let today = new Date(); 
                         State.allData[targetIndex]["前回調査日"] = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`;
-                        State.allData[targetIndex]["要調査"] = "点検済"; 
-                        State.allData[targetIndex]["点検結果"] = resultVal; 
-                        State.allData[targetIndex]["異常の種類"] = errorVal; 
-                        State.allData[targetIndex]["塗装レベル"] = paintVal; 
-                        State.allData[targetIndex]["コメント"] = commentVal;
+                        State.allData[targetIndex]["要調査"] = "点検済"; State.allData[targetIndex]["点検結果"] = resultVal; 
+                        State.allData[targetIndex]["異常の種類"] = errorVal; State.allData[targetIndex]["塗装レベル"] = paintVal; State.allData[targetIndex]["コメント"] = commentVal;
                     }
-                    
                     setTimeout(() => { map.closePopup(); execSearch(true); }, 1500);
                 } else { 
-                    showMessage("送信エラー: " + res.message); 
-                    btn.disabled = false; btn.innerText = "送信失敗（再試行）"; 
+                    showMessage("送信エラー: " + res.message); btn.disabled = false; btn.innerText = "送信失敗（再試行）"; 
                 }
             } catch (err) { 
-                showMessage("送信に失敗しました。電波状態を確認してください。"); 
-                btn.disabled = false; btn.innerText = "スプレッドシートへ送信"; 
+                showMessage("送信に失敗しました。電波状態を確認してください。"); btn.disabled = false; btn.innerText = "スプレッドシートへ送信"; 
             }
         };
 
         // ==========================================
         // 🌟 テストモード管理 (TestManager) 🌟
         // ==========================================
-        const TestManager = {
-            modeType: 'nearest', 
-            question: null, 
-            isActive: false, 
-            elements: [], 
-            fireMarker: null, 
-            fireCircle: null,
-            excavatePool: [], 
-            hitCount: 0, 
-            missCount: 0, 
-            missLimit: 5,
-            userTapsForNearest: []
-        };
+        const TestManager = { modeType: 'nearest', question: null, isActive: false, elements: [], fireMarker: null, fireCircle: null, excavatePool: [], hitCount: 0, missCount: 0, missLimit: 5, userTapsForNearest: [] };
 
         window.selectTestMode = function(mode) {
             TestManager.modeType = mode;
-            if (mode === 'nearest') {
-                document.getElementById('btn-mode-nearest').style.background = '#e83e8c'; 
-                document.getElementById('btn-mode-nearest').style.color = 'white'; 
-                document.getElementById('btn-mode-nearest').style.border = 'none';
-                document.getElementById('btn-mode-excavate').style.background = '#f1f5f9'; 
-                document.getElementById('btn-mode-excavate').style.color = '#475569'; 
-                document.getElementById('btn-mode-excavate').style.border = '1px solid #cbd5e1';
-                document.getElementById('setup-nearest').style.display = 'block'; 
-                document.getElementById('setup-excavate').style.display = 'none';
-            } else {
-                document.getElementById('btn-mode-excavate').style.background = '#e83e8c'; 
-                document.getElementById('btn-mode-excavate').style.color = 'white'; 
-                document.getElementById('btn-mode-excavate').style.border = 'none';
-                document.getElementById('btn-mode-nearest').style.background = '#f1f5f9'; 
-                document.getElementById('btn-mode-nearest').style.color = '#475569'; 
-                document.getElementById('btn-mode-nearest').style.border = '1px solid #cbd5e1';
-                document.getElementById('setup-nearest').style.display = 'none'; 
-                document.getElementById('setup-excavate').style.display = 'block';
-            }
+            ['nearest', 'excavate', 'target'].forEach(m => {
+                let btn = document.getElementById('btn-mode-' + m);
+                btn.style.background = '#f1f5f9'; btn.style.color = '#475569'; btn.style.border = '1px solid #cbd5e1';
+                document.getElementById('setup-' + m).style.display = 'none';
+            });
+            let activeBtn = document.getElementById('btn-mode-' + mode);
+            activeBtn.style.background = '#e83e8c'; activeBtn.style.color = 'white'; activeBtn.style.border = 'none';
+            document.getElementById('setup-' + mode).style.display = 'block';
         };
 
         window.execTestMode = function() {
             if (TestManager.modeType === 'nearest') initNearestTest();
-            else initExcavateTest();
+            else if (TestManager.modeType === 'excavate') initExcavateTest();
+            else initTargetTest();
         };
 
         function startTestUI() {
@@ -804,6 +679,7 @@
             
             map.off('click', onMapClickForNearest); 
             map.off('click', onMapClickForExcavate);
+            map.off('click', onMapClickForTarget);
             
             TestManager.elements.forEach(el => map.removeLayer(el)); 
             TestManager.elements = [];
@@ -822,189 +698,110 @@
             map.locate({setView: true, maxZoom: 17});
         };
 
-        // --- モード1: 【1問限定】半径200m以内の5ヶ所指定テスト ---
+        // --- モード1: 5ヶ所当て ---
         function initNearestTest() {
             let area = document.getElementById('test-area-select').value;
             let pool = State.allData.filter(row => (area === "" || row["地区"] === area) && row["緯度"] && row["経度"]);
             if(pool.length < 5) return showMessage(`この地区には水利が ${pool.length} 件しかありません。最低5件以上のデータが必要です。`);
-
             let base = pool[Math.floor(Math.random() * pool.length)];
-            let fireLat = parseFloat(base["緯度"]) + (Math.random() - 0.5) * 0.002; 
-            let fireLng = parseFloat(base["経度"]) + (Math.random() - 0.5) * 0.002; 
+            let fireLat = parseFloat(base["緯度"]) + (Math.random() - 0.5) * 0.002; let fireLng = parseFloat(base["経度"]) + (Math.random() - 0.5) * 0.002; 
             let fireLatLng = L.latLng(fireLat, fireLng);
             
-            let allInRadius = pool.map(r => {
-                return { row: r, dist: map.distance(fireLatLng, L.latLng(r["緯度"], r["経度"])) };
-            }).filter(r => r.dist <= 200).sort((a, b) => a.dist - b.dist);
-            
+            let allInRadius = pool.map(r => ({ row: r, dist: map.distance(fireLatLng, L.latLng(r["緯度"], r["経度"])) })).filter(r => r.dist <= 200).sort((a, b) => a.dist - b.dist);
             let targetCount = Math.min(5, allInRadius.length);
             if (targetCount === 0) {
-                allInRadius = pool.map(r => {
-                    return { row: r, dist: map.distance(fireLatLng, L.latLng(r["緯度"], r["経度"])) };
-                }).sort((a, b) => a.dist - b.dist);
+                allInRadius = pool.map(r => ({ row: r, dist: map.distance(fireLatLng, L.latLng(r["緯度"], r["経度"])) })).sort((a, b) => a.dist - b.dist);
                 targetCount = Math.min(5, allInRadius.length);
             }
             
-            let nearestTargets = allInRadius.slice(0, targetCount);
-            TestManager.question = { fireLat: fireLat, fireLng: fireLng, targets: nearestTargets, allInRadius: allInRadius };
-            
-            TestManager.isActive = false; 
-            TestManager.elements = [];
-            
+            TestManager.question = { fireLat: fireLat, fireLng: fireLng, targets: allInRadius.slice(0, targetCount), allInRadius: allInRadius };
+            TestManager.isActive = false; TestManager.elements = [];
             if(TestManager.fireCircle) { map.removeLayer(TestManager.fireCircle); TestManager.fireCircle = null; }
-            startTestUI();
-            map.on('click', onMapClickForNearest);
-            showNearestQuestion();
+            startTestUI(); map.on('click', onMapClickForNearest); showNearestQuestion();
         }
 
-        window.retryNearestTest = function() {
-            TestManager.elements.forEach(el => map.removeLayer(el)); 
-            TestManager.elements = [];
-            showNearestQuestion();
-        }
+        window.retryNearestTest = function() { TestManager.elements.forEach(el => map.removeLayer(el)); TestManager.elements = []; showNearestQuestion(); }
 
         function showNearestQuestion() {
-            TestManager.userTapsForNearest = [];
-            let q = TestManager.question;
+            TestManager.userTapsForNearest = []; let q = TestManager.question;
+            document.getElementById('test-progress').innerText = `🔥 火災周辺5ヶ所当てテスト`; document.getElementById('test-question').innerText = `半径200m以内の水利を【 ${q.targets.length}ヶ所 】タップせよ！`; document.getElementById('test-instruction').innerHTML = `<span style="color:#f59e0b;">現在：0 / ${q.targets.length} ヶ所 指定完了</span>`;
+            if(TestManager.fireMarker) map.removeLayer(TestManager.fireMarker); if(TestManager.fireCircle) map.removeLayer(TestManager.fireCircle);
             
-            document.getElementById('test-progress').innerText = `🔥 火災周辺5ヶ所当てテスト`;
-            document.getElementById('test-question').innerText = `半径200m以内の水利を【 ${q.targets.length}ヶ所 】タップせよ！`;
-            document.getElementById('test-instruction').innerHTML = `<span style="color:#f59e0b;">現在：0 / ${q.targets.length} ヶ所 指定完了</span>`;
-            
-            if(TestManager.fireMarker) map.removeLayer(TestManager.fireMarker);
-            if(TestManager.fireCircle) map.removeLayer(TestManager.fireCircle);
-            
-            TestManager.fireMarker = L.marker([q.fireLat, q.fireLng], {
-                icon: L.divIcon({ className: 'marker-fire-wrapper', html: '<div class="marker-fire-anim">🔥</div>', iconSize: [34, 34], iconAnchor: [17, 34] })
-            }).addTo(map);
-            
-            TestManager.fireCircle = L.circle([q.fireLat, q.fireLng], {
-                radius: 200, color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.15, dashArray: '5, 5'
-            }).addTo(map);
-            
-            map.setView([q.fireLat, q.fireLng], 16); 
-            setTimeout(() => { TestManager.isActive = true; }, 300);
+            TestManager.fireMarker = L.marker([q.fireLat, q.fireLng], { icon: L.divIcon({ className: 'marker-fire-wrapper', html: '<div class="marker-fire-anim">🔥</div>', iconSize: [34, 34], iconAnchor: [17, 34] }) }).addTo(map);
+            TestManager.fireCircle = L.circle([q.fireLat, q.fireLng], { radius: 200, color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.15, dashArray: '5, 5' }).addTo(map);
+            map.setView([q.fireLat, q.fireLng], 16); setTimeout(() => { TestManager.isActive = true; }, 300);
         }
 
         function onMapClickForNearest(e) {
             if(!TestManager.isActive) return; 
-            
-            let q = TestManager.question;
-            TestManager.userTapsForNearest.push(e.latlng);
-            
-            let userMarker = L.circleMarker(e.latlng, {radius: 8, color: '#ffffff', fillColor: '#3b82f6', fillOpacity: 1, weight: 2}).addTo(map);
-            TestManager.elements.push(userMarker);
-            
+            let q = TestManager.question; TestManager.userTapsForNearest.push(e.latlng);
+            let userMarker = L.circleMarker(e.latlng, {radius: 8, color: '#ffffff', fillColor: '#3b82f6', fillOpacity: 1, weight: 2}).addTo(map); TestManager.elements.push(userMarker);
             document.getElementById('test-instruction').innerHTML = `<span style="color:#f59e0b;">現在：${TestManager.userTapsForNearest.length} / ${q.targets.length} ヶ所 指定完了</span>`;
-            
-            if(TestManager.userTapsForNearest.length >= q.targets.length) {
-                TestManager.isActive = false; 
-                showNearestAnswers(q, TestManager.userTapsForNearest);
-            }
+            if(TestManager.userTapsForNearest.length >= q.targets.length) { TestManager.isActive = false; showNearestAnswers(q, TestManager.userTapsForNearest); }
         }
 
         function showNearestAnswers(q, userTaps) {
-            let isHardMode = document.getElementById('test-hard-mode').checked;
-            let limitDist = isHardMode ? 10 : 20;
-            
+            let isHardMode = document.getElementById('test-hard-mode').checked; let limitDist = isHardMode ? 10 : 20;
             let pairs = [];
             for(let i=0; i<q.targets.length; i++) {
                 let tLatLng = L.latLng(q.targets[i].row["緯度"], q.targets[i].row["経度"]);
-                for(let j=0; j<userTaps.length; j++) {
-                    pairs.push({ aIdx: i, uIdx: j, dist: map.distance(tLatLng, userTaps[j]), targetLatlng: tLatLng });
-                }
+                for(let j=0; j<userTaps.length; j++) { pairs.push({ aIdx: i, uIdx: j, dist: map.distance(tLatLng, userTaps[j]), targetLatlng: tLatLng }); }
             }
             pairs.sort((a,b) => a.dist - b.dist);
-            
-            let usedA = new Set(); let usedU = new Set();
-            let results = [];
-            pairs.forEach(p => {
-                if(!usedA.has(p.aIdx) && !usedU.has(p.uIdx)) {
-                    usedA.add(p.aIdx); usedU.add(p.uIdx);
-                    results.push(p);
-                }
-            });
+            let usedA = new Set(); let usedU = new Set(); let results = [];
+            pairs.forEach(p => { if(!usedA.has(p.aIdx) && !usedU.has(p.uIdx)) { usedA.add(p.aIdx); usedU.add(p.uIdx); results.push(p); } });
             
             let roundCorrect = 0;
             results.forEach(p => {
-                let isCorrect = p.dist <= limitDist;
-                if(isCorrect) { roundCorrect++; }
-                
+                let isCorrect = p.dist <= limitDist; if(isCorrect) roundCorrect++;
                 let ansIcon = L.divIcon({ className: (q.targets[p.aIdx].row["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank', iconSize: [24, 24], iconAnchor: [12, 12] });
-                let ansMarker = L.marker(p.targetLatlng, {icon: ansIcon}).addTo(map);
-                TestManager.elements.push(ansMarker);
-
-                // 不正解の場合は×を出す（線は引かない）
-                if(!isCorrect) {
-                    let missMarker = L.marker(userTaps[p.uIdx], {icon: L.divIcon({ className: 'marker-miss', html: '❌', iconSize: [20, 20], iconAnchor: [10, 10] })}).addTo(map);
-                    TestManager.elements.push(missMarker);
-                }
+                TestManager.elements.push(L.marker(p.targetLatlng, {icon: ansIcon}).addTo(map));
+                if(!isCorrect) TestManager.elements.push(L.marker(userTaps[p.uIdx], {icon: L.divIcon({ className: 'marker-miss', html: '❌', iconSize: [20, 20], iconAnchor: [10, 10] })}).addTo(map));
             });
 
-            // 結びつかなかった余りのタップも❌
             for(let j=0; j<userTaps.length; j++) {
-                if(!usedU.has(j)) {
-                    let missMarker = L.marker(userTaps[j], {icon: L.divIcon({ className: 'marker-miss', html: '❌', iconSize: [20, 20], iconAnchor: [10, 10] })}).addTo(map);
-                    TestManager.elements.push(missMarker);
-                }
+                if(!usedU.has(j)) TestManager.elements.push(L.marker(userTaps[j], {icon: L.divIcon({ className: 'marker-miss', html: '❌', iconSize: [20, 20], iconAnchor: [10, 10] })}).addTo(map));
             }
             
-            // 200m以内の「その他の全水利」を薄く表示して復習させる
             q.allInRadius.forEach(item => {
-                let r = item.row;
-                let isTarget = q.targets.some(t => t.row["水利番号"] === r["水利番号"]);
+                let r = item.row; let isTarget = q.targets.some(t => t.row["水利番号"] === r["水利番号"]);
                 if (!isTarget) {
                     let ansIcon = L.divIcon({ className: (r["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank', iconSize: [24, 24], iconAnchor: [12, 12] });
-                    let ansMarker = L.marker([r["緯度"], r["経度"]], {icon: ansIcon, opacity: 0.5}).addTo(map);
-                    TestManager.elements.push(ansMarker);
+                    TestManager.elements.push(L.marker([r["緯度"], r["経度"]], {icon: ansIcon, opacity: 0.5}).addTo(map));
                 }
             });
             
             let allLatLngs = [...userTaps, ...q.allInRadius.map(t => L.latLng(t.row["緯度"], t.row["経度"])), L.latLng(q.fireLat, q.fireLng)];
             map.fitBounds(L.latLngBounds(allLatLngs), {padding: [50,50], maxZoom: 18});
             
-            // 答え合わせボタンパネルの表示
             document.getElementById('test-instruction').innerHTML = `
-                <div style="margin-bottom: 8px;">
-                    <span style="color:#10b981; font-size:14px; background:#fff; padding:3px 10px; border-radius:10px;">${q.targets.length}ヶ所中 ${roundCorrect}ヶ所正解！ (200m内の全水利を表示中)</span>
-                </div>
-                <div style="display: flex; gap: 10px; justify-content: center;">
-                    <button onclick="retryNearestTest()" style="padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">🔄 もう一度チャレンジ</button>
-                    <button onclick="initNearestTest()" style="padding: 6px 12px; background: #e83e8c; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">▶️ 次の新しい問題へ</button>
-                </div>
+                <div style="margin-bottom: 8px;"><span style="color:#10b981; font-size:14px; background:#fff; padding:3px 10px; border-radius:10px;">${q.targets.length}ヶ所中 ${roundCorrect}ヶ所正解！</span></div>
+                <div style="display: flex; gap: 10px; justify-content: center;"><button onclick="retryNearestTest()" style="padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">🔄 もう一度</button><button onclick="initNearestTest()" style="padding: 6px 12px; background: #e83e8c; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">▶️ 次の問題</button></div>
             `;
         }
-
 
         // --- モード2: エリア内全発掘 ---
         function initExcavateTest() {
             let bounds = map.getBounds();
             TestManager.excavatePool = State.allData.filter(row => row["緯度"] && row["経度"] && bounds.contains(L.latLng(row["緯度"], row["経度"])));
-            if (TestManager.excavatePool.length === 0) return showMessage("画面に映っている範囲に水利がありません。地図を移動するかズームアウトしてください。");
+            if (TestManager.excavatePool.length === 0) return showMessage("画面に映っている範囲に水利がありません。");
 
             TestManager.missLimit = parseInt(document.getElementById('test-miss-limit').value);
-            TestManager.hitCount = 0; 
-            TestManager.missCount = 0; 
-            TestManager.isActive = false; 
-            TestManager.elements = [];
+            TestManager.hitCount = 0; TestManager.missCount = 0; TestManager.isActive = false; TestManager.elements = [];
             TestManager.excavatePool.forEach(q => q.excavated = false); 
             
-            startTestUI(); 
-            updateExcavateHeader(); 
-            map.on('click', onMapClickForExcavate);
-            setTimeout(() => { TestManager.isActive = true; }, 500);
+            startTestUI(); updateExcavateHeader(); map.on('click', onMapClickForExcavate); setTimeout(() => { TestManager.isActive = true; }, 500);
         }
 
         function updateExcavateHeader() {
             document.getElementById('test-progress').innerText = `🎯 ターゲット：全 ${TestManager.excavatePool.length} 個`;
             let lifeText = TestManager.missLimit === 999 ? "無制限" : `残り ${TestManager.missLimit - TestManager.missCount} 回`;
             document.getElementById('test-question').innerHTML = `🔍 発見：${TestManager.hitCount} / ${TestManager.excavatePool.length} 個 &nbsp;&nbsp; <span style="color:#ef4444;">❤️ ${lifeText}</span>`;
-            document.getElementById('test-instruction').innerText = "記憶を頼りに水利がありそうな場所をタップして発掘してください！";
+            document.getElementById('test-instruction').innerText = "記憶を頼りに水利がありそうな場所をタップしてください！";
         }
 
         function onMapClickForExcavate(e) {
             if (!TestManager.isActive) return;
-            
             let limitDist = document.getElementById('test-hard-mode').checked ? 10 : 20;
             let hitIndex = -1; let minDist = Infinity;
 
@@ -1015,10 +812,7 @@
             });
 
             if (hitIndex !== -1) {
-                let q = TestManager.excavatePool[hitIndex]; 
-                q.excavated = true; 
-                TestManager.hitCount++;
-                
+                let q = TestManager.excavatePool[hitIndex]; q.excavated = true; TestManager.hitCount++;
                 let ansIcon = L.divIcon({ className: (q["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank', iconSize: [24, 24], iconAnchor: [12, 12] });
                 TestManager.elements.push(L.marker([q["緯度"], q["経度"]], {icon: ansIcon}).addTo(map));
             } else {
@@ -1027,21 +821,17 @@
             }
 
             updateExcavateHeader();
-            
             if (TestManager.hitCount >= TestManager.excavatePool.length || TestManager.missCount >= TestManager.missLimit) { 
-                TestManager.isActive = false; 
-                let isCleared = TestManager.hitCount >= TestManager.excavatePool.length;
-                document.getElementById('test-instruction').innerHTML = `<span style="color:#10b981; font-size:14px; background:#fff; padding:2px 8px; border-radius:10px; cursor:pointer;">${isCleared ? '完全制覇！' : 'ゲームオーバー！'} 地図をタップして結果発表へ👉</span>`;
+                TestManager.isActive = false; let isCleared = TestManager.hitCount >= TestManager.excavatePool.length;
+                document.getElementById('test-instruction').innerHTML = `<span style="color:#10b981; font-size:14px; background:#fff; padding:2px 8px; border-radius:10px; cursor:pointer;">${isCleared ? '完全制覇！' : 'ゲームオーバー！'} 地図をタップして結果へ👉</span>`;
                 setTimeout(() => { map.once('click', () => showExcavateResult(isCleared)); }, 1000);
             }
         }
 
         function showExcavateResult(isCleared) {
-            map.off('click', onMapClickForExcavate); 
-            document.getElementById('test-header').style.display = 'none';
+            map.off('click', onMapClickForExcavate); document.getElementById('test-header').style.display = 'none';
             let score = Math.round((TestManager.hitCount / TestManager.excavatePool.length) * 100);
             
-            // 未発見を薄く表示
             TestManager.excavatePool.forEach(q => {
                 if (!q.excavated) {
                     let ansIcon = L.divIcon({ className: ((q["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank') + ' missed-marker', iconSize: [24, 24], iconAnchor: [12, 12] });
@@ -1050,73 +840,103 @@
             });
 
             document.getElementById('test-score-label').innerText = "発掘率";
-            document.getElementById('test-score-display').innerText = `${score}%`; 
-            document.getElementById('test-score-display').style.color = score >= 80 ? '#e83e8c' : '#f59e0b';
+            document.getElementById('test-score-display').innerText = `${score}%`; document.getElementById('test-score-display').style.color = score >= 80 ? '#e83e8c' : '#f59e0b';
             document.getElementById('test-correct-display').innerText = `${TestManager.excavatePool.length}個中 ${TestManager.hitCount}個 発見！`; 
-            document.getElementById('test-message-display').innerHTML = `お手つき: ${TestManager.missCount} 回<br><br>${isCleared ? "🏆 完全制覇！このエリアの水利配置は完璧です！" : "💀 お手つき上限に達しました...。配置を覚え直しましょう！"}`;
+            document.getElementById('test-message-display').innerHTML = `お手つき: ${TestManager.missCount} 回<br><br>${isCleared ? "🏆 完全制覇！" : "💀 お手つき上限に達しました..."}`;
             document.getElementById('test-result-modal').style.display = 'flex';
+        }
+
+        // --- 🌟 モード3: 目標物当てクイズ 🌟 ---
+        function initTargetTest() {
+            let selectedJurisdiction = document.getElementById('test-jurisdiction-select').value;
+            let selectedType = document.getElementById('test-target-type-select').value;
+            
+            let pool = State.targetsData.filter(row => {
+                if (!row["緯度"] || !row["経度"]) return false;
+                let matchJuri = (selectedJurisdiction === "" || row["管轄署"] === selectedJurisdiction);
+                let matchType = (selectedType === "" || row["種別"] === selectedType);
+                return matchJuri && matchType;
+            });
+
+            if(pool.length === 0) return showMessage(`指定された条件（${selectedJurisdiction} / ${selectedType}）の目標物データが見つかりません。`);
+
+            let target = pool[Math.floor(Math.random() * pool.length)];
+            TestManager.question = target; TestManager.isActive = false; TestManager.elements = [];
+            
+            startTestUI(); showTargetQuestion(target); map.on('click', onMapClickForTarget);
+        }
+
+        function showTargetQuestion(target) {
+            document.getElementById('test-progress').innerText = `📍 目標物ピンポイント当て (${target["管轄署"] || '管轄不明'})`;
+            document.getElementById('test-question').innerText = `Q. 「${target["名称"]}」はどこ？`;
+            document.getElementById('test-instruction').innerHTML = `<span style="color:#f59e0b;">マップ上の正しい位置を1回だけタップしてください</span>`;
+            
+            if (document.getElementById('test-jurisdiction-select').value !== "") {
+                let areaHints = Object.keys(State.areaMapping).filter(key => State.areaMapping[key] === target["管轄署"]);
+                let hintWater = State.allData.find(w => areaHints.includes(w["地区"]));
+                if (hintWater) { map.setView([hintWater["緯度"], hintWater["経度"]], 13); }
+            } else {
+                map.setView([34.2305, 135.1705], 13);
+            }
+            setTimeout(() => { TestManager.isActive = true; }, 500);
+        }
+
+        function onMapClickForTarget(e) {
+            if(!TestManager.isActive) return; 
+            TestManager.isActive = false; 
+            
+            let target = TestManager.question; let targetLatLng = L.latLng(target["緯度"], target["経度"]);
+            let dist = map.distance(e.latlng, targetLatLng);
+            
+            let isHardMode = document.getElementById('test-hard-mode').checked;
+            let limitDist = isHardMode ? 30 : 60; 
+            let isCorrect = dist <= limitDist;
+
+            let userMarker = L.marker(e.latlng, {icon: L.divIcon({ className: 'marker-miss', html: isCorrect ? '🎯' : '❌', iconSize: [24, 24], iconAnchor: [12, 12] })}).addTo(map);
+            let correctIcon = L.divIcon({ className: 'marker-tank', html: '<div style="background:#007bff; color:white; font-size:10px; padding:2px 5px; border-radius:3px; white-space:nowrap; position:absolute; top:-25px; left:-20px;">' + target["名称"] + '</div>', iconSize: [14, 14], iconAnchor: [7, 7] });
+            let ansMarker = L.marker(targetLatLng, {icon: correctIcon}).addTo(map);
+            let line = L.polyline([e.latlng, targetLatLng], {color: isCorrect ? '#10b981' : '#ef4444', weight: 3, dashArray: '5, 5'}).addTo(map);
+            
+            TestManager.elements.push(userMarker, ansMarker, line);
+            map.fitBounds(L.latLngBounds([e.latlng, targetLatLng]), {padding: [50, 50], maxZoom: 17});
+
+            document.getElementById('test-instruction').innerHTML = `
+                <div style="margin-bottom: 8px;"><span style="color:${isCorrect ? '#10b981' : '#ef4444'}; font-size:15px; font-weight:bold; background:#fff; padding:3px 10px; border-radius:10px;">${isCorrect ? '大正解🎉' : '残念！'} 誤差: ${Math.round(dist)}m (基準:${limitDist}m)</span></div>
+                <div style="display: flex; gap: 10px; justify-content: center;"><button onclick="initTargetTest()" style="padding: 8px 15px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">▶️ 次のクイズへ</button></div>
+            `;
         }
 
         // ==========================================
         // 7. リスト表示と検索・フィルタリング
         // ==========================================
-        
         function updateListTable(data) {
-            let tbody = document.getElementById('table-body'); 
-            tbody.innerHTML = ''; 
-            document.getElementById('list-count').innerText = data.length; 
-            document.getElementById('table-count').innerText = data.length;
-            
+            let tbody = document.getElementById('table-body'); tbody.innerHTML = ''; 
+            document.getElementById('list-count').innerText = data.length; document.getElementById('table-count').innerText = data.length;
             data.forEach(row => {
                 let tr = document.createElement('tr'); 
                 let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok"; 
                 let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
-                
-                tr.innerHTML = `
-                    <td style="font-weight:bold;">${row["水利番号"]}</td>
-                    <td>${row["地区"] || "-"}</td>
-                    <td>${row["水利種別"]}</td>
-                    <td>${categoryText}</td>
-                    <td style="font-weight:bold; color:#0369a1;">${row["前回調査日"] || "未実施"}</td>
-                    <td><span class="badge ${badgeClass}">${row["要調査"]}</span></td>
-                    <td>${row["点検結果"] || "-"}</td>
-                    <td>${row["異常の種類"] || "-"}</td>
-                    <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"] || "-"}</td>
-                `;
-                
+                tr.innerHTML = `<td style="font-weight:bold;">${row["水利番号"]}</td><td>${row["地区"] || "-"}</td><td>${row["水利種別"]}</td><td>${categoryText}</td><td style="font-weight:bold; color:#0369a1;">${row["前回調査日"] || "未実施"}</td><td><span class="badge ${badgeClass}">${row["要調査"]}</span></td><td>${row["点検結果"] || "-"}</td><td>${row["異常の種類"] || "-"}</td><td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"] || "-"}</td>`;
                 tr.addEventListener('click', () => { 
                     if (row["緯度"] && row["経度"]) { 
-                        toggleList(false); 
-                        map.setView([row["緯度"], row["経度"]], 18); 
-                        setTimeout(() => { 
-                            markersGroup.eachLayer(marker => { 
-                                if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) {
-                                    marker.openPopup(); 
-                                }
-                            }); 
-                        }, 300); 
+                        toggleList(false); map.setView([row["緯度"], row["経度"]], 18); 
+                        setTimeout(() => { markersGroup.eachLayer(marker => { if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) marker.openPopup(); }); }, 300); 
                     } 
                 });
                 tbody.appendChild(tr);
             });
         }
 
-        window.toggleList = function(show) { 
-            let container = document.getElementById('list-container'); 
-            container.style.display = (show !== undefined) ? (show ? 'flex' : 'none') : (container.style.display === 'flex' ? 'none' : 'flex'); 
-        };
+        window.toggleList = function(show) { let container = document.getElementById('list-container'); container.style.display = (show !== undefined) ? (show ? 'flex' : 'none') : (container.style.display === 'flex' ? 'none' : 'flex'); };
 
         function execSearch(skipFit) {
             let selectedCategory = document.getElementById('filter-category').value; 
-            
             let selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value);
             let isAllAreas = document.querySelectorAll('.area-checkbox').length === selectedAreas.length;
-            
             let selectedStatus = document.getElementById('filter-status').value; 
             let selectedError = document.getElementById('filter-error').value; 
             let selectedPaint = document.getElementById('filter-paint').value; 
             let keyword = document.getElementById('search-text').value.trim().toLowerCase(); 
-            
             let filterDateVal = document.getElementById('filter-date').value; 
             let filterDateCond = document.getElementById('filter-date-cond').value; 
             let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
@@ -1126,153 +946,68 @@
                 let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic);
                 let matchArea = isAllAreas || selectedAreas.includes(row["地区"]); 
                 let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
-                
                 let matchError = true; 
-                if (selectedError === "異常あり") { 
-                    matchError = (row["異常の種類"] !== "" && row["異常の種類"] !== "なし"); 
-                } else if (selectedError !== "") { 
-                    matchError = (row["異常の種類"] === selectedError); 
-                }
-                
+                if (selectedError === "異常あり") matchError = (row["異常の種類"] !== "" && row["異常の種類"] !== "なし"); 
+                else if (selectedError !== "") matchError = (row["異常の種類"] === selectedError); 
                 let matchPaint = (selectedPaint === "") || (row["塗装レベル"] === selectedPaint);
-                
                 let matchDate = true; 
                 if (filterDateTime && row["前回調査日"]) { 
                     let rowDateTime = parseLocalDate(row["前回調査日"]).getTime(); 
-                    if (filterDateCond === "before") matchDate = (rowDateTime <= filterDateTime); 
-                    else if (filterDateCond === "after") matchDate = (rowDateTime >= filterDateTime); 
+                    if (filterDateCond === "before") matchDate = (rowDateTime <= filterDateTime); else if (filterDateCond === "after") matchDate = (rowDateTime >= filterDateTime); 
                 }
-                
                 let matchKeyword = true; 
-                if (keyword !== "") {
-                    matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
-                }
+                if (keyword !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
                 
                 return matchCategory && matchArea && matchStatus && matchError && matchPaint && matchDate && matchKeyword;
             });
             
-            renderMarkers(State.currentFilteredData, skipFit); 
-            updateListTable(State.currentFilteredData);
-            
-            if (window.innerWidth <= 600) {
-                document.getElementById('search-panel').style.display = 'none';
-            }
+            renderMarkers(State.currentFilteredData, skipFit); updateListTable(State.currentFilteredData);
+            if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none';
         }
 
-        // 検索パネル開閉
         document.getElementById('search-toggle-btn').addEventListener('click', function() {
             let panel = document.getElementById('search-panel');
-            if (panel.style.display === 'flex') { 
-                panel.style.display = 'none'; this.classList.remove('tracking'); 
-            } else { 
-                panel.style.display = 'flex'; this.classList.add('tracking'); 
-            }
+            if (panel.style.display === 'flex') { panel.style.display = 'none'; this.classList.remove('tracking'); } else { panel.style.display = 'flex'; this.classList.add('tracking'); }
         });
-
-        // 検索実行
         document.getElementById('search-btn').addEventListener('click', function() { execSearch(false); });
-        
-        // 検索リセット
         document.getElementById('reset-btn').addEventListener('click', function() { 
-            document.getElementById('filter-category').value = ""; 
-            toggleAllAreas(true);
-            document.getElementById('filter-status').value = ""; 
-            document.getElementById('filter-error').value = ""; 
-            document.getElementById('filter-paint').value = ""; 
-            document.getElementById('filter-date').value = ""; 
-            document.getElementById('filter-date-cond').value = "before"; 
-            document.getElementById('search-text').value = ""; 
-            execSearch(false); 
+            document.getElementById('filter-category').value = ""; toggleAllAreas(true);
+            document.getElementById('filter-status').value = ""; document.getElementById('filter-error').value = ""; document.getElementById('filter-paint').value = ""; document.getElementById('filter-date').value = ""; document.getElementById('filter-date-cond').value = "before"; document.getElementById('search-text').value = ""; execSearch(false); 
         });
-        
-        // 全数調査ボタン
         document.getElementById('survey-btn').addEventListener('click', function() { 
-            document.getElementById('filter-category').value = "公設"; 
-            toggleAllAreas(true); 
-            document.getElementById('filter-status').value = ""; 
-            document.getElementById('filter-error').value = ""; 
-            document.getElementById('filter-paint').value = ""; 
-            document.getElementById('filter-date').value = `${new Date().getFullYear()}-05-01`; 
-            document.getElementById('filter-date-cond').value = "before"; 
-            document.getElementById('search-text').value = ""; 
-            document.getElementById('search-panel').style.display = 'flex'; 
-            execSearch(false); 
+            document.getElementById('filter-category').value = "公設"; toggleAllAreas(true); document.getElementById('filter-status').value = ""; document.getElementById('filter-error').value = ""; document.getElementById('filter-paint').value = ""; document.getElementById('filter-date').value = `${new Date().getFullYear()}-05-01`; document.getElementById('filter-date-cond').value = "before"; document.getElementById('search-text').value = ""; document.getElementById('search-panel').style.display = 'flex'; execSearch(false); 
         });
-
-        // リスト表示切替
         document.getElementById('list-toggle-btn').addEventListener('click', () => toggleList());
-
-        // 今日の点検リスト
         document.getElementById('today-list-btn').addEventListener('click', function() {
-            let today = new Date(); 
-            let todayStr1 = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`; 
-            let todayStr2 = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
-            
+            let today = new Date(); let todayStr1 = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`; let todayStr2 = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
             State.currentFilteredData = State.allData.filter(row => row["前回調査日"] === todayStr1 || row["前回調査日"] === todayStr2);
-            renderMarkers(State.currentFilteredData, false); 
-            updateListTable(State.currentFilteredData); 
-            toggleList(true);
-            
+            renderMarkers(State.currentFilteredData, false); updateListTable(State.currentFilteredData); toggleList(true);
             if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none';
         });
 
-        // GPS現在地機能
         document.getElementById('gps-btn').addEventListener('click', function() { 
             let btn = document.getElementById('gps-btn'); 
-            if (State.isTracking) { 
-                State.isTracking = false; 
-                map.stopLocate(); 
-                btn.classList.remove('tracking'); 
-                btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; 
-            } else { 
-                State.isTracking = true; 
-                btn.classList.add('tracking'); 
-                btn.innerHTML = '<span class="btn-icon">🟢</span><span class="btn-text pc-only">追従中</span><span class="btn-text sp-only">追従中</span>'; 
-                map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true}); 
-            } 
+            if (State.isTracking) { State.isTracking = false; map.stopLocate(); btn.classList.remove('tracking'); btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; 
+            } else { State.isTracking = true; btn.classList.add('tracking'); btn.innerHTML = '<span class="btn-icon">🟢</span><span class="btn-text pc-only">追従中</span><span class="btn-text sp-only">追従中</span>'; map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true}); } 
         });
-
-        // マップへのGPSイベント
         map.on('locationfound', function(e) { 
             if (State.currentLocationMarker) map.removeLayer(State.currentLocationMarker); 
-            State.currentLocationMarker = L.circleMarker(e.latlng, { 
-                radius: 8, fillColor: State.isTracking ? "#28a745" : "#007bff", 
-                color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9 
-            }).addTo(map).bindPopup("<b>現在地</b>"); 
+            State.currentLocationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: State.isTracking ? "#28a745" : "#007bff", color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9 }).addTo(map).bindPopup("<b>現在地</b>"); 
         });
-        
         map.on('dragstart', function() { 
-            if (State.isTracking) { 
-                State.isTracking = false; map.stopLocate(); 
-                let btn = document.getElementById('gps-btn'); 
-                btn.classList.remove('tracking'); 
-                btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; 
-            } 
+            if (State.isTracking) { State.isTracking = false; map.stopLocate(); let btn = document.getElementById('gps-btn'); btn.classList.remove('tracking'); btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; } 
         });
 
-        // エクスポート機能
         window.downloadCSV = function() {
             if (State.currentFilteredData.length === 0) return showMessage("リストが空です");
             let csvContent = "\uFEFF水利番号,地区,水利種別,設置区分,前回調査日,要調査,点検結果,異常の種類,塗装レベル,コメント\r\n";
             State.currentFilteredData.forEach(row => { 
                 let catText = isPublicWater(row["水利番号"]) ? "公設" : "私設"; 
-                csvContent += [
-                    row["水利番号"], row["地区"]||"-", row["水利種別"], catText, 
-                    row["前回調査日"]||"未実施", row["要調査"], row["点検結果"]||"-", 
-                    row["異常の種類"]||"-", row["塗装レベル"]||"-", 
-                    (row["コメント"]||"-").replace(/,/g, "，")
-                ].join(",") + "\r\n"; 
+                csvContent += [row["水利番号"], row["地区"]||"-", row["水利種別"], catText, row["前回調査日"]||"未実施", row["要調査"], row["点検結果"]||"-", row["異常の種類"]||"-", row["塗装レベル"]||"-", (row["コメント"]||"-").replace(/,/g, "，")].join(",") + "\r\n"; 
             });
-            let link = document.createElement("a"); 
-            link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); 
-            link.download = `地水利点検リスト_${new Date().toISOString().slice(0,10)}.csv`; 
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `地水利点検リスト_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
         };
-
-        window.printReport = function() { 
-            document.getElementById('print-date').innerText = `${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日`; 
-            window.print(); 
-        };
+        window.printReport = function() { document.getElementById('print-date').innerText = `${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日`; window.print(); };
 
     </script>
 </body>
