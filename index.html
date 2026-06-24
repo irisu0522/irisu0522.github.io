@@ -22,6 +22,7 @@
             font-family: 'Helvetica Neue', Arial, sans-serif; 
             display: flex; 
             flex-direction: column; 
+            /* スマホバー隠れ対策：100dvh（動的ビューポート）を適用 */
             height: 100vh; 
             height: 100dvh; 
             overflow: hidden; 
@@ -129,9 +130,6 @@
         /* ❌ ミスマーカー＆未発見マーカー */
         .marker-miss { color: #dc3545; font-size: 20px; line-height: 20px; text-shadow: 0 0 4px white; display: flex; align-items: center; justify-content: center; background: transparent; border: none;}
         .missed-marker { opacity: 0.3 !important; filter: grayscale(100%); }
-
-        /* 🏛️ ランドマーク用アイコン追加 */
-        .marker-landmark { font-size: 24px; line-height: 24px; text-align: center; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5)); display: block; }
 
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
@@ -262,12 +260,11 @@
 
     <div id="test-setup-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.7); z-index:10001; align-items:center; justify-content:center;">
         <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width:350px; text-align:center;">
-            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 効果測定</h2>
+            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 秘密の効果測定</h2>
             
-            <div style="display:flex; gap:5px; margin-bottom:15px; flex-wrap: wrap;">
-                <button id="btn-mode-nearest" onclick="selectTestMode('nearest')" style="flex:1; min-width:45%; padding:10px 5px; background:#e83e8c; color:white; border:none; border-radius:5px; font-weight:bold; font-size:12px; transition:0.2s;">🔥 周辺5ヶ所</button>
-                <button id="btn-mode-excavate" onclick="selectTestMode('excavate')" style="flex:1; min-width:45%; padding:10px 5px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; font-weight:bold; font-size:12px; transition:0.2s;">🗺️ エリア全発掘</button>
-                <button id="btn-mode-landmark" onclick="selectTestMode('landmark')" style="flex:1; min-width:100%; margin-top:5px; padding:10px 5px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; font-weight:bold; font-size:13px; transition:0.2s;">🏛️ 交差点・目標物当てテスト</button>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <button id="btn-mode-nearest" onclick="selectTestMode('nearest')" style="flex:1; padding:10px 5px; background:#e83e8c; color:white; border:none; border-radius:5px; font-weight:bold; font-size:13px; transition:0.2s;">🔥 周辺5ヶ所当て</button>
+                <button id="btn-mode-excavate" onclick="selectTestMode('excavate')" style="flex:1; padding:10px 5px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; font-weight:bold; font-size:13px; transition:0.2s;">🗺️ エリア全発掘</button>
             </div>
 
             <div id="setup-nearest" style="display:block;">
@@ -290,15 +287,11 @@
                 </div>
             </div>
 
-            <div id="setup-landmark" style="display:none;">
-                <p style="font-size:12px; color:#475569; margin-bottom:15px; line-height:1.5;">指定された<b style="color:#0369a1;">「交差点」</b>や<b style="color:#0369a1;">「目標物」</b>の場所を地図上でタップして当てるテストです。全5問連続で出題されます。</p>
-            </div>
-
             <div style="text-align:left; margin-bottom:20px; background:#fff1f2; padding:10px; border-radius:5px; border:1px solid #fecdd3;">
                 <label style="font-size:12px; font-weight:bold; color:#be123c; display:flex; align-items:center; gap:8px;">
-                    <input type="checkbox" id="test-hard-mode" style="transform:scale(1.2);"> 🔥 鬼モード（通常より判定が厳格）
+                    <input type="checkbox" id="test-hard-mode" style="transform:scale(1.2);"> 🔥 鬼モード（誤差10m以内で正解）
                 </label>
-                <p style="font-size:10px; color:#be123c; margin:5px 0 0 0;">※通常は誤差20m(交差点は70m)以内で正解ですが、鬼モードは実際の場所から10m(交差点は30m)以内でなければ不正解になるガチ勢向け設定です。</p>
+                <p style="font-size:10px; color:#be123c; margin:5px 0 0 0;">※通常は誤差20m以内で正解となりますが、鬼モードは実際の場所から10m以内でなければ不正解になるガチ勢向け設定です。</p>
             </div>
 
             <div style="display:flex; gap:10px;">
@@ -390,9 +383,9 @@
     </div>
 
     <script>
-        // 変更箇所：ユーザー様よりご提供いただいた新しいデプロイURLに書き換えました
+        // 🚨【最重要】取得した新しいGASのURLをここに貼り付けてください！
         const CONFIG = {
-            GAS_API_URL: "https://script.google.com/macros/s/AKfycbx9kG6v27K_N8Rob_IKJPagndQyV8jknl432DGK_hhKX8kIYTRQE4QptBvo-oJ0jSDkuQ/exec",
+            GAS_API_URL: "https://script.google.com/macros/s/AKfycbz1-hdEZMgSKThiuUtYnYr-wIQ_rP7MKOg1005slSD3ukPxZuwTDtCU6np7EykvqbO4lA/exec",
             EDIT_MODE_PIN: "1190"
         };
 
@@ -460,10 +453,8 @@
         let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); 
         map.addLayer(markersGroup);
 
-        // 変更箇所：Stateの中に「landmarks（目標物データ）」を格納する箱を追加しました
         const State = {
             allData: [],
-            landmarks: [], 
             currentFilteredData: [],
             appMode: 'view',
             isTracking: false,
@@ -481,15 +472,17 @@
             } else { showMessage("❌ 暗証番号が違います。"); document.getElementById('pin-input').value = ''; }
         };
 
-        // 変更箇所：データ読み込み処理（GASからのレスポンスを新しい形に合わせました）
+        // 🚨 データ読み込み処理を強化（エラーの原因を特定しやすく改良）
         async function loadData() {
             try {
+                // 1. URLが初期値のままでないかチェック
                 if (!CONFIG.GAS_API_URL || !CONFIG.GAS_API_URL.startsWith("http")) {
                     throw new Error("GASのURLが設定されていません。");
                 }
 
                 const fetchUrl = `${CONFIG.GAS_API_URL}?action=get_data&t=${Date.now()}`;
                 
+                // 2. 通信実行（GAS特有のリダイレクトを自動追従させる）
                 const response = await fetch(fetchUrl, { 
                     method: 'GET', 
                     redirect: 'follow',
@@ -500,18 +493,18 @@
                     throw new Error(`HTTPエラー (${response.status})が発生しました`);
                 }
 
+                // 3. データ形式が正しいJSONかチェック（ログイン画面のHTMLが返ってくる事があるため）
                 const textData = await response.text();
                 let result;
                 try {
                     result = JSON.parse(textData);
                 } catch (e) {
                     console.error("受信データ内容:", textData);
-                    throw new Error("正しいデータが取得できませんでした。GASのデプロイ設定を確認してください。");
+                    throw new Error("正しいデータが取得できませんでした。\nGASのデプロイ設定で「アクセスできるユーザー」が【全員】になっているか確認してください。");
                 }
                 
-                // 変更箇所：水利データと目標物データ（交差点）を別々に格納します
+                // 4. 正常にデータ格納
                 State.allData = result.data || []; 
-                State.landmarks = result.landmarks || [];
                 State.currentFilteredData = [...State.allData];
                 
                 document.getElementById('view-count-badge').innerText = `👁️ 閲覧数: ${result.viewCount || 0}`;
@@ -525,13 +518,19 @@
                     enterApp(State.pendingMode); 
                 }
             } catch (error) { 
+                // エラー時の処理を強化
                 console.error("通信エラー詳細:", error);
+                
+                // 最終更新日のバッジをエラー表示に変更
                 let updateBadge = document.getElementById('data-update-date');
                 updateBadge.innerText = "📅 データの取得に失敗しました";
                 updateBadge.style.backgroundColor = "#fee2e2";
                 updateBadge.style.color = "#b91c1c";
-                let errorMsg = `データの読み込みに失敗しました。\n\n【詳細】\n${error.message}`;
+                
+                // ポップアップでエラー原因のヒントを表示
+                let errorMsg = `データの読み込みに失敗しました。\nURLを取得できませんでした。\n\n【詳細】\n${error.message}\n\n【確認事項】\n1. スクリプトのURLが正しく貼り付けられているか\n2. ネットワーク接続が安定しているか`;
                 showMessage(errorMsg); 
+                
                 document.getElementById('loading').innerText = "❌ 読み込みエラー"; 
             }
         }
@@ -759,38 +758,35 @@
             hitCount: 0, 
             missCount: 0, 
             missLimit: 5,
-            userTapsForNearest: [],
-            // 変更箇所：目標物テスト用の変数を追加
-            questions: [],
-            currentQIndex: 0,
-            correctCount: 0
+            userTapsForNearest: []
         };
 
-        // 変更箇所：3つのボタンが正しく切り替わるようにリファクタリング
         window.selectTestMode = function(mode) {
             TestManager.modeType = mode;
-            let btns = ['nearest', 'excavate', 'landmark'];
-            btns.forEach(b => {
-                let btnEl = document.getElementById('btn-mode-' + b);
-                let setupEl = document.getElementById('setup-' + b);
-                if (b === mode) {
-                    btnEl.style.background = '#e83e8c';
-                    btnEl.style.color = 'white';
-                    btnEl.style.border = 'none';
-                    if(setupEl) setupEl.style.display = 'block';
-                } else {
-                    btnEl.style.background = '#f1f5f9';
-                    btnEl.style.color = '#475569';
-                    btnEl.style.border = '1px solid #cbd5e1';
-                    if(setupEl) setupEl.style.display = 'none';
-                }
-            });
+            if (mode === 'nearest') {
+                document.getElementById('btn-mode-nearest').style.background = '#e83e8c'; 
+                document.getElementById('btn-mode-nearest').style.color = 'white'; 
+                document.getElementById('btn-mode-nearest').style.border = 'none';
+                document.getElementById('btn-mode-excavate').style.background = '#f1f5f9'; 
+                document.getElementById('btn-mode-excavate').style.color = '#475569'; 
+                document.getElementById('btn-mode-excavate').style.border = '1px solid #cbd5e1';
+                document.getElementById('setup-nearest').style.display = 'block'; 
+                document.getElementById('setup-excavate').style.display = 'none';
+            } else {
+                document.getElementById('btn-mode-excavate').style.background = '#e83e8c'; 
+                document.getElementById('btn-mode-excavate').style.color = 'white'; 
+                document.getElementById('btn-mode-excavate').style.border = 'none';
+                document.getElementById('btn-mode-nearest').style.background = '#f1f5f9'; 
+                document.getElementById('btn-mode-nearest').style.color = '#475569'; 
+                document.getElementById('btn-mode-nearest').style.border = '1px solid #cbd5e1';
+                document.getElementById('setup-nearest').style.display = 'none'; 
+                document.getElementById('setup-excavate').style.display = 'block';
+            }
         };
 
         window.execTestMode = function() {
             if (TestManager.modeType === 'nearest') initNearestTest();
-            else if (TestManager.modeType === 'excavate') initExcavateTest();
-            else initLandmarkTest(); // 変更箇所：追加
+            else initExcavateTest();
         };
 
         function startTestUI() {
@@ -808,7 +804,6 @@
             
             map.off('click', onMapClickForNearest); 
             map.off('click', onMapClickForExcavate);
-            map.off('click', onMapClickForLandmark); // 変更箇所：追加
             
             TestManager.elements.forEach(el => map.removeLayer(el)); 
             TestManager.elements = [];
@@ -939,12 +934,14 @@
                 let ansMarker = L.marker(p.targetLatlng, {icon: ansIcon}).addTo(map);
                 TestManager.elements.push(ansMarker);
 
+                // 不正解の場合は×を出す（線は引かない）
                 if(!isCorrect) {
                     let missMarker = L.marker(userTaps[p.uIdx], {icon: L.divIcon({ className: 'marker-miss', html: '❌', iconSize: [20, 20], iconAnchor: [10, 10] })}).addTo(map);
                     TestManager.elements.push(missMarker);
                 }
             });
 
+            // 結びつかなかった余りのタップも❌
             for(let j=0; j<userTaps.length; j++) {
                 if(!usedU.has(j)) {
                     let missMarker = L.marker(userTaps[j], {icon: L.divIcon({ className: 'marker-miss', html: '❌', iconSize: [20, 20], iconAnchor: [10, 10] })}).addTo(map);
@@ -952,6 +949,7 @@
                 }
             }
             
+            // 200m以内の「その他の全水利」を薄く表示して復習させる
             q.allInRadius.forEach(item => {
                 let r = item.row;
                 let isTarget = q.targets.some(t => t.row["水利番号"] === r["水利番号"]);
@@ -965,6 +963,7 @@
             let allLatLngs = [...userTaps, ...q.allInRadius.map(t => L.latLng(t.row["緯度"], t.row["経度"])), L.latLng(q.fireLat, q.fireLng)];
             map.fitBounds(L.latLngBounds(allLatLngs), {padding: [50,50], maxZoom: 18});
             
+            // 答え合わせボタンパネルの表示
             document.getElementById('test-instruction').innerHTML = `
                 <div style="margin-bottom: 8px;">
                     <span style="color:#10b981; font-size:14px; background:#fff; padding:3px 10px; border-radius:10px;">${q.targets.length}ヶ所中 ${roundCorrect}ヶ所正解！ (200m内の全水利を表示中)</span>
@@ -975,6 +974,7 @@
                 </div>
             `;
         }
+
 
         // --- モード2: エリア内全発掘 ---
         function initExcavateTest() {
@@ -1041,6 +1041,7 @@
             document.getElementById('test-header').style.display = 'none';
             let score = Math.round((TestManager.hitCount / TestManager.excavatePool.length) * 100);
             
+            // 未発見を薄く表示
             TestManager.excavatePool.forEach(q => {
                 if (!q.excavated) {
                     let ansIcon = L.divIcon({ className: ((q["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank') + ' missed-marker', iconSize: [24, 24], iconAnchor: [12, 12] });
@@ -1055,105 +1056,6 @@
             document.getElementById('test-message-display').innerHTML = `お手つき: ${TestManager.missCount} 回<br><br>${isCleared ? "🏆 完全制覇！このエリアの水利配置は完璧です！" : "💀 お手つき上限に達しました...。配置を覚え直しましょう！"}`;
             document.getElementById('test-result-modal').style.display = 'flex';
         }
-
-        // --- 変更箇所：モード3: 【新規追加】目標物・交差点当てテスト ---
-        function initLandmarkTest() {
-            let pool = State.landmarks.filter(row => row["緯度"] && row["経度"]);
-            if (pool.length < 5) return showMessage(`データが不足しています。（現在読込数: ${pool.length}件）GASとスプレッドシートの紐付けを確認してください。`);
-
-            // 配列をシャッフルして5問ランダム抽出
-            let shuffled = pool.sort(() => 0.5 - Math.random());
-            TestManager.questions = shuffled.slice(0, 5);
-            TestManager.currentQIndex = 0;
-            TestManager.correctCount = 0;
-            TestManager.isActive = false;
-            TestManager.elements = [];
-
-            startTestUI();
-            map.on('click', onMapClickForLandmark);
-            showLandmarkQuestion();
-        }
-
-        function showLandmarkQuestion() {
-            TestManager.elements.forEach(el => map.removeLayer(el));
-            TestManager.elements = [];
-
-            let q = TestManager.questions[TestManager.currentQIndex];
-            let name = q["漢字名称"] || q["名称"] || "名称不明";
-            let jurisdiction = q["管轄"] || "管轄不明"; // GAS側でAI判定した管轄
-
-            document.getElementById('test-progress').innerText = `🏛️ 目標物テスト (第 ${TestManager.currentQIndex + 1} / 5 問) - 【${jurisdiction}】`;
-            document.getElementById('test-question').innerText = `「 ${name} 」はどこ？`;
-            document.getElementById('test-instruction').innerHTML = `ズームやスクロールで場所を探し、ココだと思う場所をタップしてください！`;
-
-            setTimeout(() => { TestManager.isActive = true; }, 500);
-        }
-
-        function onMapClickForLandmark(e) {
-            if (!TestManager.isActive) return;
-            TestManager.isActive = false;
-
-            let q = TestManager.questions[TestManager.currentQIndex];
-            let targetLatLng = L.latLng(q["緯度"], q["経度"]);
-            let dist = map.distance(e.latlng, targetLatLng);
-
-            // 交差点は広いため、水利よりも判定を少し甘めに設定します
-            let isHardMode = document.getElementById('test-hard-mode').checked;
-            let limitDist = isHardMode ? 30 : 70; // 鬼:30m, 通常:70m
-
-            let isCorrect = dist <= limitDist;
-            if (isCorrect) TestManager.correctCount++;
-
-            // ユーザーがタップした位置にマーカーを立てる
-            let userMarker = L.circleMarker(e.latlng, {radius: 8, color: '#ffffff', fillColor: isCorrect ? '#10b981' : '#ef4444', fillOpacity: 1, weight: 2}).addTo(map);
-            TestManager.elements.push(userMarker);
-
-            // 正解の位置にアイコン（🏛️）を立てる
-            let ansIcon = L.divIcon({ className: 'marker-landmark', html: '🏛️', iconSize: [24, 24], iconAnchor: [12, 12] });
-            let ansName = q["漢字名称"] || q["名称"];
-            let ansMarker = L.marker(targetLatLng, {icon: ansIcon}).addTo(map).bindPopup(`<b style="font-size:14px;">${ansName}</b><br>誤差: 約 ${Math.round(dist)} m`).openPopup();
-            TestManager.elements.push(ansMarker);
-
-            // 正解の判定範囲（円）を描画
-            let ansCircle = L.circle(targetLatLng, {radius: limitDist, color: isCorrect ? '#10b981' : '#3b82f6', fillOpacity: 0.1}).addTo(map);
-            TestManager.elements.push(ansCircle);
-
-            // 地図を正解位置にズーム
-            map.setView(targetLatLng, 16);
-
-            document.getElementById('test-instruction').innerHTML = isCorrect ?
-                `<span style="color:#10b981; font-weight:bold; font-size:14px;">✅ 正解！ (誤差 ${Math.round(dist)}m)</span>` :
-                `<span style="color:#ef4444; font-weight:bold; font-size:14px;">❌ 残念！ (誤差 ${Math.round(dist)}m)</span>`;
-
-            // 2.5秒後に次の問題へ
-            setTimeout(() => {
-                TestManager.currentQIndex++;
-                if (TestManager.currentQIndex < 5) {
-                    showLandmarkQuestion();
-                } else {
-                    showLandmarkResult();
-                }
-            }, 2500);
-        }
-
-        function showLandmarkResult() {
-            map.off('click', onMapClickForLandmark);
-            document.getElementById('test-header').style.display = 'none';
-
-            let score = Math.round((TestManager.correctCount / 5) * 100);
-            document.getElementById('test-score-label').innerText = "正答率";
-            document.getElementById('test-score-display').innerText = `${score}%`;
-            document.getElementById('test-score-display').style.color = score >= 80 ? '#e83e8c' : '#f59e0b';
-            document.getElementById('test-correct-display').innerText = `5問中 ${TestManager.correctCount}問 正解！`;
-
-            let msg = score === 100 ? "🏆 完璧です！管轄の地理を完全にマスターしています！" :
-                      score >= 60 ? "👍 あと一息！交差点名と場所を確実にリンクさせましょう！" :
-                                    "💪 まずは主要な交差点から少しずつ覚えましょう！";
-
-            document.getElementById('test-message-display').innerHTML = msg;
-            document.getElementById('test-result-modal').style.display = 'flex';
-        }
-        // --- 変更箇所 追加終了 ---
 
         // ==========================================
         // 7. リスト表示と検索・フィルタリング
