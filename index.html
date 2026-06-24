@@ -55,7 +55,7 @@
         }
         .mode-title { font-size: 26px; font-weight: bold; color: #1e293b; margin-bottom: 5px; text-align: center; }
         .mode-subtitle { font-size: 13px; color: #64748b; margin-bottom: 20px; text-align: center; max-width: 85%; line-height: 1.5; }
-        #data-update-date { font-size: 13px; color: #0369a1; background: #e0f2fe; padding: 6px 16px; border-radius: 20px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        #data-update-date { font-size: 13px; color: #0369a1; background: #e0f2fe; padding: 6px 16px; border-radius: 20px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.3s ease; }
         .update-history-box { margin-bottom: 20px; width: 85%; max-width: 320px; background-color: #f1f5f9; border-radius: 10px; padding: 12px; font-size: 11px; color: #334155; line-height: 1.5; border-left: 4px solid #3b82f6; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
         .mode-btn { 
@@ -260,7 +260,7 @@
 
     <div id="test-setup-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.7); z-index:10001; align-items:center; justify-content:center;">
         <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width:350px; text-align:center;">
-            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 効果測定</h2>
+            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 秘密の効果測定</h2>
             
             <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <button id="btn-mode-nearest" onclick="selectTestMode('nearest')" style="flex:1; padding:10px 5px; background:#e83e8c; color:white; border:none; border-radius:5px; font-weight:bold; font-size:13px; transition:0.2s;">🔥 周辺5ヶ所当て</button>
@@ -472,13 +472,39 @@
             } else { showMessage("❌ 暗証番号が違います。"); document.getElementById('pin-input').value = ''; }
         };
 
+        // 🚨 データ読み込み処理を強化（エラーの原因を特定しやすく改良）
         async function loadData() {
             try {
+                // 1. URLが初期値のままでないかチェック
+                if (!CONFIG.GAS_API_URL || !CONFIG.GAS_API_URL.startsWith("http")) {
+                    throw new Error("GASのURLが設定されていません。");
+                }
+
                 const fetchUrl = `${CONFIG.GAS_API_URL}?action=get_data&t=${Date.now()}`;
-                const response = await fetch(fetchUrl); 
-                const result = await response.json(); 
                 
-                State.allData = result.data; 
+                // 2. 通信実行（GAS特有のリダイレクトを自動追従させる）
+                const response = await fetch(fetchUrl, { 
+                    method: 'GET', 
+                    redirect: 'follow',
+                    headers: { 'Accept': 'application/json' }
+                }); 
+                
+                if (!response.ok) {
+                    throw new Error(`HTTPエラー (${response.status})が発生しました`);
+                }
+
+                // 3. データ形式が正しいJSONかチェック（ログイン画面のHTMLが返ってくる事があるため）
+                const textData = await response.text();
+                let result;
+                try {
+                    result = JSON.parse(textData);
+                } catch (e) {
+                    console.error("受信データ内容:", textData);
+                    throw new Error("正しいデータが取得できませんでした。\nGASのデプロイ設定で「アクセスできるユーザー」が【全員】になっているか確認してください。");
+                }
+                
+                // 4. 正常にデータ格納
+                State.allData = result.data || []; 
                 State.currentFilteredData = [...State.allData];
                 
                 document.getElementById('view-count-badge').innerText = `👁️ 閲覧数: ${result.viewCount || 0}`;
@@ -492,7 +518,19 @@
                     enterApp(State.pendingMode); 
                 }
             } catch (error) { 
-                showMessage("データの読み込みに失敗しました。URLが正しいか確認してください。"); 
+                // エラー時の処理を強化
+                console.error("通信エラー詳細:", error);
+                
+                // 最終更新日のバッジをエラー表示に変更
+                let updateBadge = document.getElementById('data-update-date');
+                updateBadge.innerText = "📅 データの取得に失敗しました";
+                updateBadge.style.backgroundColor = "#fee2e2";
+                updateBadge.style.color = "#b91c1c";
+                
+                // ポップアップでエラー原因のヒントを表示
+                let errorMsg = `データの読み込みに失敗しました。\nURLを取得できませんでした。\n\n【詳細】\n${error.message}\n\n【確認事項】\n1. スクリプトのURLが正しく貼り付けられているか\n2. ネットワーク接続が安定しているか`;
+                showMessage(errorMsg); 
+                
                 document.getElementById('loading').innerText = "❌ 読み込みエラー"; 
             }
         }
