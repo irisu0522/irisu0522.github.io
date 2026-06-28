@@ -79,11 +79,13 @@
         .marker-tank::after { content: ''; width: 10px; height: 10px; background-color: #007aff; border: 1.5px solid #ffffff; border-radius: 2px; box-shadow: 0 0 3px rgba(0,0,0,0.4); }
         .marker-tank.alert-marker::after { border: 1.5px solid #ffcc00; box-shadow: 0 0 5px #007aff; animation: pulse 1.5s infinite; }
 
-        /* 🌟 目標物ピンのデザイン（文字表示付き） 🌟 */
+        /* 🌟 目標物ラベルのデザイン（ピンなし文字のみ） 🌟 */
         .marker-target-container { background: transparent; border: none; overflow: visible; }
-        .marker-target-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; }
-        .marker-target-pin { background: #10b981; color: white; border: 2px solid white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.4); z-index: 2; }
-        .marker-target-label { position: absolute; top: 24px; background: rgba(255,255,255,0.95); border: 1.5px solid #10b981; color: #0f172a; font-size: 11px; font-weight: bold; padding: 3px 6px; border-radius: 4px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 3; pointer-events: none; }
+        .marker-target-wrapper { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; }
+        .marker-target-label { background: rgba(255,255,255,0.95); border: 2px solid #10b981; color: #0f172a; font-size: 12px; font-weight: bold; padding: 4px 6px; border-radius: 4px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.3); pointer-events: auto; }
+        
+        /* 🌟 テストモード用の隠しラベル 🌟 */
+        .test-hidden-label { min-width: 40px; min-height: 18px; border-color: #cbd5e1 !important; background: rgba(241, 245, 249, 0.8) !important; cursor: pointer; }
 
         .marker-fire-wrapper { background: transparent; border: none; }
         .marker-fire-anim { font-size: 34px; line-height: 34px; text-align: center; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6)); animation: bounce 0.6s infinite alternate; transform-origin: bottom center; display: block; }
@@ -390,8 +392,16 @@
         const gsiPhoto = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.png', { attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>", maxZoom: 18 });
 
         const map = L.map('map', { center: [34.2305, 135.1705], zoom: 14, layers: [googleRoad] });
+        
+        let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); 
+        map.addLayer(markersGroup);
+
+        let targetMarkersGroup = L.featureGroup().addTo(map);
+
+        // 🌟 レイヤー（個別設定）の登録 🌟
         const baseMaps = { "Google マップ": googleRoad, "Google 航空写真": googleSatellite, "地理院地図 (標準)": gsiStd, "地理院地図 (淡色：ピンが見易い)": gsiPale, "地理院 航空写真": gsiPhoto };
-        L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+        const overlays = { "🚰 水利ピン": markersGroup, "📍 目標物ラベル": targetMarkersGroup };
+        L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(map);
 
         const legend = L.control({position: 'bottomleft'});
         legend.onAdd = function (map) {
@@ -418,11 +428,6 @@
             return div;
         };
         legend.addTo(map);
-
-        let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); 
-        map.addLayer(markersGroup);
-
-        let targetMarkersGroup = L.featureGroup().addTo(map);
 
         const State = {
             allData: [], currentFilteredData: [], targetsData: [], currentTargetFilteredData: [],
@@ -528,15 +533,15 @@
             if (!skipFit && dataToRender.length > 0 && State.searchTab === 'water') { map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] }); }
         }
 
-        // 🌟目標物マーカーの描画（文字ラベル付き）🌟
+        // 🌟 通常の目標物マーカーの描画（ピンなし文字ラベルのみ） 🌟
         function renderTargetMarkers(dataToRender, skipFit) {
             targetMarkersGroup.clearLayers();
             if (State.appMode === 'test') return;
 
             dataToRender.forEach(function(row) {
                 if (!row["緯度"] || !row["経度"]) return;
-                let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-pin">📍</div><div class="marker-target-label">${row["名称"]}</div></div>`;
-                let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [24, 24], iconAnchor: [12, 12] });
+                let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label">${row["名称"]}</div></div>`;
+                let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [0, 0] });
                 let popupContent = `<div class="popup-title target">${row["名称"]}</div><table class="popup-table"><tr><th>種別</th><td>${row["種別"] || "-"}</td></tr><tr><th>管轄署</th><td>${row["管轄署"] || "-"}</td></tr><tr><th>住所</th><td>${row["住所"] || "-"}</td></tr></table>`;
                 L.marker([row["緯度"], row["経度"]], {icon: customIcon, zIndexOffset: 1000}).bindPopup(popupContent).addTo(targetMarkersGroup);
             });
@@ -544,6 +549,23 @@
             if (!skipFit && dataToRender.length > 0 && State.searchTab === 'target') {
                 map.fitBounds(targetMarkersGroup.getBounds(), { padding: [50, 50], maxZoom: 16 });
             }
+        }
+
+        // 🌟 テストモード用の目標物マーカー（最初は空白、タップで表示） 🌟
+        function renderTargetMarkersForTest(centerLatLng) {
+            targetMarkersGroup.clearLayers();
+            // 基準点から半径1.5km以内の目標物だけを表示
+            let pool = State.targetsData.filter(row => {
+                if (!row["緯度"] || !row["経度"]) return false;
+                return map.distance(centerLatLng, L.latLng(row["緯度"], row["経度"])) < 1500;
+            });
+            
+            pool.forEach(function(row) {
+                let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label test-hidden-label" onclick="this.innerText='${row["名称"]}'; this.classList.remove('test-hidden-label'); event.stopPropagation();"></div></div>`;
+                let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [0, 0] });
+                let marker = L.marker([row["緯度"], row["経度"]], {icon: customIcon, zIndexOffset: 900}).addTo(targetMarkersGroup);
+                TestManager.elements.push(marker);
+            });
         }
 
         window.toggleForm = function(id) { let form = document.getElementById("form-" + id); form.style.display = (form.style.display === "block") ? "none" : "block"; };
@@ -589,6 +611,8 @@
             if(TestManager.fireCircle) { map.removeLayer(TestManager.fireCircle); TestManager.fireCircle = null; }
             map.off('click', onMapClickForNearest); map.off('click', onMapClickForExcavate); map.off('click', onMapClickForTarget);
             TestManager.elements.forEach(el => map.removeLayer(el)); TestManager.elements = [];
+            targetMarkersGroup.clearLayers();
+            
             document.getElementById('test-header').style.display = 'none'; document.getElementById('test-result-modal').style.display = 'none'; document.getElementById('test-setup-modal').style.display = 'none';
             document.getElementById('main-side-btns').style.display = 'flex'; document.getElementById('top-info-container').style.display = 'flex';
             State.appMode = 'view'; document.getElementById('current-mode-badge').innerText = '👀 閲覧モード'; document.getElementById('current-mode-badge').style.backgroundColor = '#3b82f6';
@@ -609,14 +633,19 @@
             if(TestManager.fireCircle) { map.removeLayer(TestManager.fireCircle); TestManager.fireCircle = null; }
             startTestUI(); map.on('click', onMapClickForNearest); showNearestQuestion();
         }
-        window.retryNearestTest = function() { TestManager.elements.forEach(el => map.removeLayer(el)); TestManager.elements = []; showNearestQuestion(); }
+        window.retryNearestTest = function() { TestManager.elements.forEach(el => map.removeLayer(el)); TestManager.elements = []; targetMarkersGroup.clearLayers(); showNearestQuestion(); }
         function showNearestQuestion() {
             TestManager.userTapsForNearest = []; let q = TestManager.question;
             document.getElementById('test-progress').innerText = `🔥 火災周辺5ヶ所当てテスト`; document.getElementById('test-question').innerText = `半径200m以内の水利を【 ${q.targets.length}ヶ所 】タップせよ！`; document.getElementById('test-instruction').innerHTML = `<span style="color:#f59e0b;">現在：0 / ${q.targets.length} ヶ所 指定完了</span>`;
             if(TestManager.fireMarker) map.removeLayer(TestManager.fireMarker); if(TestManager.fireCircle) map.removeLayer(TestManager.fireCircle);
             TestManager.fireMarker = L.marker([q.fireLat, q.fireLng], { icon: L.divIcon({ className: 'marker-fire-wrapper', html: '<div class="marker-fire-anim">🔥</div>', iconSize: [34, 34], iconAnchor: [17, 34] }) }).addTo(map);
             TestManager.fireCircle = L.circle([q.fireLat, q.fireLng], { radius: 200, color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.15, dashArray: '5, 5' }).addTo(map);
-            map.setView([q.fireLat, q.fireLng], 16); setTimeout(() => { TestManager.isActive = true; }, 300);
+            map.setView([q.fireLat, q.fireLng], 16); 
+            
+            // 🌟 周辺の目標物を隠しラベルとして配置 🌟
+            renderTargetMarkersForTest(L.latLng(q.fireLat, q.fireLng));
+            
+            setTimeout(() => { TestManager.isActive = true; }, 300);
         }
         function onMapClickForNearest(e) {
             if(!TestManager.isActive) return; let q = TestManager.question; TestManager.userTapsForNearest.push(e.latlng);
@@ -659,7 +688,12 @@
             let bounds = map.getBounds(); TestManager.excavatePool = State.allData.filter(row => row["緯度"] && row["経度"] && bounds.contains(L.latLng(row["緯度"], row["経度"])));
             if (TestManager.excavatePool.length === 0) return showMessage("画面に映っている範囲に水利がありません。");
             TestManager.missLimit = parseInt(document.getElementById('test-miss-limit').value); TestManager.hitCount = 0; TestManager.missCount = 0; TestManager.isActive = false; TestManager.elements = []; TestManager.excavatePool.forEach(q => q.excavated = false); 
-            startTestUI(); updateExcavateHeader(); map.on('click', onMapClickForExcavate); setTimeout(() => { TestManager.isActive = true; }, 500);
+            startTestUI(); updateExcavateHeader(); map.on('click', onMapClickForExcavate); 
+            
+            // 🌟 画面内の目標物を隠しラベルとして配置 🌟
+            renderTargetMarkersForTest(map.getCenter());
+            
+            setTimeout(() => { TestManager.isActive = true; }, 500);
         }
         function updateExcavateHeader() {
             document.getElementById('test-progress').innerText = `🎯 ターゲット：全 ${TestManager.excavatePool.length} 個`;
@@ -701,7 +735,7 @@
             document.getElementById('test-result-modal').style.display = 'flex';
         }
 
-        // --- 🌟 モード3: 目標物当てクイズ（文字ラベル付き） 🌟 ---
+        // --- モード3: 目標物当てクイズ（文字ラベル） ---
         function initTargetTest() {
             let selectedJurisdiction = document.getElementById('test-jurisdiction-select').value; let selectedType = document.getElementById('test-target-type-select').value;
             let pool = State.targetsData.filter(row => {
@@ -727,10 +761,9 @@
             
             let userMarker = L.marker(e.latlng, {icon: L.divIcon({ className: 'marker-miss', html: isCorrect ? '🎯' : '❌', iconSize: [24, 24], iconAnchor: [12, 12] })}).addTo(map);
             
-            // 🌟 クイズ正解時の表示も文字ラベル付きに変更
             let pinColor = isCorrect ? '#10b981' : '#3b82f6';
-            let correctHtml = `<div class="marker-target-wrapper"><div class="marker-target-pin" style="background:${pinColor};">📍</div><div class="marker-target-label" style="border-color:${pinColor}; color:#1e293b;">${target["名称"]}</div></div>`;
-            let correctIcon = L.divIcon({ className: 'marker-target-container', html: correctHtml, iconSize: [24, 24], iconAnchor: [12, 12] });
+            let correctHtml = `<div class="marker-target-wrapper"><div class="marker-target-label" style="border-color:${pinColor}; color:#1e293b;">${target["名称"]}</div></div>`;
+            let correctIcon = L.divIcon({ className: 'marker-target-container', html: correctHtml, iconSize: [0, 0] });
             
             let ansMarker = L.marker(targetLatLng, {icon: correctIcon}).addTo(map);
             let line = L.polyline([e.latlng, targetLatLng], {color: isCorrect ? '#10b981' : '#ef4444', weight: 3, dashArray: '5, 5'}).addTo(map);
