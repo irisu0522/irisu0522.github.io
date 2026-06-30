@@ -203,9 +203,9 @@
             <h2 style="margin-top:0; color:#1e293b; font-size:18px; text-align:center; border-bottom:2px solid #cbd5e1; padding-bottom:10px;">📖 便利な機能と使い方</h2>
             <ul style="padding-left: 20px; font-size:13px; color:#334155; line-height:1.8;">
                 <li><b style="color:#dc3545;">🚨全数調査</b>：右下のボタンを押すと「今年点検すべき公設水利」が一発で抽出されます。</li>
-                <li><b style="color:#17a2b8;">📊リスト表示</b>：抽出した水利を一覧で確認し、行をタップすると地図上の位置へ瞬時に移動します。</li>
+                <li><b style="color:#17a2b8;">📊リスト表示</b>：点検モードで送信した水利や抽出した水利をリストで確認（PDF/エクセル化可能）が可能。行をタップすると地図上の位置へ瞬時に移動します。</li>
                 <li><b style="color:#3b82f6;">🚰水利 / 📍目標物</b>：画面上部の検索パネルを開き、タブを切り替えることで、交差点や施設名での検索が可能です。</li>
-                <li><b style="color:#8b5cf6;">🎓秘密のテスト</b>：左下の「📍ピンの見方（凡例）」を連続で3回タップすると、水利の位置を覚えるための訓練モードが起動します。</li>
+                <li><b style="color:#8b5cf6;">マップ右上のボタンでマップのレイヤーを切り替えることができます。</li>
             </ul>
             <button onclick="document.getElementById('manual-modal').style.display='none'" style="width:100%; padding:12px; margin-top:10px; background:#3b82f6; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">閉じる</button>
         </div>
@@ -225,7 +225,7 @@
 
     <div id="test-setup-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.7); z-index:10001; align-items:center; justify-content:center;">
         <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width:360px; text-align:center;">
-            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 秘密の効果測定</h2>
+            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 効果測定</h2>
             
             <div style="display:flex; gap:6px; margin-bottom:15px;">
                 <button id="btn-mode-nearest" onclick="selectTestMode('nearest')" style="flex:1; padding:10px 2px; background:#e83e8c; color:white; border:none; border-radius:5px; font-weight:bold; font-size:12px; transition:0.2s;">🔥 5ヶ所当て</button>
