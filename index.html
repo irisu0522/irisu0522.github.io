@@ -18,7 +18,7 @@
            ========================================== */
         body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; background-color: #f8fafc; }
         #main-container { position: relative; flex: 1; display: flex; flex-direction: column; height: 100%; }
-        #map { flex: 1; width: 100vw; height: 100%; }
+        #map { flex: 1; width: 100vw; height: 100%; background: #e5e7eb; } /* 白画面対策の背景色 */
         
         /* ==========================================
            2. モーダル・オーバーレイ画面
@@ -80,12 +80,12 @@
         .marker-tank::after { content: ''; width: 10px; height: 10px; background-color: #007aff; border: 1.5px solid #ffffff; border-radius: 2px; box-shadow: 0 0 3px rgba(0,0,0,0.4); }
         .marker-tank.alert-marker::after { border: 1.5px solid #ffcc00; box-shadow: 0 0 5px #007aff; animation: pulse 1.5s infinite; }
 
-        /* 🌟 変更箇所: 目標物ラベルのデザイン（色を動的に変えるため基本設計を調整） 🌟 */
+        /* 目標物ラベルのデザイン（ピンなし文字のみ） */
         .marker-target-container { background: transparent; border: none; overflow: visible; }
         .marker-target-wrapper { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; }
         .marker-target-label { background: rgba(255,255,255,0.95); border: 2px solid; color: #0f172a; font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 4px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.3); pointer-events: auto; }
         
-        /* 🌟 変更箇所: テストモード用の隠しラベル 🌟 */
+        /* テストモード用の隠しラベル */
         .test-hidden-label { min-width: 40px; min-height: 18px; border-color: #cbd5e1 !important; background: rgba(241, 245, 249, 0.8) !important; cursor: pointer; color: transparent !important; }
 
         .marker-fire-wrapper { background: transparent; border: none; }
@@ -171,7 +171,6 @@
 </head>
 <body>
     
-    <!-- 汎用アラートモーダル -->
     <div id="custom-alert" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.6); z-index:10006; align-items:center; justify-content:center;">
         <div style="background:white; padding:20px; border-radius:10px; width:80%; max-width:300px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
             <p id="custom-alert-msg" style="font-size:14px; font-weight:bold; color:#334155; line-height:1.5; margin-bottom:20px;"></p>
@@ -179,13 +178,11 @@
         </div>
     </div>
 
-    <!-- スタート画面 -->
     <div id="mode-overlay">
         <div class="mode-title">🗺️ 地水利マップシステム</div>
         <div class="mode-subtitle">和歌山市内の地水利状況を地図上で確認・点検できるシステムです。</div>
         <div id="data-update-date">📅 データ最終更新日: 読込中...</div>
         
-        <!-- 🌟 変更箇所: 使い方ボタンの設置（マニュアル分離） -->
         <button onclick="document.getElementById('manual-modal').style.display='flex'" style="background:#f1f5f9; color:#3b82f6; border:1px solid #cbd5e1; padding:12px 20px; border-radius:8px; font-size:14px; font-weight:bold; margin-bottom:25px; cursor:pointer; display:flex; align-items:center; gap:8px;">📖 システムの詳しい使い方を見る</button>
         
         <button class="mode-btn mode-view" onclick="startApp('view')">👀 閲覧モードで開始</button>
@@ -201,21 +198,19 @@
         </div>
     </div>
 
-    <!-- 🌟 新規追加: 独立したマニュアル（使い方）モーダル -->
     <div id="manual-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.7); z-index:10005; align-items:center; justify-content:center;">
         <div style="background:white; padding:25px; border-radius:12px; width:85%; max-width:400px; max-height:80vh; overflow-y:auto;">
             <h2 style="margin-top:0; color:#1e293b; font-size:18px; text-align:center; border-bottom:2px solid #cbd5e1; padding-bottom:10px;">📖 便利な機能と使い方</h2>
             <ul style="padding-left: 20px; font-size:13px; color:#334155; line-height:1.8;">
-                <li><b style="color:#dc3545;">🚨全数調査</b>：右下のボタンを押すと「５月からの全数点検すべき公設水利」が一発で抽出されます。</li>
+                <li><b style="color:#dc3545;">🚨全数調査</b>：右下のボタンを押すと「今年点検すべき公設水利」が一発で抽出されます。</li>
                 <li><b style="color:#17a2b8;">📊リスト表示</b>：抽出した水利を一覧で確認し、行をタップすると地図上の位置へ瞬時に移動します。</li>
                 <li><b style="color:#3b82f6;">🚰水利 / 📍目標物</b>：画面上部の検索パネルを開き、タブを切り替えることで、交差点や施設名での検索が可能です。</li>
-                <li><b style="color:#8b5cf6;">今日の点検リストで、点検モードで点検した水利が一覧表示（PDF・エクセル出力可能）されます。</li>
+                <li><b style="color:#8b5cf6;">🎓秘密のテスト</b>：左下の「📍ピンの見方（凡例）」を連続で3回タップすると、水利の位置を覚えるための訓練モードが起動します。</li>
             </ul>
             <button onclick="document.getElementById('manual-modal').style.display='none'" style="width:100%; padding:12px; margin-top:10px; background:#3b82f6; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">閉じる</button>
         </div>
     </div>
 
-    <!-- 点検モードパスワード -->
     <div id="pin-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.6); z-index:10001; align-items:center; justify-content:center;">
         <div style="background:white; padding:20px; border-radius:10px; width:80%; max-width:300px; text-align:center;">
             <h3 style="margin-top:0; color:#1e293b;">🔐 暗証番号入力</h3>
@@ -228,10 +223,9 @@
         </div>
     </div>
 
-    <!-- 効果測定モーダル -->
     <div id="test-setup-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.7); z-index:10001; align-items:center; justify-content:center;">
         <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width:360px; text-align:center;">
-            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 効果測定</h2>
+            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 秘密の効果測定</h2>
             
             <div style="display:flex; gap:6px; margin-bottom:15px;">
                 <button id="btn-mode-nearest" onclick="selectTestMode('nearest')" style="flex:1; padding:10px 2px; background:#e83e8c; color:white; border:none; border-radius:5px; font-weight:bold; font-size:12px; transition:0.2s;">🔥 5ヶ所当て</button>
@@ -289,7 +283,6 @@
         </div>
     </div>
 
-    <!-- テスト中ヘッダー -->
     <div id="test-header" style="display:none; position:fixed; top:0; left:0; width:100%; background:#1e293b; color:white; z-index:10002; padding:12px 20px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.3);">
         <div id="test-progress" style="font-size:12px; color:#cbd5e1; font-weight:bold; margin-bottom:4px;"></div>
         <div id="test-question" style="font-size:16px; font-weight:bold; margin-bottom:4px;"></div>
@@ -310,7 +303,6 @@
         </div>
     </div>
 
-    <!-- UI類 -->
     <div id="top-info-container">
         <div id="current-mode-badge"></div>
         <div id="view-count-badge">👁️ 閲覧数: 取得中...</div>
@@ -322,7 +314,6 @@
     </div>
     
     <div id="main-container">
-        <!-- 検索パネル -->
         <div id="search-panel">
             <div class="search-tabs">
                 <button id="tab-water" class="search-tab active" onclick="switchSearchTab('water')">🚰 水利</button>
@@ -366,7 +357,6 @@
         </div>
     </div>
 
-    <!-- リスト表示パネル -->
     <div id="list-container">
         <div class="list-header">
             <h3>📊 抽出一覧リスト (<span id="table-count">0</span>件)</h3>
@@ -385,7 +375,6 @@
     </div>
 
     <script>
-        // 🚨 取得した新しいGASのURLに更新済み
         const CONFIG = {
             GAS_API_URL: "https://script.google.com/macros/s/AKfycbxVwj1ObPjK1al4yx_3prbc6okookqbVsf1T-Jkjc2oqawJxHQQruuAhs8djN3gyTgxDg/exec",
             EDIT_MODE_PIN: "1190"
@@ -396,7 +385,6 @@
             document.getElementById('custom-alert').style.display = 'flex';
         }
 
-        // fetch時にキャッシュを防ぐためのタイムスタンプ付与（厳守事項）
         function getFetchUrl(baseAction) {
             return `${CONFIG.GAS_API_URL}?action=${baseAction}&t=${Date.now()}`;
         }
@@ -420,11 +408,9 @@
         let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); 
         map.addLayer(markersGroup);
 
-        // 🌟 変更箇所: 目標物マーカーも「クラスター表示」対応に変更
         let targetMarkersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 60 });
         map.addLayer(targetMarkersGroup);
 
-        // 🌟 変更箇所: 右上のレイヤーメニューで「水利」と「目標物」を個別にON/OFFできるように登録
         const baseMaps = { "Google マップ": googleRoad, "Google 航空写真": googleSatellite, "地理院地図 (標準)": gsiStd, "地理院地図 (淡色：見易い)": gsiPale };
         const overlays = { "🚰 水利ピン": markersGroup, "📍 目標物ラベル": targetMarkersGroup };
         L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(map);
@@ -469,22 +455,20 @@
             else { showMessage("❌ 暗証番号が違います。"); document.getElementById('pin-input').value = ''; }
         };
 
-        // 🌟 変更箇所: 目標物の枠線を種別ごとに色分けする関数
+        // 目標物の種別ごとに色を変える関数
         function getTargetColor(type) {
-            if (!type) return '#64748b'; // 未設定はグレー
-            if (type.includes('交差点')) return '#3b82f6'; // 青
-            if (type.includes('幼') || type.includes('保') || type.includes('学')) return '#ec4899'; // ピンク
-            if (type.includes('ヘリ') || type.includes('消防')) return '#f59e0b'; // オレンジ
-            if (type.includes('病院') || type.includes('医療') || type.includes('医大')) return '#10b981'; // 緑
-            if (type.includes('警察') || type.includes('交番')) return '#8b5cf6'; // 紫
-            return '#64748b'; // その他はグレー
+            if (!type) return '#64748b'; 
+            if (type.includes('交差点')) return '#3b82f6'; 
+            if (type.includes('幼') || type.includes('保') || type.includes('学')) return '#ec4899'; 
+            if (type.includes('ヘリ') || type.includes('消防')) return '#f59e0b'; 
+            if (type.includes('病院') || type.includes('医療') || type.includes('医大')) return '#10b981'; 
+            if (type.includes('警察') || type.includes('交番')) return '#8b5cf6'; 
+            return '#64748b'; 
         }
 
         async function loadData() {
             try {
                 if (!CONFIG.GAS_API_URL || !CONFIG.GAS_API_URL.startsWith("http")) throw new Error("GASのURLが設定されていません。");
-                
-                // redirect: "follow" を明示的につけてGASのエラーを回避（厳守事項）
                 const response = await fetch(getFetchUrl("get_data"), { method: 'GET', redirect: 'follow', headers: { 'Accept': 'application/json' } }); 
                 if (!response.ok) throw new Error(`通信エラー (${response.status})`);
 
@@ -527,13 +511,20 @@
         };
 
         function enterApp(mode) {
-            State.appMode = mode; document.getElementById('mode-overlay').style.display = 'none'; document.getElementById('top-info-container').style.display = 'flex'; 
+            State.appMode = mode; 
+            document.getElementById('mode-overlay').style.display = 'none'; 
+            document.getElementById('top-info-container').style.display = 'flex'; 
             let badge = document.getElementById('current-mode-badge');
             if (mode === 'view') { badge.innerText = '👀 閲覧モード'; badge.style.backgroundColor = '#3b82f6'; } else { badge.innerText = '🛠️ 点検モード'; badge.style.backgroundColor = '#ef4444'; }
-            switchSearchTab('water'); map.locate({setView: true, maxZoom: 17}); 
+            
+            // 🌟 修正箇所: カバー画面が消えた直後に地図のサイズを再計算させる（白画面対策）
+            setTimeout(() => {
+                map.invalidateSize();
+                switchSearchTab('water'); 
+                map.locate({setView: true, maxZoom: 17}); 
+            }, 100);
         }
 
-        // 🌟 変更箇所: タブ切り替え時に「検索実行をスキップする」オプションを追加（リスト上書きバグ防止）
         window.switchSearchTab = function(tabName, skipSearch) {
             State.searchTab = tabName;
             document.getElementById('tab-water').classList.toggle('active', tabName === 'water'); document.getElementById('tab-target').classList.toggle('active', tabName === 'target');
@@ -554,7 +545,9 @@
         });
 
         function isPublicWater(suiriNumber) {
-            if (!suiriNumber || !suiriNumber.includes("-")) return true; let parts = suiriNumber.split("-"); return parts.length > 1 && parts[1].trim().length > 0 && parts[1].trim().charAt(0) !== "6";
+            let str = String(suiriNumber || "");
+            if (!str || !str.includes("-")) return true; 
+            let parts = str.split("-"); return parts.length > 1 && parts[1].trim().length > 0 && parts[1].trim().charAt(0) !== "6";
         }
 
         function renderMarkers(dataToRender, skipFit) {
@@ -569,43 +562,46 @@
                 }
                 L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent).addTo(markersGroup);
             });
-            if (!skipFit && dataToRender.length > 0 && State.searchTab === 'water') { map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] }); }
+            // 🌟 修正箇所: boundsが取得できない時のエラー（白画面）防止
+            if (!skipFit && State.searchTab === 'water') { 
+                if (markersGroup.getLayers().length > 0) {
+                    map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] }); 
+                }
+            }
         }
 
-        // 🌟 変更箇所: 通常の目標物マーカー（種別ごとに色を変えた文字ラベルのみ表示）
         function renderTargetMarkers(dataToRender, skipFit) {
             targetMarkersGroup.clearLayers();
             if (State.appMode === 'test') return;
 
             dataToRender.forEach(function(row) {
                 if (!row["緯度"] || !row["経度"]) return;
-                let color = getTargetColor(row["種別"]); // 種別から色を取得
-                
-                // ピンをなくし、左側に太めの色線をあしらった視認性の高いラベルデザインに変更
+                let color = getTargetColor(row["種別"]); 
                 let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label" style="border-left: 4px solid ${color}; color: #0f172a; border-color: ${color};">${row["名称"]}</div></div>`;
                 let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [0, 0] });
-                
                 let popupContent = `<div class="popup-title target" style="border-bottom-color:${color};">${row["名称"]}</div><table class="popup-table"><tr><th>種別</th><td>${row["種別"] || "-"}</td></tr><tr><th>管轄署</th><td>${row["管轄署"] || "-"}</td></tr><tr><th>住所</th><td>${row["住所"] || "-"}</td></tr></table>`;
                 L.marker([row["緯度"], row["経度"]], {icon: customIcon, zIndexOffset: 1000}).bindPopup(popupContent).addTo(targetMarkersGroup);
             });
 
-            if (!skipFit && dataToRender.length > 0 && State.searchTab === 'target') {
-                map.fitBounds(targetMarkersGroup.getBounds(), { padding: [50, 50], maxZoom: 16 });
+            // 🌟 修正箇所: boundsが取得できない時のエラー防止
+            if (!skipFit && State.searchTab === 'target') {
+                if (targetMarkersGroup.getLayers().length > 0) {
+                    map.fitBounds(targetMarkersGroup.getBounds(), { padding: [50, 50], maxZoom: 16 });
+                }
             }
         }
 
-        // 🌟 変更箇所: テストモード用の目標物ヒント枠（最初は空白、タップで文字表示＆色反映）
         function renderTargetMarkersForTest(centerLatLng) {
             targetMarkersGroup.clearLayers();
-            // 基準点から半径1.5km以内の目標物だけを表示
             let pool = State.targetsData.filter(row => {
                 if (!row["緯度"] || !row["経度"]) return false;
                 return map.distance(centerLatLng, L.latLng(row["緯度"], row["経度"])) < 1500;
             });
             
             pool.forEach(function(row) {
-                let color = getTargetColor(row["種別"]); // 色を取得
-                let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label test-hidden-label" onclick="this.innerText='${row["名称"]}'; this.style.borderColor='${color}'; this.style.borderLeft='4px solid ${color}'; this.style.color='#0f172a'; this.classList.remove('test-hidden-label'); event.stopPropagation();"></div></div>`;
+                let color = getTargetColor(row["種別"]); 
+                let safeName = (row["名称"] || "").replace(/'/g, "\\'"); // シングルクォート対策
+                let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label test-hidden-label" onclick="this.innerText='${safeName}'; this.style.borderColor='${color}'; this.style.borderLeft='4px solid ${color}'; this.style.color='#0f172a'; this.classList.remove('test-hidden-label'); event.stopPropagation();"></div></div>`;
                 let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [0, 0] });
                 let marker = L.marker([row["緯度"], row["経度"]], {icon: customIcon, zIndexOffset: 900}).addTo(targetMarkersGroup);
                 TestManager.elements.push(marker);
@@ -618,7 +614,6 @@
             let resultVal = document.getElementById("input-result-" + id).value; let errorVal = document.getElementById("input-error-" + id).value; let paintVal = document.getElementById("input-paint-" + id).value; let commentVal = document.getElementById("input-comment-" + id).value;
             btn.disabled = true; btn.innerText = "送信中...";
             
-            // fetch()時のキャッシュ対策パラメータ付与
             let requestUrl = `${CONFIG.GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}&t=${Date.now()}`;
             try {
                 let res = await (await fetch(requestUrl, { redirect: 'follow' })).json();
@@ -665,7 +660,6 @@
             execSearch(true); map.locate({setView: true, maxZoom: 17});
         };
 
-        // --- モード1: 5ヶ所当て ---
         function initNearestTest() {
             let area = document.getElementById('test-area-select').value; let pool = State.allData.filter(row => (area === "" || row["地区"] === area) && row["緯度"] && row["経度"]);
             if(pool.length < 5) return showMessage(`この地区には水利が ${pool.length} 件しかありません。最低5件以上必要です。`);
@@ -688,7 +682,6 @@
             TestManager.fireCircle = L.circle([q.fireLat, q.fireLng], { radius: 200, color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.15, dashArray: '5, 5' }).addTo(map);
             map.setView([q.fireLat, q.fireLng], 16); 
             
-            // 🌟 変更箇所: 周辺の目標物を隠しラベル（タップでヒント表示）として配置
             renderTargetMarkersForTest(L.latLng(q.fireLat, q.fireLng));
             
             setTimeout(() => { TestManager.isActive = true; }, 300);
@@ -729,14 +722,12 @@
             document.getElementById('test-instruction').innerHTML = `<div style="margin-bottom: 8px;"><span style="color:#10b981; font-size:14px; background:#fff; padding:3px 10px; border-radius:10px;">${q.targets.length}ヶ所中 ${roundCorrect}ヶ所正解！</span></div><div style="display: flex; gap: 10px; justify-content: center;"><button onclick="retryNearestTest()" style="padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">🔄 もう一度</button><button onclick="initNearestTest()" style="padding: 6px 12px; background: #e83e8c; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">▶️ 次の問題</button></div>`;
         }
 
-        // --- モード2: エリア内全発掘 ---
         function initExcavateTest() {
             let bounds = map.getBounds(); TestManager.excavatePool = State.allData.filter(row => row["緯度"] && row["経度"] && bounds.contains(L.latLng(row["緯度"], row["経度"])));
             if (TestManager.excavatePool.length === 0) return showMessage("画面に映っている範囲に水利がありません。");
             TestManager.missLimit = parseInt(document.getElementById('test-miss-limit').value); TestManager.hitCount = 0; TestManager.missCount = 0; TestManager.isActive = false; TestManager.elements = []; TestManager.excavatePool.forEach(q => q.excavated = false); 
             startTestUI(); updateExcavateHeader(); map.on('click', onMapClickForExcavate); 
             
-            // 🌟 変更箇所: 画面内の目標物をヒントとして配置
             renderTargetMarkersForTest(map.getCenter());
             
             setTimeout(() => { TestManager.isActive = true; }, 500);
@@ -781,7 +772,6 @@
             document.getElementById('test-result-modal').style.display = 'flex';
         }
 
-        // --- モード3: 目標物当てクイズ ---
         function initTargetTest() {
             let selectedJurisdiction = document.getElementById('test-jurisdiction-select').value; let selectedType = document.getElementById('test-target-type-select').value;
             let pool = State.targetsData.filter(row => {
@@ -818,9 +808,6 @@
             document.getElementById('test-instruction').innerHTML = `<div style="margin-bottom: 8px;"><span style="color:${isCorrect ? '#10b981' : '#ef4444'}; font-size:15px; font-weight:bold; background:#fff; padding:3px 10px; border-radius:10px;">${isCorrect ? '大正解🎉' : '残念！'} 誤差: ${Math.round(dist)}m (基準:${limitDist}m)</span></div><div style="display: flex; gap: 10px; justify-content: center;"><button onclick="initTargetTest()" style="padding: 8px 15px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">▶️ 次のクイズへ</button></div>`;
         }
 
-        // ==========================================
-        // 7. リスト表示と検索・フィルタリング (🌟バグ修正済み)
-        // ==========================================
         function updateListTable(data, type) {
             let thead = document.getElementById('table-head'); let tbody = document.getElementById('table-body'); tbody.innerHTML = ''; 
             document.getElementById('list-count').innerText = data.length; document.getElementById('table-count').innerText = data.length;
@@ -829,11 +816,9 @@
                 data.forEach(row => {
                     let tr = document.createElement('tr'); let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok"; let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
                     tr.innerHTML = `<td style="font-weight:bold;">${row["水利番号"]}</td><td>${row["地区"] || "-"}</td><td>${row["水利種別"]}</td><td>${categoryText}</td><td style="font-weight:bold; color:#0369a1;">${row["前回調査日"] || "未実施"}</td><td><span class="badge ${badgeClass}">${row["要調査"]}</span></td><td>${row["点検結果"] || "-"}</td><td>${row["異常の種類"] || "-"}</td><td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"] || "-"}</td>`;
-                    
-                    // リストクリック時、クラスターを開いてからポップアップする安全な処理
                     tr.addEventListener('click', () => { 
                         if (row["緯度"] && row["経度"]) { 
-                            toggleList(false);
+                            toggleList(false); 
                             setTimeout(() => { 
                                 markersGroup.eachLayer(marker => { 
                                     if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) {
@@ -852,7 +837,7 @@
                     let tr = document.createElement('tr'); tr.innerHTML = `<td style="font-weight:bold; color:${color};">${row["名称"]}</td><td>${row["種別"] || "-"}</td><td>${row["管轄署"] || "-"}</td><td>${row["住所"] || "-"}</td>`;
                     tr.addEventListener('click', () => { 
                         if (row["緯度"] && row["経度"]) { 
-                            toggleList(false);
+                            toggleList(false); 
                             setTimeout(() => { 
                                 targetMarkersGroup.eachLayer(marker => { 
                                     if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) {
@@ -898,7 +883,7 @@
             execSearch(false); 
         });
 
-        // 🌟 変更箇所: リスト上書き防止のため switchSearchTab に true を渡す
+        // 🌟 修正箇所: リスト上書き防止のため true を渡す
         document.getElementById('survey-btn').addEventListener('click', function() { switchSearchTab('water', true); document.getElementById('filter-category').value = "公設"; toggleAllAreas(true); document.getElementById('filter-status').value = ""; document.getElementById('filter-error').value = ""; document.getElementById('filter-paint').value = ""; document.getElementById('filter-date').value = `${new Date().getFullYear()}-05-01`; document.getElementById('filter-date-cond').value = "before"; document.getElementById('search-text').value = ""; document.getElementById('search-panel').style.display = 'flex'; execSearch(false); });
         
         document.getElementById('list-toggle-btn').addEventListener('click', () => {
@@ -909,10 +894,10 @@
             }
             toggleList();
         });
-        
-        // 🌟 変更箇所: リスト上書き防止バグ修正対応
+
+        // 🌟 修正箇所: 今日の点検の上書きバグ防止
         document.getElementById('today-list-btn').addEventListener('click', function() { 
-            switchSearchTab('water', true); // 通常の検索（上書き）をスキップ
+            switchSearchTab('water', true); 
             let today = new Date(); let todayStr1 = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`; let todayStr2 = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`; 
             State.currentFilteredData = State.allData.filter(row => row["前回調査日"] === todayStr1 || row["前回調査日"] === todayStr2); 
             renderMarkers(State.currentFilteredData, false); updateListTable(State.currentFilteredData, 'water'); toggleList(true); 
