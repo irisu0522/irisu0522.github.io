@@ -17,8 +17,8 @@
            1. 基本設定・レイアウト
            ========================================== */
         body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; background-color: #f8fafc; }
-        #main-container { position: relative; flex: 1; display: flex; flex-direction: column; height: 100%; min-height: 0; }
-        #map { flex: 1; width: 100%; min-height: 0; background: #e5e7eb; z-index: 1; } /* 🌟修正: Safari高さ0px潰れ対策 */
+        #main-container { position: relative; flex: 1; display: flex; flex-direction: column; height: 100%; }
+        #map { flex: 1; width: 100vw; height: 100%; background: #e5e7eb; } /* 白画面対策の背景色 */
         
         /* ==========================================
            2. モーダル・オーバーレイ画面
@@ -203,9 +203,9 @@
             <h2 style="margin-top:0; color:#1e293b; font-size:18px; text-align:center; border-bottom:2px solid #cbd5e1; padding-bottom:10px;">📖 便利な機能と使い方</h2>
             <ul style="padding-left: 20px; font-size:13px; color:#334155; line-height:1.8;">
                 <li><b style="color:#dc3545;">🚨全数調査</b>：右下のボタンを押すと「今年点検すべき公設水利」が一発で抽出されます。</li>
-                <li><b style="color:#17a2b8;">📊リスト表示</b>：点検モードで送信した水利や抽出した水利をリストで出力ができます。行をタップすると地図上の位置へ瞬時に移動します。</li>
+                <li><b style="color:#17a2b8;">📊リスト表示</b>：抽出した水利を一覧で確認し、行をタップすると地図上の位置へ瞬時に移動します。</li>
                 <li><b style="color:#3b82f6;">🚰水利 / 📍目標物</b>：画面上部の検索パネルを開き、タブを切り替えることで、交差点や施設名での検索が可能です。</li>
-                <li><b style="color:#8b5cf6;">マップ右上のボタンで、マップのレイヤーを切り替えることができます。</li>
+                <li><b style="color:#8b5cf6;">マップレイヤ</b>：マップ右上ボタンでマップのレイヤーを切り替えることができます。</li>
             </ul>
             <button onclick="document.getElementById('manual-modal').style.display='none'" style="width:100%; padding:12px; margin-top:10px; background:#3b82f6; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">閉じる</button>
         </div>
@@ -401,6 +401,7 @@
         const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=ja&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 21 });
         const gsiStd = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>", maxZoom: 18 });
         const gsiPale = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', { attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>", maxZoom: 18 });
+        const gsiPhoto = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.png', { attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>", maxZoom: 18 });
 
         const map = L.map('map', { center: [34.2305, 135.1705], zoom: 14, layers: [googleRoad] });
         
@@ -516,10 +517,11 @@
             let badge = document.getElementById('current-mode-badge');
             if (mode === 'view') { badge.innerText = '👀 閲覧モード'; badge.style.backgroundColor = '#3b82f6'; } else { badge.innerText = '🛠️ 点検モード'; badge.style.backgroundColor = '#ef4444'; }
             
-            // 🌟 白画面防止：UI描画後にサイズを再計算し、データにカメラを合わせる
+            // 🌟 修正箇所: カバー画面が消えた直後に地図のサイズを再計算させる（白画面対策）
             setTimeout(() => {
                 map.invalidateSize();
                 switchSearchTab('water'); 
+                map.locate({setView: true, maxZoom: 17}); 
             }, 100);
         }
 
@@ -527,9 +529,6 @@
             State.searchTab = tabName;
             document.getElementById('tab-water').classList.toggle('active', tabName === 'water'); document.getElementById('tab-target').classList.toggle('active', tabName === 'target');
             document.getElementById('filter-group-water').classList.toggle('active', tabName === 'water'); document.getElementById('filter-group-target').classList.toggle('active', tabName === 'target');
-            
-            setTimeout(() => { map.invalidateSize(); }, 50); // タブ切替時の地図ズレ防止
-
             if (!skipSearch) execSearch(false);
         };
 
@@ -563,11 +562,10 @@
                 }
                 L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent).addTo(markersGroup);
             });
-            
-            // 🌟 修正箇所: maxZoom制限を追加し、白画面・エラーを防止
+            // 🌟 修正箇所: boundsが取得できない時のエラー（白画面）防止
             if (!skipFit && State.searchTab === 'water') { 
                 if (markersGroup.getLayers().length > 0) {
-                    map.fitBounds(markersGroup.getBounds(), { padding: [50, 50], maxZoom: 17 }); 
+                    map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] }); 
                 }
             }
         }
@@ -585,7 +583,7 @@
                 L.marker([row["緯度"], row["経度"]], {icon: customIcon, zIndexOffset: 1000}).bindPopup(popupContent).addTo(targetMarkersGroup);
             });
 
-            // 🌟 修正箇所: エラー防止
+            // 🌟 修正箇所: boundsが取得できない時のエラー防止
             if (!skipFit && State.searchTab === 'target') {
                 if (targetMarkersGroup.getLayers().length > 0) {
                     map.fitBounds(targetMarkersGroup.getBounds(), { padding: [50, 50], maxZoom: 16 });
@@ -659,7 +657,7 @@
             document.getElementById('test-header').style.display = 'none'; document.getElementById('test-result-modal').style.display = 'none'; document.getElementById('test-setup-modal').style.display = 'none';
             document.getElementById('main-side-btns').style.display = 'flex'; document.getElementById('top-info-container').style.display = 'flex';
             State.appMode = 'view'; document.getElementById('current-mode-badge').innerText = '👀 閲覧モード'; document.getElementById('current-mode-badge').style.backgroundColor = '#3b82f6';
-            execSearch(true); 
+            execSearch(true); map.locate({setView: true, maxZoom: 17});
         };
 
         function initNearestTest() {
@@ -885,9 +883,11 @@
             execSearch(false); 
         });
 
+        // 🌟 修正箇所: リスト上書き防止のため true を渡す
         document.getElementById('survey-btn').addEventListener('click', function() { switchSearchTab('water', true); document.getElementById('filter-category').value = "公設"; toggleAllAreas(true); document.getElementById('filter-status').value = ""; document.getElementById('filter-error').value = ""; document.getElementById('filter-paint').value = ""; document.getElementById('filter-date').value = `${new Date().getFullYear()}-05-01`; document.getElementById('filter-date-cond').value = "before"; document.getElementById('search-text').value = ""; document.getElementById('search-panel').style.display = 'flex'; execSearch(false); });
         
         document.getElementById('list-toggle-btn').addEventListener('click', () => {
+            // パネルを開く直前に、現在のタブに応じた正しいデータをリストに確実にセットする
             if (document.getElementById('list-container').style.display !== 'flex') {
                 if (State.searchTab === 'water') updateListTable(State.currentFilteredData, 'water');
                 else updateListTable(State.currentTargetFilteredData, 'target');
@@ -895,6 +895,7 @@
             toggleList();
         });
 
+        // 🌟 修正箇所: 今日の点検の上書きバグ防止
         document.getElementById('today-list-btn').addEventListener('click', function() { 
             switchSearchTab('water', true); 
             let today = new Date(); let todayStr1 = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`; let todayStr2 = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`; 
