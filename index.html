@@ -203,9 +203,9 @@
             <h2 style="margin-top:0; color:#1e293b; font-size:18px; text-align:center; border-bottom:2px solid #cbd5e1; padding-bottom:10px;">📖 便利な機能と使い方</h2>
             <ul style="padding-left: 20px; font-size:13px; color:#334155; line-height:1.8;">
                 <li><b style="color:#dc3545;">🚨全数調査</b>：右下のボタンを押すと「今年点検すべき公設水利」が一発で抽出されます。</li>
-                <li><b style="color:#17a2b8;">📊リスト表示</b>：抽出した水利を一覧で確認し、行をタップすると地図上の位置へ瞬時に移動します。</li>
+                <li><b style="color:#17a2b8;">📊点検リスト・リスト表示</b>：点検した水利または抽出した水利を一覧を出力可能。行をタップすると地図上の位置へ瞬時に移動します。</li>
                 <li><b style="color:#3b82f6;">🚰水利 / 📍目標物</b>：画面上部の検索パネルを開き、タブを切り替えることで、交差点や施設名での検索が可能です。</li>
-                <li><b style="color:#8b5cf6;">マップレイヤ</b>：マップ右上ボタンでマップのレイヤーを切り替えることができます。</li>
+                <li><b style="color:#8b5cf6;">マップレイヤー</b>：マップ右上のボタンで、マップレイヤーを切り替えることができます。目標物のみ、水利のみを追加しました。</li>
             </ul>
             <button onclick="document.getElementById('manual-modal').style.display='none'" style="width:100%; padding:12px; margin-top:10px; background:#3b82f6; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">閉じる</button>
         </div>
@@ -807,6 +807,16 @@
             TestManager.elements.push(userMarker, ansMarker, line); map.fitBounds(L.latLngBounds([e.latlng, targetLatLng]), {padding: [50, 50], maxZoom: 17});
             document.getElementById('test-instruction').innerHTML = `<div style="margin-bottom: 8px;"><span style="color:${isCorrect ? '#10b981' : '#ef4444'}; font-size:15px; font-weight:bold; background:#fff; padding:3px 10px; border-radius:10px;">${isCorrect ? '大正解🎉' : '残念！'} 誤差: ${Math.round(dist)}m (基準:${limitDist}m)</span></div><div style="display: flex; gap: 10px; justify-content: center;"><button onclick="initTargetTest()" style="padding: 8px 15px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">▶️ 次のクイズへ</button></div>`;
         }
+
+        // 🌟 追加箇所：リストパネルの表示・非表示を制御する関数
+        window.toggleList = function(forceShow) {
+            let container = document.getElementById('list-container');
+            if (typeof forceShow === 'boolean') {
+                container.style.display = forceShow ? 'flex' : 'none';
+            } else {
+                container.style.display = (container.style.display === 'flex') ? 'none' : 'flex';
+            }
+        };
 
         function updateListTable(data, type) {
             let thead = document.getElementById('table-head'); let tbody = document.getElementById('table-body'); tbody.innerHTML = ''; 
