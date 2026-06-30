@@ -25,10 +25,11 @@
            ========================================== */
         #mode-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; z-index: 9999; background-color: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; backdrop-filter: blur(5px); overflow-y: auto; padding: 40px 0; }
         .mode-title { font-size: 26px; font-weight: bold; color: #1e293b; margin-bottom: 5px; text-align: center; }
-        .mode-subtitle { font-size: 13px; color: #64748b; margin-bottom: 20px; text-align: center; max-width: 85%; line-height: 1.5; }
-        #data-update-date { font-size: 13px; color: #0369a1; background: #e0f2fe; padding: 6px 16px; border-radius: 20px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.3s ease; }
-        .update-history-box { margin-bottom: 20px; width: 85%; max-width: 320px; background-color: #f1f5f9; border-radius: 10px; padding: 12px; font-size: 11px; color: #334155; line-height: 1.5; border-left: 4px solid #3b82f6; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .mode-btn { width: 85%; max-width: 320px; padding: 18px; margin-bottom: 10px; border-radius: 12px; font-size: 18px; font-weight: bold; border: none; cursor: pointer; color: white; box-shadow: 0 6px 12px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .mode-subtitle { font-size: 13px; color: #64748b; margin-bottom: 25px; text-align: center; max-width: 85%; line-height: 1.5; }
+        #data-update-date { font-size: 13px; color: #0369a1; background: #e0f2fe; padding: 6px 16px; border-radius: 20px; font-weight: bold; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.3s ease; }
+        
+        .mode-btn { width: 85%; max-width: 320px; padding: 18px; margin-bottom: 10px; border-radius: 12px; font-size: 18px; font-weight: bold; border: none; cursor: pointer; color: white; box-shadow: 0 6px 12px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.1s; }
+        .mode-btn:active { transform: scale(0.98); }
         .mode-view { background-color: #3b82f6; } .mode-edit { background-color: #ef4444; }
         .mode-desc { font-size: 12px; color: #475569; margin-top: -5px; margin-bottom: 25px; text-align: center; }
         .line-warning-box { margin-bottom: 30px; width: 85%; max-width: 320px; background-color: #fff9db; border: 1px solid #fab005; border-radius: 10px; padding: 14px; font-size: 11px; color: #495057; line-height: 1.6; text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
@@ -47,7 +48,7 @@
         .search-tab.active { background: #3b82f6; color: white; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .filter-group { display: none; width: 100%; flex-wrap: wrap; gap: 8px; }
         .filter-group.active { display: flex; }
-        .filter-group select, .filter-group input { padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; min-width: 100px; }
+        .filter-group select, .filter-group input { padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; min-width: 100px; box-sizing: border-box; }
         .filter-group .date-group { display: flex; align-items: center; gap: 4px; flex-grow: 1.5; min-width: 190px; }
         #search-buttons { display: flex; gap: 8px; width: 100%; margin-top: 4px; }
         #search-buttons button { padding: 10px 15px; font-size: 13px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; flex-grow: 1; }
@@ -55,9 +56,9 @@
         .multi-select-container { position: relative; flex-grow: 1; min-width: 120px; }
         .multi-select-button { padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; background: white; cursor: pointer; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; display: block; width: 100%; box-sizing: border-box; height: 37px; line-height: 1.2; color: #333;}
         .multi-select-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; border-radius: 4px; max-height: 250px; overflow-y: auto; z-index: 1001; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .multi-select-dropdown label { display: block; padding: 8px 10px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #eee; margin: 0; color: #333; }
+        .multi-select-dropdown label { display: block; padding: 12px 10px; font-size: 14px; cursor: pointer; border-bottom: 1px solid #eee; margin: 0; color: #333; }
         .multi-select-dropdown label:hover { background: #f8fafc; }
-        .multi-select-dropdown input[type="checkbox"] { margin-right: 8px; transform: scale(1.2); }
+        .multi-select-dropdown input[type="checkbox"] { margin-right: 8px; transform: scale(1.3); }
 
         /* ==========================================
            4. サイドボタン（マップ操作・ツール群）
@@ -79,13 +80,13 @@
         .marker-tank::after { content: ''; width: 10px; height: 10px; background-color: #007aff; border: 1.5px solid #ffffff; border-radius: 2px; box-shadow: 0 0 3px rgba(0,0,0,0.4); }
         .marker-tank.alert-marker::after { border: 1.5px solid #ffcc00; box-shadow: 0 0 5px #007aff; animation: pulse 1.5s infinite; }
 
-        /* 🌟 目標物ラベルのデザイン（ピンなし文字のみ） 🌟 */
+        /* 🌟 変更箇所: 目標物ラベルのデザイン（色を動的に変えるため基本設計を調整） 🌟 */
         .marker-target-container { background: transparent; border: none; overflow: visible; }
         .marker-target-wrapper { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; }
-        .marker-target-label { background: rgba(255,255,255,0.95); border: 2px solid #10b981; color: #0f172a; font-size: 12px; font-weight: bold; padding: 4px 6px; border-radius: 4px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.3); pointer-events: auto; }
+        .marker-target-label { background: rgba(255,255,255,0.95); border: 2px solid; color: #0f172a; font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 4px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.3); pointer-events: auto; }
         
-        /* 🌟 テストモード用の隠しラベル 🌟 */
-        .test-hidden-label { min-width: 40px; min-height: 18px; border-color: #cbd5e1 !important; background: rgba(241, 245, 249, 0.8) !important; cursor: pointer; }
+        /* 🌟 変更箇所: テストモード用の隠しラベル 🌟 */
+        .test-hidden-label { min-width: 40px; min-height: 18px; border-color: #cbd5e1 !important; background: rgba(241, 245, 249, 0.8) !important; cursor: pointer; color: transparent !important; }
 
         .marker-fire-wrapper { background: transparent; border: none; }
         .marker-fire-anim { font-size: 34px; line-height: 34px; text-align: center; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6)); animation: bounce 0.6s infinite alternate; transform-origin: bottom center; display: block; }
@@ -103,30 +104,30 @@
         .popup-table td { padding: 5px; border-bottom: 1px solid #ddd; color: #222;}
         .popup-alert { color: white; background-color: #dc3545; padding: 4px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 8px; font-size: 11px; }
 
-        .form-toggle { display: block; width: 100%; padding: 6px; background: #e2e8f0; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; text-align: center; cursor: pointer; color: #475569; margin-top: 5px; }
-        .input-form { display: none; background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 4px; margin-top: 5px; }
-        .form-group { margin-bottom: 6px; }
-        .form-group label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 2px; color: #64748b; }
-        .form-group select, .form-group input { width: 93%; padding: 4px; font-size: 11px; border: 1px solid #cbd5e1; border-radius: 3px; }
-        .form-submit-btn { width: 100%; padding: 6px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .form-toggle { display: block; width: 100%; padding: 10px; background: #e2e8f0; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; text-align: center; cursor: pointer; color: #475569; margin-top: 5px; }
+        .input-form { display: none; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 4px; margin-top: 5px; }
+        .form-group { margin-bottom: 8px; }
+        .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #64748b; }
+        .form-group select, .form-group input { width: 100%; padding: 8px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box;}
+        .form-submit-btn { width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .form-submit-btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
 
         /* ==========================================
            6. リスト表示パネル
            ========================================== */
-        #list-container { display: none; height: 35vh; background: #ffffff; border-top: 3px solid #17a2b8; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1010; overflow: hidden; flex-direction: column; }
-        .list-header { background: #f1f5f9; padding: 10px 15px; border-bottom: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; }
+        #list-container { display: none; height: 40vh; background: #ffffff; border-top: 3px solid #17a2b8; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 1010; overflow: hidden; flex-direction: column; }
+        .list-header { background: #f1f5f9; padding: 12px 15px; border-bottom: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; }
         .list-header h3 { margin: 0; font-size: 15px; color: #1e293b; display: flex; align-items: center; gap: 8px; }
         .list-btn-group { display: flex; gap: 8px; }
-        .list-btn { padding: 5px 12px; font-size: 12px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px; color: white; }
+        .list-btn { padding: 6px 12px; font-size: 13px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px; color: white; }
         .btn-csv { background-color: #28a745; } .btn-print { background-color: #6c757d; } .btn-close { background-color: #ef4444; }
         .table-wrapper { flex: 1; overflow-y: auto; padding: 0 15px 15px 15px; }
-        .result-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
-        .result-table th { background: #334155; color: white; position: sticky; top: 0; padding: 8px; text-align: left; }
-        .result-table td { padding: 8px; border-bottom: 1px solid #e2e8f0; }
+        .result-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+        .result-table th { background: #334155; color: white; position: sticky; top: 0; padding: 10px; text-align: left; }
+        .result-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
         .result-table tr:nth-child(even) { background: #f8fafc; }
         .result-table tr:hover { background: #f1f5f9; cursor: pointer; }
-        .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; }
+        .badge { padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; }
         .badge-alert { background-color: #ef4444; } .badge-ok { background-color: #3b82f6; }
 
         .leaflet-top.leaflet-right { top: 60px !important; }
@@ -170,25 +171,22 @@
 </head>
 <body>
     
+    <!-- 汎用アラートモーダル -->
     <div id="custom-alert" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.6); z-index:10006; align-items:center; justify-content:center;">
         <div style="background:white; padding:20px; border-radius:10px; width:80%; max-width:300px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
             <p id="custom-alert-msg" style="font-size:14px; font-weight:bold; color:#334155; line-height:1.5; margin-bottom:20px;"></p>
-            <button onclick="document.getElementById('custom-alert').style.display='none'" style="width:100%; padding:10px; background:#3b82f6; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">OK</button>
+            <button onclick="document.getElementById('custom-alert').style.display='none'" style="width:100%; padding:12px; background:#3b82f6; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">OK</button>
         </div>
     </div>
 
+    <!-- スタート画面 -->
     <div id="mode-overlay">
         <div class="mode-title">🗺️ 地水利マップシステム</div>
         <div class="mode-subtitle">和歌山市内の地水利状況を地図上で確認・点検できるシステムです。</div>
         <div id="data-update-date">📅 データ最終更新日: 読込中...</div>
         
-        <div class="update-history-box">
-            <b style="font-size:12px; color:#1e293b;">📢 システムの使い方・便利機能</b>
-            <ul style="margin: 5px 0 0; padding-left: 20px;">
-                <li><b style="color:#dc3545;">🚨全数調査</b>ボタン：右下のボタンを押すと今年点検すべき水利が一発で抽出されます。</li>
-                <li><b style="color:#17a2b8;">📊リスト</b>表示：抽出した水利を一覧で確認しタップすると瞬時に移動します。</li>
-            </ul>
-        </div>
+        <!-- 🌟 変更箇所: 使い方ボタンの設置（マニュアル分離） -->
+        <button onclick="document.getElementById('manual-modal').style.display='flex'" style="background:#f1f5f9; color:#3b82f6; border:1px solid #cbd5e1; padding:12px 20px; border-radius:8px; font-size:14px; font-weight:bold; margin-bottom:25px; cursor:pointer; display:flex; align-items:center; gap:8px;">📖 システムの詳しい使い方を見る</button>
         
         <button class="mode-btn mode-view" onclick="startApp('view')">👀 閲覧モードで開始</button>
         <div class="mode-desc">データの確認や検索のみ行います（誤操作防止用）</div>
@@ -203,6 +201,21 @@
         </div>
     </div>
 
+    <!-- 🌟 新規追加: 独立したマニュアル（使い方）モーダル -->
+    <div id="manual-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.7); z-index:10005; align-items:center; justify-content:center;">
+        <div style="background:white; padding:25px; border-radius:12px; width:85%; max-width:400px; max-height:80vh; overflow-y:auto;">
+            <h2 style="margin-top:0; color:#1e293b; font-size:18px; text-align:center; border-bottom:2px solid #cbd5e1; padding-bottom:10px;">📖 便利な機能と使い方</h2>
+            <ul style="padding-left: 20px; font-size:13px; color:#334155; line-height:1.8;">
+                <li><b style="color:#dc3545;">🚨全数調査</b>：右下のボタンを押すと「今年点検すべき公設水利」が一発で抽出されます。</li>
+                <li><b style="color:#17a2b8;">📊リスト表示</b>：抽出した水利を一覧で確認し、行をタップすると地図上の位置へ瞬時に移動します。</li>
+                <li><b style="color:#3b82f6;">🚰水利 / 📍目標物</b>：画面上部の検索パネルを開き、タブを切り替えることで、交差点や施設名での検索が可能です。</li>
+                <li><b style="color:#8b5cf6;">🎓秘密のテスト</b>：左下の「📍ピンの見方（凡例）」を連続で3回タップすると、水利の位置を覚えるための訓練モードが起動します。</li>
+            </ul>
+            <button onclick="document.getElementById('manual-modal').style.display='none'" style="width:100%; padding:12px; margin-top:10px; background:#3b82f6; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">閉じる</button>
+        </div>
+    </div>
+
+    <!-- 点検モードパスワード -->
     <div id="pin-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.6); z-index:10001; align-items:center; justify-content:center;">
         <div style="background:white; padding:20px; border-radius:10px; width:80%; max-width:300px; text-align:center;">
             <h3 style="margin-top:0; color:#1e293b;">🔐 暗証番号入力</h3>
@@ -215,6 +228,7 @@
         </div>
     </div>
 
+    <!-- 効果測定モーダル -->
     <div id="test-setup-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.7); z-index:10001; align-items:center; justify-content:center;">
         <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width:360px; text-align:center;">
             <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 秘密の効果測定</h2>
@@ -263,7 +277,7 @@
 
             <div style="text-align:left; margin-bottom:20px; background:#fff1f2; padding:10px; border-radius:5px; border:1px solid #fecdd3;">
                 <label style="font-size:12px; font-weight:bold; color:#be123c; display:flex; align-items:center; gap:8px;">
-                    <input type="checkbox" id="test-hard-mode" style="transform:scale(1.2);"> 🔥 鬼モード（許容誤差の半減）
+                    <input type="checkbox" id="test-hard-mode" style="transform:scale(1.3);"> 🔥 鬼モード（許容誤差の半減）
                 </label>
                 <p style="font-size:10px; color:#be123c; margin:5px 0 0 0;">※鬼モード時は正解の判定エリアが大幅に狭くなり、より正確な位置記憶が求められます。</p>
             </div>
@@ -275,11 +289,12 @@
         </div>
     </div>
 
+    <!-- テスト中ヘッダー -->
     <div id="test-header" style="display:none; position:fixed; top:0; left:0; width:100%; background:#1e293b; color:white; z-index:10002; padding:12px 20px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.3);">
         <div id="test-progress" style="font-size:12px; color:#cbd5e1; font-weight:bold; margin-bottom:4px;"></div>
         <div id="test-question" style="font-size:16px; font-weight:bold; margin-bottom:4px;"></div>
         <div id="test-instruction" style="font-size:12px; color:#f59e0b; font-weight:bold;"></div>
-        <button onclick="quitTestMode()" style="position:absolute; right:15px; top:12px; background:rgba(255,255,255,0.2); border:none; color:white; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">やめる</button>
+        <button onclick="quitTestMode()" style="position:absolute; right:15px; top:12px; background:rgba(255,255,255,0.2); border:none; color:white; padding:8px 12px; border-radius:4px; font-size:13px; font-weight:bold; cursor:pointer;">やめる</button>
     </div>
 
     <div id="test-result-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.8); z-index:10003; align-items:center; justify-content:center;">
@@ -295,6 +310,7 @@
         </div>
     </div>
 
+    <!-- UI類 -->
     <div id="top-info-container">
         <div id="current-mode-badge"></div>
         <div id="view-count-badge">👁️ 閲覧数: 取得中...</div>
@@ -306,6 +322,7 @@
     </div>
     
     <div id="main-container">
+        <!-- 検索パネル -->
         <div id="search-panel">
             <div class="search-tabs">
                 <button id="tab-water" class="search-tab active" onclick="switchSearchTab('water')">🚰 水利</button>
@@ -313,13 +330,13 @@
             </div>
 
             <div id="filter-group-water" class="filter-group active">
-                <select id="filter-category"><option value="">🏢 すべての設置区分</option><option value="公設">公設のみ（私設・空白を除外）</option><option value="私設">私設のみ</option></select>
+                <select id="filter-category"><option value="">🏢 すべての設置区分</option><option value="公設">公設のみ</option><option value="私設">私設のみ</option></select>
                 <div class="multi-select-container" id="filter-area-container">
                     <div class="multi-select-button" id="filter-area-btn" onclick="document.getElementById('filter-area-dropdown').style.display = document.getElementById('filter-area-dropdown').style.display === 'block' ? 'none' : 'block';">🌐 すべての地区</div>
                     <div class="multi-select-dropdown" id="filter-area-dropdown"></div>
                 </div>
                 <select id="filter-status"><option value="">🟢 すべての状態</option><option value="要点検">🔴 要点検のみ</option><option value="点検済">🔵 点検済のみ</option></select>
-                <select id="filter-error"><option value="">⚠️ 異常の種類 (すべて)</option><option value="異常あり">🚨 何らかの異常あり</option><option value="なし">✅ 異常なし</option><option value="蓋開閉困難">🔧 蓋開閉困難</option><option value="土没">🍂 土没</option><option value="水没">💧 水没</option><option value="バルブ開閉不良">⚙️ バルブ開閉不良</option><option value="道路陥没（大）">🕳️ 道路陥没（大）</option><option value="道路陥没（小）">🕳️ 道路陥没（小）</option><option value="塗装剥がれ">🎨 塗装剥がれ</option><option value="塗装間違い">❌ 塗装間違い</option><option value="その他">❓ その他</option></select>
+                <select id="filter-error"><option value="">⚠️ 異常の種類 (すべて)</option><option value="異常あり">🚨 異常あり</option><option value="なし">✅ 異常なし</option><option value="蓋開閉困難">🔧 蓋開閉困難</option><option value="土没">🍂 土没</option><option value="水没">💧 水没</option><option value="バルブ開閉不良">⚙️ バルブ不良</option><option value="道路陥没（大）">🕳️ 陥没（大）</option><option value="道路陥没（小）">🕳️ 陥没（小）</option><option value="塗装剥がれ">🎨 塗装剥がれ</option><option value="塗装間違い">❌ 塗装間違い</option><option value="その他">❓ その他</option></select>
                 <select id="filter-paint"><option value="">🎨 塗装レベル (すべて)</option><option value="100%">100%</option><option value="50%">50%</option><option value="0%">0%</option></select>
                 <div class="date-group"><input type="date" id="filter-date" placeholder="点検日"><select id="filter-date-cond" style="min-width: 90px; flex-grow: 0;"><option value="before">以前に点検</option><option value="after">以降に点検</option></select></div>
                 <input type="text" id="search-text" placeholder="水利番号などで検索...">
@@ -349,11 +366,12 @@
         </div>
     </div>
 
+    <!-- リスト表示パネル -->
     <div id="list-container">
         <div class="list-header">
             <h3>📊 抽出一覧リスト (<span id="table-count">0</span>件)</h3>
             <div class="list-btn-group">
-                <button class="list-btn btn-csv" onclick="downloadCSV()">📥 Excel/CSV出力</button>
+                <button class="list-btn btn-csv" onclick="downloadCSV()">📥 Excel出力</button>
                 <button class="list-btn btn-print" onclick="printReport()">🖨️ 報告書印刷</button>
                 <button class="list-btn btn-close" onclick="toggleList(false)">✕ 閉じる</button>
             </div>
@@ -367,6 +385,7 @@
     </div>
 
     <script>
+        // 🚨 取得した新しいGASのURLに更新済み
         const CONFIG = {
             GAS_API_URL: "https://script.google.com/macros/s/AKfycbxVwj1ObPjK1al4yx_3prbc6okookqbVsf1T-Jkjc2oqawJxHQQruuAhs8djN3gyTgxDg/exec",
             EDIT_MODE_PIN: "1190"
@@ -375,6 +394,11 @@
         function showMessage(msg) {
             document.getElementById('custom-alert-msg').innerText = msg;
             document.getElementById('custom-alert').style.display = 'flex';
+        }
+
+        // fetch時にキャッシュを防ぐためのタイムスタンプ付与（厳守事項）
+        function getFetchUrl(baseAction) {
+            return `${CONFIG.GAS_API_URL}?action=${baseAction}&t=${Date.now()}`;
         }
 
         function parseLocalDate(dateStr) {
@@ -396,10 +420,12 @@
         let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); 
         map.addLayer(markersGroup);
 
-        let targetMarkersGroup = L.featureGroup().addTo(map);
+        // 🌟 変更箇所: 目標物マーカーも「クラスター表示」対応に変更
+        let targetMarkersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 60 });
+        map.addLayer(targetMarkersGroup);
 
-        // 🌟 レイヤー（個別設定）の登録 🌟
-        const baseMaps = { "Google マップ": googleRoad, "Google 航空写真": googleSatellite, "地理院地図 (標準)": gsiStd, "地理院地図 (淡色：ピンが見易い)": gsiPale, "地理院 航空写真": gsiPhoto };
+        // 🌟 変更箇所: 右上のレイヤーメニューで「水利」と「目標物」を個別にON/OFFできるように登録
+        const baseMaps = { "Google マップ": googleRoad, "Google 航空写真": googleSatellite, "地理院地図 (標準)": gsiStd, "地理院地図 (淡色：見易い)": gsiPale };
         const overlays = { "🚰 水利ピン": markersGroup, "📍 目標物ラベル": targetMarkersGroup };
         L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(map);
 
@@ -411,7 +437,6 @@
                     <b style="font-size:12px; color:#1e293b;">📍 ピンの見方</b><br>
                     <span style="color:#ff3b30; font-size:14px;">●</span> 消火栓<br>
                     <span style="color:#007aff; font-size:14px;">■</span> 防火水槽<br>
-                    <span style="color:#10b981; font-size:14px;">📍</span> 目標物 (検索時)<br>
                     <span style="color:#ffcc00; font-weight:bold;">⚠️</span> 点滅は「要点検」
                 </div>
             `;
@@ -444,11 +469,24 @@
             else { showMessage("❌ 暗証番号が違います。"); document.getElementById('pin-input').value = ''; }
         };
 
+        // 🌟 変更箇所: 目標物の枠線を種別ごとに色分けする関数
+        function getTargetColor(type) {
+            if (!type) return '#64748b'; // 未設定はグレー
+            if (type.includes('交差点')) return '#3b82f6'; // 青
+            if (type.includes('幼') || type.includes('保') || type.includes('学')) return '#ec4899'; // ピンク
+            if (type.includes('ヘリ') || type.includes('消防')) return '#f59e0b'; // オレンジ
+            if (type.includes('病院') || type.includes('医療') || type.includes('医大')) return '#10b981'; // 緑
+            if (type.includes('警察') || type.includes('交番')) return '#8b5cf6'; // 紫
+            return '#64748b'; // その他はグレー
+        }
+
         async function loadData() {
             try {
                 if (!CONFIG.GAS_API_URL || !CONFIG.GAS_API_URL.startsWith("http")) throw new Error("GASのURLが設定されていません。");
-                const response = await fetch(`${CONFIG.GAS_API_URL}?action=get_data&t=${Date.now()}`, { method: 'GET', redirect: 'follow', headers: { 'Accept': 'application/json' } }); 
-                if (!response.ok) throw new Error(`HTTPエラー (${response.status})が発生しました`);
+                
+                // redirect: "follow" を明示的につけてGASのエラーを回避（厳守事項）
+                const response = await fetch(getFetchUrl("get_data"), { method: 'GET', redirect: 'follow', headers: { 'Accept': 'application/json' } }); 
+                if (!response.ok) throw new Error(`通信エラー (${response.status})`);
 
                 const textData = await response.text(); let result = JSON.parse(textData);
                 State.allData = result.data || []; State.targetsData = result.targets || []; State.areaMapping = result.mapping || {};   
@@ -495,11 +533,12 @@
             switchSearchTab('water'); map.locate({setView: true, maxZoom: 17}); 
         }
 
-        window.switchSearchTab = function(tabName) {
+        // 🌟 変更箇所: タブ切り替え時に「検索実行をスキップする」オプションを追加（リスト上書きバグ防止）
+        window.switchSearchTab = function(tabName, skipSearch) {
             State.searchTab = tabName;
             document.getElementById('tab-water').classList.toggle('active', tabName === 'water'); document.getElementById('tab-target').classList.toggle('active', tabName === 'target');
             document.getElementById('filter-group-water').classList.toggle('active', tabName === 'water'); document.getElementById('filter-group-target').classList.toggle('active', tabName === 'target');
-            execSearch(false);
+            if (!skipSearch) execSearch(false);
         };
 
         window.toggleAllAreas = function(isChecked) { document.querySelectorAll('.area-checkbox').forEach(cb => cb.checked = isChecked); updateAreaBtnText(); };
@@ -533,16 +572,20 @@
             if (!skipFit && dataToRender.length > 0 && State.searchTab === 'water') { map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] }); }
         }
 
-        // 🌟 通常の目標物マーカーの描画（ピンなし文字ラベルのみ） 🌟
+        // 🌟 変更箇所: 通常の目標物マーカー（種別ごとに色を変えた文字ラベルのみ表示）
         function renderTargetMarkers(dataToRender, skipFit) {
             targetMarkersGroup.clearLayers();
             if (State.appMode === 'test') return;
 
             dataToRender.forEach(function(row) {
                 if (!row["緯度"] || !row["経度"]) return;
-                let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label">${row["名称"]}</div></div>`;
+                let color = getTargetColor(row["種別"]); // 種別から色を取得
+                
+                // ピンをなくし、左側に太めの色線をあしらった視認性の高いラベルデザインに変更
+                let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label" style="border-left: 4px solid ${color}; color: #0f172a; border-color: ${color};">${row["名称"]}</div></div>`;
                 let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [0, 0] });
-                let popupContent = `<div class="popup-title target">${row["名称"]}</div><table class="popup-table"><tr><th>種別</th><td>${row["種別"] || "-"}</td></tr><tr><th>管轄署</th><td>${row["管轄署"] || "-"}</td></tr><tr><th>住所</th><td>${row["住所"] || "-"}</td></tr></table>`;
+                
+                let popupContent = `<div class="popup-title target" style="border-bottom-color:${color};">${row["名称"]}</div><table class="popup-table"><tr><th>種別</th><td>${row["種別"] || "-"}</td></tr><tr><th>管轄署</th><td>${row["管轄署"] || "-"}</td></tr><tr><th>住所</th><td>${row["住所"] || "-"}</td></tr></table>`;
                 L.marker([row["緯度"], row["経度"]], {icon: customIcon, zIndexOffset: 1000}).bindPopup(popupContent).addTo(targetMarkersGroup);
             });
 
@@ -551,7 +594,7 @@
             }
         }
 
-        // 🌟 テストモード用の目標物マーカー（最初は空白、タップで表示） 🌟
+        // 🌟 変更箇所: テストモード用の目標物ヒント枠（最初は空白、タップで文字表示＆色反映）
         function renderTargetMarkersForTest(centerLatLng) {
             targetMarkersGroup.clearLayers();
             // 基準点から半径1.5km以内の目標物だけを表示
@@ -561,7 +604,8 @@
             });
             
             pool.forEach(function(row) {
-                let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label test-hidden-label" onclick="this.innerText='${row["名称"]}'; this.classList.remove('test-hidden-label'); event.stopPropagation();"></div></div>`;
+                let color = getTargetColor(row["種別"]); // 色を取得
+                let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label test-hidden-label" onclick="this.innerText='${row["名称"]}'; this.style.borderColor='${color}'; this.style.borderLeft='4px solid ${color}'; this.style.color='#0f172a'; this.classList.remove('test-hidden-label'); event.stopPropagation();"></div></div>`;
                 let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [0, 0] });
                 let marker = L.marker([row["緯度"], row["経度"]], {icon: customIcon, zIndexOffset: 900}).addTo(targetMarkersGroup);
                 TestManager.elements.push(marker);
@@ -573,9 +617,11 @@
             let btn = document.getElementById("btn-" + id);
             let resultVal = document.getElementById("input-result-" + id).value; let errorVal = document.getElementById("input-error-" + id).value; let paintVal = document.getElementById("input-paint-" + id).value; let commentVal = document.getElementById("input-comment-" + id).value;
             btn.disabled = true; btn.innerText = "送信中...";
+            
+            // fetch()時のキャッシュ対策パラメータ付与
             let requestUrl = `${CONFIG.GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}&t=${Date.now()}`;
             try {
-                let res = await (await fetch(requestUrl)).json();
+                let res = await (await fetch(requestUrl, { redirect: 'follow' })).json();
                 if (res.status === "Success") {
                     btn.innerText = "送信完了！"; btn.style.backgroundColor = "#28a745";
                     let targetIndex = State.allData.findIndex(row => row["水利番号"] === id);
@@ -642,7 +688,7 @@
             TestManager.fireCircle = L.circle([q.fireLat, q.fireLng], { radius: 200, color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.15, dashArray: '5, 5' }).addTo(map);
             map.setView([q.fireLat, q.fireLng], 16); 
             
-            // 🌟 周辺の目標物を隠しラベルとして配置 🌟
+            // 🌟 変更箇所: 周辺の目標物を隠しラベル（タップでヒント表示）として配置
             renderTargetMarkersForTest(L.latLng(q.fireLat, q.fireLng));
             
             setTimeout(() => { TestManager.isActive = true; }, 300);
@@ -690,7 +736,7 @@
             TestManager.missLimit = parseInt(document.getElementById('test-miss-limit').value); TestManager.hitCount = 0; TestManager.missCount = 0; TestManager.isActive = false; TestManager.elements = []; TestManager.excavatePool.forEach(q => q.excavated = false); 
             startTestUI(); updateExcavateHeader(); map.on('click', onMapClickForExcavate); 
             
-            // 🌟 画面内の目標物を隠しラベルとして配置 🌟
+            // 🌟 変更箇所: 画面内の目標物をヒントとして配置
             renderTargetMarkersForTest(map.getCenter());
             
             setTimeout(() => { TestManager.isActive = true; }, 500);
@@ -735,7 +781,7 @@
             document.getElementById('test-result-modal').style.display = 'flex';
         }
 
-        // --- モード3: 目標物当てクイズ（文字ラベル） ---
+        // --- モード3: 目標物当てクイズ ---
         function initTargetTest() {
             let selectedJurisdiction = document.getElementById('test-jurisdiction-select').value; let selectedType = document.getElementById('test-target-type-select').value;
             let pool = State.targetsData.filter(row => {
@@ -761,8 +807,8 @@
             
             let userMarker = L.marker(e.latlng, {icon: L.divIcon({ className: 'marker-miss', html: isCorrect ? '🎯' : '❌', iconSize: [24, 24], iconAnchor: [12, 12] })}).addTo(map);
             
-            let pinColor = isCorrect ? '#10b981' : '#3b82f6';
-            let correctHtml = `<div class="marker-target-wrapper"><div class="marker-target-label" style="border-color:${pinColor}; color:#1e293b;">${target["名称"]}</div></div>`;
+            let color = getTargetColor(target["種別"]);
+            let correctHtml = `<div class="marker-target-wrapper"><div class="marker-target-label" style="border-left: 4px solid ${color}; color: #0f172a; border-color: ${color};">${target["名称"]}</div></div>`;
             let correctIcon = L.divIcon({ className: 'marker-target-container', html: correctHtml, iconSize: [0, 0] });
             
             let ansMarker = L.marker(targetLatLng, {icon: correctIcon}).addTo(map);
@@ -772,6 +818,9 @@
             document.getElementById('test-instruction').innerHTML = `<div style="margin-bottom: 8px;"><span style="color:${isCorrect ? '#10b981' : '#ef4444'}; font-size:15px; font-weight:bold; background:#fff; padding:3px 10px; border-radius:10px;">${isCorrect ? '大正解🎉' : '残念！'} 誤差: ${Math.round(dist)}m (基準:${limitDist}m)</span></div><div style="display: flex; gap: 10px; justify-content: center;"><button onclick="initTargetTest()" style="padding: 8px 15px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">▶️ 次のクイズへ</button></div>`;
         }
 
+        // ==========================================
+        // 7. リスト表示と検索・フィルタリング (🌟バグ修正済み)
+        // ==========================================
         function updateListTable(data, type) {
             let thead = document.getElementById('table-head'); let tbody = document.getElementById('table-body'); tbody.innerHTML = ''; 
             document.getElementById('list-count').innerText = data.length; document.getElementById('table-count').innerText = data.length;
@@ -780,14 +829,39 @@
                 data.forEach(row => {
                     let tr = document.createElement('tr'); let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok"; let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
                     tr.innerHTML = `<td style="font-weight:bold;">${row["水利番号"]}</td><td>${row["地区"] || "-"}</td><td>${row["水利種別"]}</td><td>${categoryText}</td><td style="font-weight:bold; color:#0369a1;">${row["前回調査日"] || "未実施"}</td><td><span class="badge ${badgeClass}">${row["要調査"]}</span></td><td>${row["点検結果"] || "-"}</td><td>${row["異常の種類"] || "-"}</td><td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"] || "-"}</td>`;
-                    tr.addEventListener('click', () => { if (row["緯度"] && row["経度"]) { toggleList(false); map.setView([row["緯度"], row["経度"]], 18); setTimeout(() => { markersGroup.eachLayer(marker => { if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) marker.openPopup(); }); }, 300); } });
+                    
+                    // リストクリック時、クラスターを開いてからポップアップする安全な処理
+                    tr.addEventListener('click', () => { 
+                        if (row["緯度"] && row["経度"]) { 
+                            toggleList(false);
+                            setTimeout(() => { 
+                                markersGroup.eachLayer(marker => { 
+                                    if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) {
+                                        markersGroup.zoomToShowLayer(marker, () => marker.openPopup());
+                                    } 
+                                }); 
+                            }, 300); 
+                        } 
+                    });
                     tbody.appendChild(tr);
                 });
             } else {
                 thead.innerHTML = '<tr><th>目標物名称</th><th>種別</th><th>管轄署</th><th>住所</th></tr>';
                 data.forEach(row => {
-                    let tr = document.createElement('tr'); tr.innerHTML = `<td style="font-weight:bold; color:#10b981;">${row["名称"]}</td><td>${row["種別"] || "-"}</td><td>${row["管轄署"] || "-"}</td><td>${row["住所"] || "-"}</td>`;
-                    tr.addEventListener('click', () => { if (row["緯度"] && row["経度"]) { toggleList(false); map.setView([row["緯度"], row["経度"]], 17); setTimeout(() => { targetMarkersGroup.eachLayer(marker => { if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) marker.openPopup(); }); }, 300); } });
+                    let color = getTargetColor(row["種別"]);
+                    let tr = document.createElement('tr'); tr.innerHTML = `<td style="font-weight:bold; color:${color};">${row["名称"]}</td><td>${row["種別"] || "-"}</td><td>${row["管轄署"] || "-"}</td><td>${row["住所"] || "-"}</td>`;
+                    tr.addEventListener('click', () => { 
+                        if (row["緯度"] && row["経度"]) { 
+                            toggleList(false);
+                            setTimeout(() => { 
+                                targetMarkersGroup.eachLayer(marker => { 
+                                    if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) {
+                                        targetMarkersGroup.zoomToShowLayer(marker, () => marker.openPopup());
+                                    } 
+                                }); 
+                            }, 300); 
+                        } 
+                    });
                     tbody.appendChild(tr);
                 });
             }
@@ -824,9 +898,26 @@
             execSearch(false); 
         });
 
-        document.getElementById('survey-btn').addEventListener('click', function() { switchSearchTab('water'); document.getElementById('filter-category').value = "公設"; toggleAllAreas(true); document.getElementById('filter-status').value = ""; document.getElementById('filter-error').value = ""; document.getElementById('filter-paint').value = ""; document.getElementById('filter-date').value = `${new Date().getFullYear()}-05-01`; document.getElementById('filter-date-cond').value = "before"; document.getElementById('search-text').value = ""; document.getElementById('search-panel').style.display = 'flex'; execSearch(false); });
-        document.getElementById('list-toggle-btn').addEventListener('click', () => toggleList());
-        document.getElementById('today-list-btn').addEventListener('click', function() { switchSearchTab('water'); let today = new Date(); let todayStr1 = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`; let todayStr2 = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`; State.currentFilteredData = State.allData.filter(row => row["前回調査日"] === todayStr1 || row["前回調査日"] === todayStr2); renderMarkers(State.currentFilteredData, false); updateListTable(State.currentFilteredData, 'water'); toggleList(true); if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none'; });
+        // 🌟 変更箇所: リスト上書き防止のため switchSearchTab に true を渡す
+        document.getElementById('survey-btn').addEventListener('click', function() { switchSearchTab('water', true); document.getElementById('filter-category').value = "公設"; toggleAllAreas(true); document.getElementById('filter-status').value = ""; document.getElementById('filter-error').value = ""; document.getElementById('filter-paint').value = ""; document.getElementById('filter-date').value = `${new Date().getFullYear()}-05-01`; document.getElementById('filter-date-cond').value = "before"; document.getElementById('search-text').value = ""; document.getElementById('search-panel').style.display = 'flex'; execSearch(false); });
+        
+        document.getElementById('list-toggle-btn').addEventListener('click', () => {
+            // パネルを開く直前に、現在のタブに応じた正しいデータをリストに確実にセットする
+            if (document.getElementById('list-container').style.display !== 'flex') {
+                if (State.searchTab === 'water') updateListTable(State.currentFilteredData, 'water');
+                else updateListTable(State.currentTargetFilteredData, 'target');
+            }
+            toggleList();
+        });
+        
+        // 🌟 変更箇所: リスト上書き防止バグ修正対応
+        document.getElementById('today-list-btn').addEventListener('click', function() { 
+            switchSearchTab('water', true); // 通常の検索（上書き）をスキップ
+            let today = new Date(); let todayStr1 = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`; let todayStr2 = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`; 
+            State.currentFilteredData = State.allData.filter(row => row["前回調査日"] === todayStr1 || row["前回調査日"] === todayStr2); 
+            renderMarkers(State.currentFilteredData, false); updateListTable(State.currentFilteredData, 'water'); toggleList(true); 
+            if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none'; 
+        });
 
         document.getElementById('gps-btn').addEventListener('click', function() { let btn = document.getElementById('gps-btn'); if (State.isTracking) { State.isTracking = false; map.stopLocate(); btn.classList.remove('tracking'); btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; } else { State.isTracking = true; btn.classList.add('tracking'); btn.innerHTML = '<span class="btn-icon">🟢</span><span class="btn-text pc-only">追従中</span><span class="btn-text sp-only">追従中</span>'; map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true}); } });
         map.on('locationfound', function(e) { if (State.currentLocationMarker) map.removeLayer(State.currentLocationMarker); State.currentLocationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: State.isTracking ? "#28a745" : "#007bff", color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9 }).addTo(map).bindPopup("<b>現在地</b>"); });
