@@ -172,6 +172,12 @@
         <button class="mode-btn mode-edit" onclick="promptPasscode()">🛠️ 水利 点検モード</button>
         <div class="mode-desc">現場でピンをタップし、点検結果を入力・送信します</div>
         
+        <!-- 🌟 変更箇所：トップページに報告ボタンを独立して配置 -->
+        <div style="width:85%; max-width:320px; margin-top:15px; margin-bottom:10px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:15px; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+            <p style="font-size:12px; color:#b45309; margin:0 0 10px 0; font-weight:bold;">💡 アプリ改善にご協力ください</p>
+            <button onclick="document.getElementById('report-modal').style.display='flex';" style="width:100%; padding:12px; background:#f59e0b; color:white; border:none; border-radius:8px; font-weight:bold; font-size:14px; cursor:pointer; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.2);">📢 不具合・要望を報告する</button>
+        </div>
+        
         <div class="line-warning-box">
             <b style="color: #e03131; font-size: 12px; display: block; margin-bottom: 4px;">⚠️ アプリを利用する際のお願い</b>
             LINE等のアプリ内から直接リンクを開くと、現在地取得機能が正常に動かない不具合が発生します。<br>
@@ -190,18 +196,12 @@
                 <li><b style="color:#10b981;">📍GPSルート確認</b>：右下の現在地ボタンを押すと、自分の移動に合わせてマップが追従します。目標物周辺での迷路防止に活用してください。</li>
                 <li><b style="color:#f59e0b;">🌐レイヤー切替</b>：マップ右上のボタンから、航空写真への切り替えや、不要なピンの非表示（ON/OFF）が可能です。</li>
             </ul>
-            
-            <!-- 🌟 変更箇所：報告フォームを開くボタンの設置 -->
-            <div style="margin-top:20px; padding-top:15px; border-top:1px dashed #cbd5e1; text-align:center;">
-                <p style="font-size:12px; color:#64748b; margin-bottom:8px;">アプリの不具合や要望はこちらから送信できます</p>
-                <button onclick="document.getElementById('manual-modal').style.display='none'; document.getElementById('report-modal').style.display='flex';" style="padding:10px 20px; background:#f59e0b; color:white; border:none; border-radius:6px; font-weight:bold; font-size:13px; cursor:pointer;">📢 不具合・要望を報告する</button>
-            </div>
-
+            <!-- 🌟 変更箇所：マニュアル内からは報告ボタンを削除 -->
             <button onclick="document.getElementById('manual-modal').style.display='none'" style="width:100%; padding:12px; margin-top:15px; background:#3b82f6; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">閉じる</button>
         </div>
     </div>
 
-    <!-- 🌟 新規追加：不具合・要望入力フォームモーダル -->
+    <!-- 不具合・要望入力フォームモーダル -->
     <div id="report-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.7); z-index:10006; align-items:center; justify-content:center;">
         <div style="background:white; padding:25px; border-radius:12px; width:85%; max-width:400px;">
             <h2 style="margin-top:0; color:#1e293b; font-size:18px; border-bottom:2px solid #cbd5e1; padding-bottom:10px;">📢 報告・要望を送信</h2>
@@ -643,7 +643,6 @@
             } catch (err) { showMessage("送信に失敗しました。電波状態を確認してください。"); btn.disabled = false; btn.innerText = "スプレッドシートへ送信"; }
         };
 
-        // 🌟 新機能：不具合・要望の報告送信処理
         window.submitReportForm = async function() {
             let typeVal = document.getElementById("report-type").value;
             let contentVal = document.getElementById("report-content").value.trim();
