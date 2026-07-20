@@ -1,5 +1,5 @@
 // ==========================================
-// app.js : UIと地図制御、アプリのメインロジック
+// app.js : UIとアプリのメインロジック (State管理)
 // ==========================================
 
 function showMessage(msg) {
@@ -15,45 +15,7 @@ function parseLocalDate(dateStr) {
     let d = new Date(s); return isNaN(d.getTime()) ? new Date(2000, 0, 1) : d;
 }
 
-const googleRoad = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ja&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 21 });
-const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=ja&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 21 });
-const gsiStd = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>", maxZoom: 18 });
-const gsiPale = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', { attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>", maxZoom: 18 });
-
-const map = L.map('map', { center: [34.2305, 135.1705], zoom: 14, layers: [googleRoad] });
-
-let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); 
-let targetMarkersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 60 });
-
-const baseMaps = { "Google マップ": googleRoad, "Google 航空写真": googleSatellite, "地理院地図 (標準)": gsiStd, "地理院地図 (淡色：見易い)": gsiPale };
-const overlays = { "🚰 水利ピン": markersGroup, "📍 目標物ラベル": targetMarkersGroup };
-L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(map);
-
-const legend = L.control({position: 'bottomleft'});
-legend.onAdd = function (map) {
-    const div = L.DomUtil.create('div', 'info legend');
-    div.innerHTML = `
-        <div style="background: rgba(255,255,255,0.9); padding: 8px; border-radius: 5px; box-shadow: 0 0 15px rgba(0,0,0,0.2); font-size: 11px; margin-bottom: 20px; margin-left: 10px; cursor: pointer;">
-            <b style="font-size:12px; color:#1e293b;">📍 ピンの見方</b><br>
-            <span style="color:#ff3b30; font-size:14px;">●</span> 消火栓<br>
-            <span style="color:#007aff; font-size:14px;">■</span> 防火水槽<br>
-            <span style="color:#ffcc00; font-weight:bold;">⚠️</span> 点滅は「要点検」
-        </div>
-    `;
-    L.DomEvent.disableClickPropagation(div); 
-    let tapCount = 0; let lastTap = 0;
-    div.addEventListener('click', function(e) {
-        let now = Date.now();
-        if (now - lastTap < 500) { 
-            tapCount++;
-            if (tapCount === 3) { if (State.appMode !== 'test') document.getElementById('test-setup-modal').style.display = 'flex'; tapCount = 0; }
-        } else { tapCount = 1; }
-        lastTap = now;
-    });
-    return div;
-};
-legend.addTo(map);
-
+// 🌟 全体の状態管理
 const State = {
     allData: [], currentFilteredData: [], targetsData: [], currentTargetFilteredData: [],
     areaMapping: {}, appMode: 'view', searchTab: 'water', isTracking: false,
@@ -63,6 +25,7 @@ const State = {
 // api.js で定義されている loadData を実行
 if (CONFIG.GAS_API_URL && CONFIG.GAS_API_URL.indexOf("http") === 0) { loadData(); }
 
+// --- UI操作関数群 ---
 window.promptPasscode = function() { document.getElementById('pin-input').value = ''; document.getElementById('pin-modal').style.display = 'flex'; };
 window.closePinModal = function() { document.getElementById('pin-modal').style.display = 'none'; };
 window.checkPin = function() {
@@ -70,15 +33,10 @@ window.checkPin = function() {
     else { showMessage("❌ 暗証番号が違います。"); document.getElementById('pin-input').value = ''; }
 };
 
-function getTargetColor(type) {
-    if (!type) return '#64748b'; 
-    if (type.includes('交差点')) return '#3b82f6'; 
-    if (type.includes('幼') || type.includes('保') || type.includes('学')) return '#ec4899'; 
-    if (type.includes('ヘリ') || type.includes('消防')) return '#f59e0b'; 
-    if (type.includes('病院') || type.includes('医療') || type.includes('医大')) return '#10b981'; 
-    if (type.includes('警察') || type.includes('交番')) return '#8b5cf6'; 
-    return '#64748b'; 
-}
+window.toggleForm = function(id) { 
+    let form = document.getElementById("form-" + id); 
+    form.style.display = (form.style.display === "block") ? "none" : "block"; 
+};
 
 function setupAreaDropdowns(areas) {
     let areaDropdown = document.getElementById('filter-area-dropdown');
@@ -108,6 +66,7 @@ function enterApp(mode) {
         badge.innerText = '🛠️ 水利 点検'; badge.style.backgroundColor = '#ef4444'; 
     }
     
+    // map.js のオブジェクトを利用
     setTimeout(() => {
         map.invalidateSize();
         if (mode === 'view_target') {
@@ -137,6 +96,90 @@ window.updateAreaBtnText = function() {
     if(allCheckbox) { allCheckbox.checked = (checkboxes.length === checkedBoxes.length); }
     if (checkedBoxes.length === checkboxes.length) btn.innerText = '🌐 すべての地区'; else if (checkedBoxes.length === 0) btn.innerText = '⚠️ 地区未選択'; else if (checkedBoxes.length === 1) btn.innerText = '📍 ' + checkedBoxes[0].value; else btn.innerText = `📍 ${checkedBoxes.length}地区を選択中`;
 };
+
+// --- リスト表示関連 ---
+function updateListTable(data, type) {
+    let thead = document.getElementById('table-head'); let tbody = document.getElementById('table-body'); tbody.innerHTML = ''; 
+    document.getElementById('list-count').innerText = data.length; document.getElementById('table-count').innerText = data.length;
+    if (type === 'water') {
+        thead.innerHTML = '<tr><th>水利番号</th><th>地区</th><th>種別</th><th>区分</th><th>前回調査日</th><th>要調査</th><th>点検結果</th><th>異常の種類</th><th>コメント</th></tr>';
+        data.forEach(row => {
+            let tr = document.createElement('tr'); let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok"; let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
+            tr.innerHTML = `<td style="font-weight:bold;">${row["水利番号"]}</td><td>${row["地区"] || "-"}</td><td>${row["水利種別"]}</td><td>${categoryText}</td><td style="font-weight:bold; color:#0369a1;">${row["前回調査日"] || "未実施"}</td><td><span class="badge ${badgeClass}">${row["要調査"]}</span></td><td>${row["点検結果"] || "-"}</td><td>${row["異常の種類"] || "-"}</td><td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"] || "-"}</td>`;
+            tr.addEventListener('click', () => { 
+                if (row["緯度"] && row["経度"]) { 
+                    document.getElementById('list-container').style.display = 'none';
+                    map.setView([row["緯度"], row["経度"]], 18);
+                    setTimeout(() => { 
+                        markersGroup.eachLayer(marker => { 
+                            if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) {
+                                markersGroup.zoomToShowLayer(marker, () => marker.openPopup());
+                            } 
+                        }); 
+                    }, 300); 
+                } 
+            });
+            tbody.appendChild(tr);
+        });
+    } else {
+        thead.innerHTML = '<tr><th>目標物名称</th><th>種別</th><th>管轄署</th><th>住所</th></tr>';
+        data.forEach(row => {
+            let color = getTargetColor(row["種別"]);
+            let tr = document.createElement('tr'); tr.innerHTML = `<td style="font-weight:bold; color:${color};">${row["名称"]}</td><td>${row["種別"] || "-"}</td><td>${row["管轄署"] || "-"}</td><td>${row["住所"] || "-"}</td>`;
+            tr.addEventListener('click', () => { 
+                if (row["緯度"] && row["経度"]) { 
+                    document.getElementById('list-container').style.display = 'none';
+                    map.setView([row["緯度"], row["経度"]], 17);
+                    setTimeout(() => { 
+                        targetMarkersGroup.eachLayer(marker => { 
+                            if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) {
+                                targetMarkersGroup.zoomToShowLayer(marker, () => marker.openPopup());
+                            } 
+                        }); 
+                    }, 300); 
+                } 
+            });
+            tbody.appendChild(tr);
+        });
+    }
+}
+
+// --- 検索・抽出処理 ---
+function execSearch(skipFit) {
+    if (State.searchTab === 'water') {
+        let selectedCategory = document.getElementById('filter-category').value; let selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value); let isAllAreas = document.querySelectorAll('.area-checkbox').length === selectedAreas.length; let selectedStatus = document.getElementById('filter-status').value; let selectedError = document.getElementById('filter-error').value; let selectedPaint = document.getElementById('filter-paint').value; let keyword = document.getElementById('search-text').value.trim().toLowerCase(); let filterDateVal = document.getElementById('filter-date').value; let filterDateCond = document.getElementById('filter-date-cond').value; let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
+        State.currentFilteredData = State.allData.filter(row => {
+            let isPublic = isPublicWater(row["水利番号"]); let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic); let matchArea = isAllAreas || selectedAreas.includes(row["地区"]); let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
+            let matchError = true; if (selectedError === "異常あり") matchError = (row["異常の種類"] !== "" && row["異常の種類"] !== "なし"); else if (selectedError !== "") matchError = (row["異常の種類"] === selectedError); 
+            let matchPaint = (selectedPaint === "") || (row["塗装レベル"] === selectedPaint);
+            let matchDate = true; if (filterDateTime && row["前回調査日"]) { let rowDateTime = parseLocalDate(row["前回調査日"]).getTime(); if (filterDateCond === "before") matchDate = (rowDateTime <= filterDateTime); else if (filterDateCond === "after") matchDate = (rowDateTime >= filterDateTime); }
+            let matchKeyword = true; if (keyword !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
+            return matchCategory && matchArea && matchStatus && matchError && matchPaint && matchDate && matchKeyword;
+        });
+        renderMarkers(State.currentFilteredData, skipFit); updateListTable(State.currentFilteredData, 'water');
+    } else {
+        let selectedJuri = document.getElementById('filter-target-jurisdiction').value; let selectedType = document.getElementById('filter-target-type').value; let keyword = document.getElementById('filter-target-name').value.trim().toLowerCase();
+        State.currentTargetFilteredData = State.targetsData.filter(row => {
+            let matchJuri = (selectedJuri === "" || row["管轄署"] === selectedJuri); let matchType = (selectedType === "" || row["種別"] === selectedType); let matchKeyword = (keyword === "" || (row["名称"] || "").toLowerCase().includes(keyword));
+            return matchJuri && matchType && matchKeyword;
+        });
+        renderTargetMarkers(State.currentTargetFilteredData, skipFit); updateListTable(State.currentTargetFilteredData, 'target');
+    }
+    if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none';
+}
+
+window.downloadCSV = function() {
+    if (State.searchTab === 'water') {
+        if (State.currentFilteredData.length === 0) return showMessage("リストが空です");
+        let csvContent = "\uFEFF水利番号,地区,水利種別,設置区分,前回調査日,要調査,点検結果,異常の種類,塗装レベル,コメント\r\n"; State.currentFilteredData.forEach(row => { let catText = isPublicWater(row["水利番号"]) ? "公設" : "私設"; csvContent += [row["水利番号"], row["地区"]||"-", row["水利種別"], catText, row["前回調査日"]||"未実施", row["要調査"], row["点検結果"]||"-", row["異常の種類"]||"-", row["塗装レベル"]||"-", (row["コメント"]||"-").replace(/,/g, "，")].join(",") + "\r\n"; });
+        let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `地水利点検リスト_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    } else {
+        if (State.currentTargetFilteredData.length === 0) return showMessage("リストが空です");
+        let csvContent = "\uFEFF目標物名称,種別,管轄署,住所\r\n"; State.currentTargetFilteredData.forEach(row => { csvContent += [row["名称"]||"-", row["種別"]||"-", row["管轄署"]||"-", row["住所"]||"-"].join(",") + "\r\n"; });
+        let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `目標物リスト_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
+};
+window.printReport = function() { document.getElementById('print-date').innerText = `${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日`; window.print(); };
 
 // --- DOM読み込み後のイベント設定 ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -191,68 +234,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none'; 
     };
 
-    document.getElementById('gps-btn').onclick = function() { let btn = document.getElementById('gps-btn'); if (State.isTracking) { State.isTracking = false; map.stopLocate(); btn.classList.remove('tracking'); btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; } else { State.isTracking = true; btn.classList.add('tracking'); btn.innerHTML = '<span class="btn-icon">🟢</span><span class="btn-text pc-only">追従中</span><span class="btn-text sp-only">追従中</span>'; map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true}); } };
+    document.getElementById('gps-btn').onclick = function() { 
+        let btn = document.getElementById('gps-btn'); 
+        if (State.isTracking) { 
+            State.isTracking = false; map.stopLocate(); btn.classList.remove('tracking'); btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; 
+        } else { 
+            State.isTracking = true; btn.classList.add('tracking'); btn.innerHTML = '<span class="btn-icon">🟢</span><span class="btn-text pc-only">追従中</span><span class="btn-text sp-only">追従中</span>'; map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true}); 
+        } 
+    };
 });
 
-map.on('locationfound', function(e) { if (State.currentLocationMarker) map.removeLayer(State.currentLocationMarker); State.currentLocationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: State.isTracking ? "#28a745" : "#007bff", color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9 }).addTo(map).bindPopup("<b>現在地</b>"); });
-map.on('dragstart', function() { if (State.isTracking) { State.isTracking = false; map.stopLocate(); let btn = document.getElementById('gps-btn'); btn.classList.remove('tracking'); btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; } });
-
-function isPublicWater(suiriNumber) {
-    let str = String(suiriNumber || "");
-    if (!str || !str.includes("-")) return true; 
-    let parts = str.split("-"); return parts.length > 1 && parts[1].trim().length > 0 && parts[1].trim().charAt(0) !== "6";
-}
-
-function renderMarkers(dataToRender, skipFit) {
-    markersGroup.clearLayers(); if (State.appMode === 'test') return;
-    dataToRender.forEach(function(row) {
-        if (!row["緯度"] || !row["経度"]) return;
-        let isAlert = (row["要調査"] === "要点検"); let className = (row["水利種別"] === "消火栓") ? "marker-hydrant" : "marker-tank"; if (isAlert) className += " alert-marker";
-        let customIcon = L.divIcon({ className: className, iconSize: [24, 24], iconAnchor: [12, 12] }); let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
-        let popupContent = `<div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>${isAlert ? `<div class="popup-alert">⚠️ 要点検</div>` : ''}<table class="popup-table"><tr><th>地区</th><td>${row["地区"] || "-"}</td></tr><tr><th>区分</th><td>${categoryText}</td></tr><tr><th>前回点検</th><td>${row["前回調査日"] || "未実施"}</td></tr><tr><th>点検結果</th><td>${row["点検結果"] || "未入力"}</td></tr><tr><th>異常の種類</th><td>${row["異常の種類"] || "-"}</td></tr><tr><th>塗装レベル</th><td>${row["塗装レベル"] || "-"}</td></tr><tr><th>コメント</th><td>${row["コメント"] || "-"}</td></tr></table>`;
-        if (State.appMode === 'edit') {
-            popupContent += `<button class="form-toggle" onclick="toggleForm('${row["水利番号"]}')">📝 点検結果を入力する</button><div class="input-form" id="form-${row["水利番号"]}"><div class="form-group"><label>点検結果</label><select id="input-result-${row["水利番号"]}"><option value="点検済">点検済（良好）</option><option value="要対応">要対応（不備あり）</option><option value="未実施">未点検</option></select></div><div class="form-group"><label>異常の種類</label><select id="input-error-${row["水利番号"]}"><option value="なし">異常なし</option><option value="蓋開閉困難">蓋開閉困難</option><option value="土没">土没</option><option value="水没">水没</option><option value="バルブ開閉不良">バルブ開閉不良</option><option value="道路陥没（大）">道路陥没（大）</option><option value="道路陥没（小）">道路陥没（小）</option><option value="塗装剥がれ">塗装剥がれ</option><option value="塗装間違い">塗装間違い</option><option value="その他">その他</option></select></div><div class="form-group"><label>塗装レベル</label><select id="input-paint-${row["水利番号"]}"><option value="100%">100%</option><option value="50%">50%</option><option value="0%">0%</option></select></div><div class="form-group"><label>コメント</label><input type="text" id="input-comment-${row["水利番号"]}" placeholder="状況など"></div><button class="form-submit-btn" id="btn-${row["水利番号"]}" onclick="submitReport('${row["水利番号"]}')">スプレッドシートへ送信</button></div>`;
-        }
-        L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent).addTo(markersGroup);
-    });
-    if (!skipFit && State.searchTab === 'water') { 
-        if (markersGroup.getLayers().length > 0) { map.fitBounds(markersGroup.getBounds(), { padding: [50, 50], maxZoom: 17 }); }
-    }
-}
-
-function renderTargetMarkers(dataToRender, skipFit) {
-    targetMarkersGroup.clearLayers(); if (State.appMode === 'test') return;
-    dataToRender.forEach(function(row) {
-        if (!row["緯度"] || !row["経度"]) return;
-        let color = getTargetColor(row["種別"]); 
-        let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label" style="border-left: 4px solid ${color}; color: #0f172a; border-color: ${color};">${row["名称"]}</div></div>`;
-        let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [0, 0] });
-        let popupContent = `<div class="popup-title target" style="border-bottom-color:${color};">${row["名称"]}</div><table class="popup-table"><tr><th>種別</th><td>${row["種別"] || "-"}</td></tr><tr><th>管轄署</th><td>${row["管轄署"] || "-"}</td></tr><tr><th>住所</th><td>${row["住所"] || "-"}</td></tr></table>`;
-        L.marker([row["緯度"], row["経度"]], {icon: customIcon, zIndexOffset: 1000}).bindPopup(popupContent).addTo(targetMarkersGroup);
-    });
-    if (!skipFit && State.searchTab === 'target') {
-        if (targetMarkersGroup.getLayers().length > 0) { map.fitBounds(targetMarkersGroup.getBounds(), { padding: [50, 50], maxZoom: 16 }); }
-    }
-}
-
-function renderTargetMarkersForTest(centerLatLng) {
-    targetMarkersGroup.clearLayers();
-    let pool = State.targetsData.filter(row => {
-        if (!row["緯度"] || !row["経度"]) return false;
-        return map.distance(centerLatLng, L.latLng(row["緯度"], row["経度"])) < 1500;
-    });
-    pool.forEach(function(row) {
-        let color = getTargetColor(row["種別"]); 
-        let safeName = (row["名称"] || "").replace(/'/g, "\\'"); 
-        let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label test-hidden-label" onclick="this.innerText='${safeName}'; this.style.borderColor='${color}'; this.style.borderLeft='4px solid ${color}'; this.style.color='#0f172a'; this.classList.remove('test-hidden-label'); event.stopPropagation();"></div></div>`;
-        let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [0, 0] });
-        let marker = L.marker([row["緯度"], row["経度"]], {icon: customIcon, zIndexOffset: 900}).addTo(targetMarkersGroup);
-        TestManager.elements.push(marker);
-    });
-}
-
-window.toggleForm = function(id) { let form = document.getElementById("form-" + id); form.style.display = (form.style.display === "block") ? "none" : "block"; };
-
+// --- テストモード ロジック (現状維持) ---
 const TestManager = { modeType: 'nearest', question: null, isActive: false, elements: [], fireMarker: null, fireCircle: null, excavatePool: [], hitCount: 0, missCount: 0, missLimit: 5, userTapsForNearest: [] };
 
 window.selectTestMode = function(mode) {
@@ -429,85 +421,3 @@ function onMapClickForTarget(e) {
     TestManager.elements.push(userMarker, ansMarker, line); map.fitBounds(L.latLngBounds([e.latlng, targetLatLng]), {padding: [50, 50], maxZoom: 17});
     document.getElementById('test-instruction').innerHTML = `<div style="margin-bottom: 8px;"><span style="color:${isCorrect ? '#10b981' : '#ef4444'}; font-size:15px; font-weight:bold; background:#fff; padding:3px 10px; border-radius:10px;">${isCorrect ? '大正解🎉' : '残念！'} 誤差: ${Math.round(dist)}m (基準:${limitDist}m)</span></div><div style="display: flex; gap: 10px; justify-content: center;"><button onclick="initTargetTest()" style="padding: 8px 15px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">▶️ 次のクイズへ</button></div>`;
 }
-
-function updateListTable(data, type) {
-    let thead = document.getElementById('table-head'); let tbody = document.getElementById('table-body'); tbody.innerHTML = ''; 
-    document.getElementById('list-count').innerText = data.length; document.getElementById('table-count').innerText = data.length;
-    if (type === 'water') {
-        thead.innerHTML = '<tr><th>水利番号</th><th>地区</th><th>種別</th><th>区分</th><th>前回調査日</th><th>要調査</th><th>点検結果</th><th>異常の種類</th><th>コメント</th></tr>';
-        data.forEach(row => {
-            let tr = document.createElement('tr'); let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok"; let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
-            tr.innerHTML = `<td style="font-weight:bold;">${row["水利番号"]}</td><td>${row["地区"] || "-"}</td><td>${row["水利種別"]}</td><td>${categoryText}</td><td style="font-weight:bold; color:#0369a1;">${row["前回調査日"] || "未実施"}</td><td><span class="badge ${badgeClass}">${row["要調査"]}</span></td><td>${row["点検結果"] || "-"}</td><td>${row["異常の種類"] || "-"}</td><td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"] || "-"}</td>`;
-            tr.addEventListener('click', () => { 
-                if (row["緯度"] && row["経度"]) { 
-                    document.getElementById('list-container').style.display = 'none';
-                    map.setView([row["緯度"], row["経度"]], 18);
-                    setTimeout(() => { 
-                        markersGroup.eachLayer(marker => { 
-                            if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) {
-                                markersGroup.zoomToShowLayer(marker, () => marker.openPopup());
-                            } 
-                        }); 
-                    }, 300); 
-                } 
-            });
-            tbody.appendChild(tr);
-        });
-    } else {
-        thead.innerHTML = '<tr><th>目標物名称</th><th>種別</th><th>管轄署</th><th>住所</th></tr>';
-        data.forEach(row => {
-            let color = getTargetColor(row["種別"]);
-            let tr = document.createElement('tr'); tr.innerHTML = `<td style="font-weight:bold; color:${color};">${row["名称"]}</td><td>${row["種別"] || "-"}</td><td>${row["管轄署"] || "-"}</td><td>${row["住所"] || "-"}</td>`;
-            tr.addEventListener('click', () => { 
-                if (row["緯度"] && row["経度"]) { 
-                    document.getElementById('list-container').style.display = 'none';
-                    map.setView([row["緯度"], row["経度"]], 17);
-                    setTimeout(() => { 
-                        targetMarkersGroup.eachLayer(marker => { 
-                            if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) {
-                                targetMarkersGroup.zoomToShowLayer(marker, () => marker.openPopup());
-                            } 
-                        }); 
-                    }, 300); 
-                } 
-            });
-            tbody.appendChild(tr);
-        });
-    }
-}
-
-function execSearch(skipFit) {
-    if (State.searchTab === 'water') {
-        let selectedCategory = document.getElementById('filter-category').value; let selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value); let isAllAreas = document.querySelectorAll('.area-checkbox').length === selectedAreas.length; let selectedStatus = document.getElementById('filter-status').value; let selectedError = document.getElementById('filter-error').value; let selectedPaint = document.getElementById('filter-paint').value; let keyword = document.getElementById('search-text').value.trim().toLowerCase(); let filterDateVal = document.getElementById('filter-date').value; let filterDateCond = document.getElementById('filter-date-cond').value; let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
-        State.currentFilteredData = State.allData.filter(row => {
-            let isPublic = isPublicWater(row["水利番号"]); let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic); let matchArea = isAllAreas || selectedAreas.includes(row["地区"]); let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
-            let matchError = true; if (selectedError === "異常あり") matchError = (row["異常の種類"] !== "" && row["異常の種類"] !== "なし"); else if (selectedError !== "") matchError = (row["異常の種類"] === selectedError); 
-            let matchPaint = (selectedPaint === "") || (row["塗装レベル"] === selectedPaint);
-            let matchDate = true; if (filterDateTime && row["前回調査日"]) { let rowDateTime = parseLocalDate(row["前回調査日"]).getTime(); if (filterDateCond === "before") matchDate = (rowDateTime <= filterDateTime); else if (filterDateCond === "after") matchDate = (rowDateTime >= filterDateTime); }
-            let matchKeyword = true; if (keyword !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
-            return matchCategory && matchArea && matchStatus && matchError && matchPaint && matchDate && matchKeyword;
-        });
-        renderMarkers(State.currentFilteredData, skipFit); updateListTable(State.currentFilteredData, 'water');
-    } else {
-        let selectedJuri = document.getElementById('filter-target-jurisdiction').value; let selectedType = document.getElementById('filter-target-type').value; let keyword = document.getElementById('filter-target-name').value.trim().toLowerCase();
-        State.currentTargetFilteredData = State.targetsData.filter(row => {
-            let matchJuri = (selectedJuri === "" || row["管轄署"] === selectedJuri); let matchType = (selectedType === "" || row["種別"] === selectedType); let matchKeyword = (keyword === "" || (row["名称"] || "").toLowerCase().includes(keyword));
-            return matchJuri && matchType && matchKeyword;
-        });
-        renderTargetMarkers(State.currentTargetFilteredData, skipFit); updateListTable(State.currentTargetFilteredData, 'target');
-    }
-    if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none';
-}
-
-window.downloadCSV = function() {
-    if (State.searchTab === 'water') {
-        if (State.currentFilteredData.length === 0) return showMessage("リストが空です");
-        let csvContent = "\uFEFF水利番号,地区,水利種別,設置区分,前回調査日,要調査,点検結果,異常の種類,塗装レベル,コメント\r\n"; State.currentFilteredData.forEach(row => { let catText = isPublicWater(row["水利番号"]) ? "公設" : "私設"; csvContent += [row["水利番号"], row["地区"]||"-", row["水利種別"], catText, row["前回調査日"]||"未実施", row["要調査"], row["点検結果"]||"-", row["異常の種類"]||"-", row["塗装レベル"]||"-", (row["コメント"]||"-").replace(/,/g, "，")].join(",") + "\r\n"; });
-        let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `地水利点検リスト_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    } else {
-        if (State.currentTargetFilteredData.length === 0) return showMessage("リストが空です");
-        let csvContent = "\uFEFF目標物名称,種別,管轄署,住所\r\n"; State.currentTargetFilteredData.forEach(row => { csvContent += [row["名称"]||"-", row["種別"]||"-", row["管轄署"]||"-", row["住所"]||"-"].join(",") + "\r\n"; });
-        let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `目標物リスト_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    }
-};
-window.printReport = function() { document.getElementById('print-date').innerText = `${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日`; window.print(); };
