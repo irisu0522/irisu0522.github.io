@@ -1,0 +1,600 @@
+const CONFIG = {
+    // 🌟 新しいGASのURLを設定済みです
+    GAS_API_URL: "https://script.google.com/macros/s/AKfycbw4kvzRzNjkOF2lKulHVtoqml0mjP1GQHBvNVD9mXq05ipvMsZaiRC6GCAYXqmOtmzD/exec",
+    EDIT_MODE_PIN: "1190"
+};
+
+function showMessage(msg) {
+    document.getElementById('custom-alert-msg').innerText = msg;
+    document.getElementById('custom-alert').style.display = 'flex';
+}
+
+function getFetchUrl(baseAction) {
+    return `${CONFIG.GAS_API_URL}?action=${baseAction}&t=${Date.now()}`;
+}
+
+function parseLocalDate(dateStr) {
+    if (!dateStr || dateStr === "00年00月00日" || dateStr === "0") return new Date(2000, 0, 1);
+    let s = String(dateStr).trim(); 
+    const parts = s.split(/[-/]/);
+    if (parts.length >= 3) { return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)); }
+    let d = new Date(s); return isNaN(d.getTime()) ? new Date(2000, 0, 1) : d;
+}
+
+const googleRoad = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ja&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 21 });
+const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=ja&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 21 });
+const gsiStd = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>", maxZoom: 18 });
+const gsiPale = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', { attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>", maxZoom: 18 });
+
+const map = L.map('map', { center: [34.2305, 135.1705], zoom: 14, layers: [googleRoad] });
+
+let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); 
+let targetMarkersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 60 });
+
+const baseMaps = { "Google マップ": googleRoad, "Google 航空写真": googleSatellite, "地理院地図 (標準)": gsiStd, "地理院地図 (淡色：見易い)": gsiPale };
+const overlays = { "🚰 水利ピン": markersGroup, "📍 目標物ラベル": targetMarkersGroup };
+L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(map);
+
+const legend = L.control({position: 'bottomleft'});
+legend.onAdd = function (map) {
+    const div = L.DomUtil.create('div', 'info legend');
+    div.innerHTML = `
+        <div style="background: rgba(255,255,255,0.9); padding: 8px; border-radius: 5px; box-shadow: 0 0 15px rgba(0,0,0,0.2); font-size: 11px; margin-bottom: 20px; margin-left: 10px; cursor: pointer;">
+            <b style="font-size:12px; color:#1e293b;">📍 ピンの見方</b><br>
+            <span style="color:#ff3b30; font-size:14px;">●</span> 消火栓<br>
+            <span style="color:#007aff; font-size:14px;">■</span> 防火水槽<br>
+            <span style="color:#ffcc00; font-weight:bold;">⚠️</span> 点滅は「要点検」
+        </div>
+    `;
+    L.DomEvent.disableClickPropagation(div); 
+    let tapCount = 0; let lastTap = 0;
+    div.addEventListener('click', function(e) {
+        let now = Date.now();
+        if (now - lastTap < 500) { 
+            tapCount++;
+            if (tapCount === 3) { if (State.appMode !== 'test') document.getElementById('test-setup-modal').style.display = 'flex'; tapCount = 0; }
+        } else { tapCount = 1; }
+        lastTap = now;
+    });
+    return div;
+};
+legend.addTo(map);
+
+const State = {
+    allData: [], currentFilteredData: [], targetsData: [], currentTargetFilteredData: [],
+    areaMapping: {}, appMode: 'view', searchTab: 'water', isTracking: false,
+    currentLocationMarker: null, pendingMode: null
+};
+
+if (CONFIG.GAS_API_URL && CONFIG.GAS_API_URL.indexOf("http") === 0) { loadData(); }
+
+window.promptPasscode = function() { document.getElementById('pin-input').value = ''; document.getElementById('pin-modal').style.display = 'flex'; };
+window.closePinModal = function() { document.getElementById('pin-modal').style.display = 'none'; };
+window.checkPin = function() {
+    if (document.getElementById('pin-input').value === CONFIG.EDIT_MODE_PIN) { document.getElementById('pin-modal').style.display = 'none'; startApp('edit'); } 
+    else { showMessage("❌ 暗証番号が違います。"); document.getElementById('pin-input').value = ''; }
+};
+
+function getTargetColor(type) {
+    if (!type) return '#64748b'; 
+    if (type.includes('交差点')) return '#3b82f6'; 
+    if (type.includes('幼') || type.includes('保') || type.includes('学')) return '#ec4899'; 
+    if (type.includes('ヘリ') || type.includes('消防')) return '#f59e0b'; 
+    if (type.includes('病院') || type.includes('医療') || type.includes('医大')) return '#10b981'; 
+    if (type.includes('警察') || type.includes('交番')) return '#8b5cf6'; 
+    return '#64748b'; 
+}
+
+async function loadData() {
+    try {
+        if (!CONFIG.GAS_API_URL || !CONFIG.GAS_API_URL.startsWith("http")) throw new Error("GASのURLが設定されていません。");
+        const response = await fetch(getFetchUrl("get_data"), { method: 'GET', redirect: 'follow', headers: { 'Accept': 'application/json' } }); 
+        if (!response.ok) throw new Error(`通信エラー (${response.status})`);
+
+        const textData = await response.text(); let result = JSON.parse(textData);
+        State.allData = result.data || []; State.targetsData = result.targets || []; State.areaMapping = result.mapping || {};   
+        State.currentFilteredData = [...State.allData]; State.currentTargetFilteredData = [...State.targetsData];
+        
+        document.getElementById('view-count-badge').innerText = `👁️ 閲覧数: ${result.viewCount || 0}`;
+        document.getElementById('data-update-date').innerText = `📅 データ最終更新日: ${result.updateDate || "未設定"}`;
+        
+        let areas = [...new Set(State.allData.map(row => row["地区"]).filter(a => a))].sort(); setupAreaDropdowns(areas);
+
+        let jurisdictions = [...new Set(State.targetsData.map(t => t["管轄署"]).filter(Boolean))].sort();
+        let testJSelect = document.getElementById('test-jurisdiction-select'); let searchJSelect = document.getElementById('filter-target-jurisdiction');
+        jurisdictions.forEach(j => { testJSelect.appendChild(new Option(j, j)); searchJSelect.appendChild(new Option(j, j)); });
+
+        let targetTypes = [...new Set(State.targetsData.map(t => t["種別"]).filter(Boolean))].sort();
+        let testTSelect = document.getElementById('test-target-type-select'); let searchTSelect = document.getElementById('filter-target-type');
+        targetTypes.forEach(t => { testTSelect.appendChild(new Option(t, t)); searchTSelect.appendChild(new Option(t, t)); });
+
+        if (State.pendingMode) { document.getElementById('loading').style.display = 'none'; enterApp(State.pendingMode); }
+    } catch (error) { 
+        console.error(error); document.getElementById('data-update-date').innerText = "📅 データの取得に失敗しました";
+        showMessage(`データの読み込みに失敗しました。\n\n【詳細】\n${error.message}`); document.getElementById('loading').innerText = "❌ 読み込みエラー"; 
+    }
+}
+
+function setupAreaDropdowns(areas) {
+    let areaDropdown = document.getElementById('filter-area-dropdown');
+    areaDropdown.innerHTML = '<label><input type="checkbox" id="area-all-checkbox" checked onchange="toggleAllAreas(this.checked)"> <b>🌐 すべて選択</b></label>';
+    areas.forEach(area => { areaDropdown.innerHTML += `<label><input type="checkbox" class="area-checkbox" value="${area}" checked onchange="updateAreaBtnText()"> ${area}</label>`; });
+    updateAreaBtnText();
+    let testAreaSelect = document.getElementById('test-area-select'); testAreaSelect.innerHTML = '<option value="">すべての地区（広域テスト）</option>';
+    areas.forEach(area => { testAreaSelect.appendChild(new Option(area, area)); });
+}
+
+window.startApp = function(mode) {
+    if (State.allData.length === 0) { State.pendingMode = mode; document.getElementById('loading').style.display = 'block'; return; }
+    enterApp(mode);
+};
+
+function enterApp(mode) {
+    State.appMode = mode; 
+    document.getElementById('mode-overlay').style.display = 'none'; 
+    document.getElementById('top-info-container').style.display = 'flex'; 
+    let badge = document.getElementById('current-mode-badge');
+    
+    if (mode === 'view_water') { 
+        badge.innerText = '👀 水利 閲覧'; badge.style.backgroundColor = '#3b82f6'; 
+    } else if (mode === 'view_target') { 
+        badge.innerText = '📍 目標物 閲覧'; badge.style.backgroundColor = '#10b981'; 
+    } else if (mode === 'edit') { 
+        badge.innerText = '🛠️ 水利 点検'; badge.style.backgroundColor = '#ef4444'; 
+    }
+    
+    setTimeout(() => {
+        map.invalidateSize();
+        if (mode === 'view_target') {
+            if (map.hasLayer(markersGroup)) map.removeLayer(markersGroup);
+            if (!map.hasLayer(targetMarkersGroup)) map.addLayer(targetMarkersGroup);
+            switchSearchTab('target'); 
+        } else {
+            if (!map.hasLayer(markersGroup)) map.addLayer(markersGroup);
+            switchSearchTab('water'); 
+        }
+        map.locate({setView: true, maxZoom: 17}); 
+    }, 100);
+}
+
+window.switchSearchTab = function(tabName, skipSearch) {
+    State.searchTab = tabName;
+    document.getElementById('tab-water').classList.toggle('active', tabName === 'water'); document.getElementById('tab-target').classList.toggle('active', tabName === 'target');
+    document.getElementById('filter-group-water').classList.toggle('active', tabName === 'water'); document.getElementById('filter-group-target').classList.toggle('active', tabName === 'target');
+    setTimeout(() => { map.invalidateSize(); }, 50); 
+    if (!skipSearch) execSearch(false);
+};
+
+window.toggleAllAreas = function(isChecked) { document.querySelectorAll('.area-checkbox').forEach(cb => cb.checked = isChecked); updateAreaBtnText(); };
+window.updateAreaBtnText = function() {
+    let checkboxes = document.querySelectorAll('.area-checkbox'); let checkedBoxes = document.querySelectorAll('.area-checkbox:checked');
+    let btn = document.getElementById('filter-area-btn'); let allCheckbox = document.getElementById('area-all-checkbox');
+    if(allCheckbox) { allCheckbox.checked = (checkboxes.length === checkedBoxes.length); }
+    if (checkedBoxes.length === checkboxes.length) btn.innerText = '🌐 すべての地区'; else if (checkedBoxes.length === 0) btn.innerText = '⚠️ 地区未選択'; else if (checkedBoxes.length === 1) btn.innerText = '📍 ' + checkedBoxes[0].value; else btn.innerText = `📍 ${checkedBoxes.length}地区を選択中`;
+};
+
+// --- DOM読み込み後のイベント設定 ---
+document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('click', function(e) {
+        let container = document.getElementById('filter-area-container'); let dropdown = document.getElementById('filter-area-dropdown');
+        if (container && dropdown && !container.contains(e.target)) dropdown.style.display = 'none';
+    });
+
+    document.getElementById('search-toggle-btn').onclick = function() { let panel = document.getElementById('search-panel'); if (panel.style.display === 'flex') { panel.style.display = 'none'; this.classList.remove('tracking'); } else { panel.style.display = 'flex'; this.classList.add('tracking'); } };
+    document.getElementById('search-btn').onclick = function() { execSearch(false); };
+    document.getElementById('reset-btn').onclick = function() { 
+        if (State.searchTab === 'water') { document.getElementById('filter-category').value = ""; toggleAllAreas(true); document.getElementById('filter-status').value = ""; document.getElementById('filter-error').value = ""; document.getElementById('filter-paint').value = ""; document.getElementById('filter-date').value = ""; document.getElementById('filter-date-cond').value = "before"; document.getElementById('search-text').value = ""; } 
+        else { document.getElementById('filter-target-jurisdiction').value = ""; document.getElementById('filter-target-type').value = ""; document.getElementById('filter-target-name').value = ""; }
+        execSearch(false); 
+    };
+
+    document.getElementById('survey-btn').onclick = function() { 
+        if (!map.hasLayer(markersGroup)) map.addLayer(markersGroup);
+        switchSearchTab('water', true); 
+        document.getElementById('filter-category').value = "公設"; toggleAllAreas(true); document.getElementById('filter-status').value = ""; document.getElementById('filter-error').value = ""; document.getElementById('filter-paint').value = ""; document.getElementById('filter-date').value = `${new Date().getFullYear()}-05-01`; document.getElementById('filter-date-cond').value = "before"; document.getElementById('search-text').value = ""; document.getElementById('search-panel').style.display = 'flex'; 
+        execSearch(false); 
+    };
+    
+    document.getElementById('list-toggle-btn').onclick = function() {
+        let container = document.getElementById('list-container');
+        if (container.style.display !== 'flex') {
+            if (State.searchTab === 'water') updateListTable(State.currentFilteredData, 'water');
+            else updateListTable(State.currentTargetFilteredData, 'target');
+            container.style.display = 'flex';
+        } else {
+            container.style.display = 'none';
+        }
+    };
+
+    document.getElementById('list-close-btn').onclick = function() {
+        document.getElementById('list-container').style.display = 'none';
+    };
+
+    document.getElementById('today-list-btn').onclick = function() { 
+        if (!map.hasLayer(markersGroup)) map.addLayer(markersGroup);
+        switchSearchTab('water', true); 
+        let today = new Date(); 
+        let mm = ("0" + (today.getMonth() + 1)).slice(-2);
+        let dd = ("0" + today.getDate()).slice(-2);
+        let todayStr1 = `${today.getFullYear()}/${mm}/${dd}`; 
+        let todayStr2 = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`; 
+        State.currentFilteredData = State.allData.filter(row => row["前回調査日"] === todayStr1 || row["前回調査日"] === todayStr2); 
+        renderMarkers(State.currentFilteredData, false); 
+        updateListTable(State.currentFilteredData, 'water'); 
+        
+        document.getElementById('list-container').style.display = 'flex'; 
+        if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none'; 
+    };
+
+    document.getElementById('gps-btn').onclick = function() { let btn = document.getElementById('gps-btn'); if (State.isTracking) { State.isTracking = false; map.stopLocate(); btn.classList.remove('tracking'); btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; } else { State.isTracking = true; btn.classList.add('tracking'); btn.innerHTML = '<span class="btn-icon">🟢</span><span class="btn-text pc-only">追従中</span><span class="btn-text sp-only">追従中</span>'; map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true}); } };
+});
+
+map.on('locationfound', function(e) { if (State.currentLocationMarker) map.removeLayer(State.currentLocationMarker); State.currentLocationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: State.isTracking ? "#28a745" : "#007bff", color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9 }).addTo(map).bindPopup("<b>現在地</b>"); });
+map.on('dragstart', function() { if (State.isTracking) { State.isTracking = false; map.stopLocate(); let btn = document.getElementById('gps-btn'); btn.classList.remove('tracking'); btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; } });
+
+function isPublicWater(suiriNumber) {
+    let str = String(suiriNumber || "");
+    if (!str || !str.includes("-")) return true; 
+    let parts = str.split("-"); return parts.length > 1 && parts[1].trim().length > 0 && parts[1].trim().charAt(0) !== "6";
+}
+
+function renderMarkers(dataToRender, skipFit) {
+    markersGroup.clearLayers(); if (State.appMode === 'test') return;
+    dataToRender.forEach(function(row) {
+        if (!row["緯度"] || !row["経度"]) return;
+        let isAlert = (row["要調査"] === "要点検"); let className = (row["水利種別"] === "消火栓") ? "marker-hydrant" : "marker-tank"; if (isAlert) className += " alert-marker";
+        let customIcon = L.divIcon({ className: className, iconSize: [24, 24], iconAnchor: [12, 12] }); let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
+        let popupContent = `<div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>${isAlert ? `<div class="popup-alert">⚠️ 要点検</div>` : ''}<table class="popup-table"><tr><th>地区</th><td>${row["地区"] || "-"}</td></tr><tr><th>区分</th><td>${categoryText}</td></tr><tr><th>前回点検</th><td>${row["前回調査日"] || "未実施"}</td></tr><tr><th>点検結果</th><td>${row["点検結果"] || "未入力"}</td></tr><tr><th>異常の種類</th><td>${row["異常の種類"] || "-"}</td></tr><tr><th>塗装レベル</th><td>${row["塗装レベル"] || "-"}</td></tr><tr><th>コメント</th><td>${row["コメント"] || "-"}</td></tr></table>`;
+        if (State.appMode === 'edit') {
+            popupContent += `<button class="form-toggle" onclick="toggleForm('${row["水利番号"]}')">📝 点検結果を入力する</button><div class="input-form" id="form-${row["水利番号"]}"><div class="form-group"><label>点検結果</label><select id="input-result-${row["水利番号"]}"><option value="点検済">点検済（良好）</option><option value="要対応">要対応（不備あり）</option><option value="未実施">未点検</option></select></div><div class="form-group"><label>異常の種類</label><select id="input-error-${row["水利番号"]}"><option value="なし">異常なし</option><option value="蓋開閉困難">蓋開閉困難</option><option value="土没">土没</option><option value="水没">水没</option><option value="バルブ開閉不良">バルブ開閉不良</option><option value="道路陥没（大）">道路陥没（大）</option><option value="道路陥没（小）">道路陥没（小）</option><option value="塗装剥がれ">塗装剥がれ</option><option value="塗装間違い">塗装間違い</option><option value="その他">その他</option></select></div><div class="form-group"><label>塗装レベル</label><select id="input-paint-${row["水利番号"]}"><option value="100%">100%</option><option value="50%">50%</option><option value="0%">0%</option></select></div><div class="form-group"><label>コメント</label><input type="text" id="input-comment-${row["水利番号"]}" placeholder="状況など"></div><button class="form-submit-btn" id="btn-${row["水利番号"]}" onclick="submitReport('${row["水利番号"]}')">スプレッドシートへ送信</button></div>`;
+        }
+        L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent).addTo(markersGroup);
+    });
+    if (!skipFit && State.searchTab === 'water') { 
+        if (markersGroup.getLayers().length > 0) { map.fitBounds(markersGroup.getBounds(), { padding: [50, 50], maxZoom: 17 }); }
+    }
+}
+
+function renderTargetMarkers(dataToRender, skipFit) {
+    targetMarkersGroup.clearLayers(); if (State.appMode === 'test') return;
+    dataToRender.forEach(function(row) {
+        if (!row["緯度"] || !row["経度"]) return;
+        let color = getTargetColor(row["種別"]); 
+        let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label" style="border-left: 4px solid ${color}; color: #0f172a; border-color: ${color};">${row["名称"]}</div></div>`;
+        let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [0, 0] });
+        let popupContent = `<div class="popup-title target" style="border-bottom-color:${color};">${row["名称"]}</div><table class="popup-table"><tr><th>種別</th><td>${row["種別"] || "-"}</td></tr><tr><th>管轄署</th><td>${row["管轄署"] || "-"}</td></tr><tr><th>住所</th><td>${row["住所"] || "-"}</td></tr></table>`;
+        L.marker([row["緯度"], row["経度"]], {icon: customIcon, zIndexOffset: 1000}).bindPopup(popupContent).addTo(targetMarkersGroup);
+    });
+    if (!skipFit && State.searchTab === 'target') {
+        if (targetMarkersGroup.getLayers().length > 0) { map.fitBounds(targetMarkersGroup.getBounds(), { padding: [50, 50], maxZoom: 16 }); }
+    }
+}
+
+function renderTargetMarkersForTest(centerLatLng) {
+    targetMarkersGroup.clearLayers();
+    let pool = State.targetsData.filter(row => {
+        if (!row["緯度"] || !row["経度"]) return false;
+        return map.distance(centerLatLng, L.latLng(row["緯度"], row["経度"])) < 1500;
+    });
+    pool.forEach(function(row) {
+        let color = getTargetColor(row["種別"]); 
+        let safeName = (row["名称"] || "").replace(/'/g, "\\'"); 
+        let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label test-hidden-label" onclick="this.innerText='${safeName}'; this.style.borderColor='${color}'; this.style.borderLeft='4px solid ${color}'; this.style.color='#0f172a'; this.classList.remove('test-hidden-label'); event.stopPropagation();"></div></div>`;
+        let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [0, 0] });
+        let marker = L.marker([row["緯度"], row["経度"]], {icon: customIcon, zIndexOffset: 900}).addTo(targetMarkersGroup);
+        TestManager.elements.push(marker);
+    });
+}
+
+window.toggleForm = function(id) { let form = document.getElementById("form-" + id); form.style.display = (form.style.display === "block") ? "none" : "block"; };
+
+window.submitReport = async function(id) {
+    let btn = document.getElementById("btn-" + id);
+    let resultVal = document.getElementById("input-result-" + id).value; let errorVal = document.getElementById("input-error-" + id).value; let paintVal = document.getElementById("input-paint-" + id).value; let commentVal = document.getElementById("input-comment-" + id).value;
+    btn.disabled = true; btn.innerText = "送信中...";
+    
+    let requestUrl = `${CONFIG.GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}&t=${Date.now()}`;
+    try {
+        let res = await (await fetch(requestUrl, { redirect: 'follow' })).json();
+        if (res.status === "Success") {
+            btn.innerText = "送信完了！"; btn.style.backgroundColor = "#28a745";
+            let targetIndex = State.allData.findIndex(row => row["水利番号"] === id);
+            if (targetIndex !== -1) {
+                let today = new Date(); State.allData[targetIndex]["前回調査日"] = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`;
+                State.allData[targetIndex]["要調査"] = "点検済"; State.allData[targetIndex]["点検結果"] = resultVal; State.allData[targetIndex]["異常の種類"] = errorVal; State.allData[targetIndex]["塗装レベル"] = paintVal; State.allData[targetIndex]["コメント"] = commentVal;
+            }
+            setTimeout(() => { map.closePopup(); execSearch(true); }, 1500);
+        } else { showMessage("送信エラー: " + res.message); btn.disabled = false; btn.innerText = "送信失敗（再試行）"; }
+    } catch (err) { showMessage("送信に失敗しました。電波状態を確認してください。"); btn.disabled = false; btn.innerText = "スプレッドシートへ送信"; }
+};
+
+window.submitReportForm = async function() {
+    let typeVal = document.getElementById("report-type").value;
+    let contentVal = document.getElementById("report-content").value.trim();
+    
+    if (!contentVal) {
+        showMessage("内容を入力してください。");
+        return;
+    }
+    
+    let btn = document.getElementById("submit-report-btn");
+    btn.disabled = true;
+    btn.innerText = "送信中...";
+    
+    let requestUrl = `${CONFIG.GAS_API_URL}?action=report&type=${encodeURIComponent(typeVal)}&content=${encodeURIComponent(contentVal)}&t=${Date.now()}`;
+    
+    try {
+        let res = await (await fetch(requestUrl, { redirect: 'follow' })).json();
+        if (res.status === "Success") {
+            showMessage("報告を送信しました。ご協力ありがとうございます！");
+            document.getElementById("report-content").value = "";
+            document.getElementById("report-modal").style.display = 'none';
+        } else {
+            showMessage("送信エラー: " + res.message);
+        }
+    } catch (err) {
+        showMessage("送信に失敗しました。電波状態を確認してください。");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "送信する";
+    }
+};
+
+const TestManager = { modeType: 'nearest', question: null, isActive: false, elements: [], fireMarker: null, fireCircle: null, excavatePool: [], hitCount: 0, missCount: 0, missLimit: 5, userTapsForNearest: [] };
+
+window.selectTestMode = function(mode) {
+    TestManager.modeType = mode;
+    ['nearest', 'excavate', 'target'].forEach(m => {
+        let btn = document.getElementById('btn-mode-' + m); btn.style.background = '#f1f5f9'; btn.style.color = '#475569'; btn.style.border = '1px solid #cbd5e1'; document.getElementById('setup-' + m).style.display = 'none';
+    });
+    let activeBtn = document.getElementById('btn-mode-' + mode); activeBtn.style.background = '#e83e8c'; activeBtn.style.color = 'white'; activeBtn.style.border = 'none'; document.getElementById('setup-' + mode).style.display = 'block';
+};
+
+window.execTestMode = function() { if (TestManager.modeType === 'nearest') initNearestTest(); else if (TestManager.modeType === 'excavate') initExcavateTest(); else initTargetTest(); };
+
+function startTestUI() {
+    State.appMode = 'test';
+    document.getElementById('test-setup-modal').style.display = 'none'; document.getElementById('main-side-btns').style.display = 'none'; document.getElementById('top-info-container').style.display = 'none'; document.getElementById('test-header').style.display = 'block';
+    renderMarkers([], true); targetMarkersGroup.clearLayers();
+}
+
+window.quitTestMode = function() {
+    if(TestManager.fireMarker) { map.removeLayer(TestManager.fireMarker); TestManager.fireMarker = null; }
+    if(TestManager.fireCircle) { map.removeLayer(TestManager.fireCircle); TestManager.fireCircle = null; }
+    map.off('click', onMapClickForNearest); map.off('click', onMapClickForExcavate); map.off('click', onMapClickForTarget);
+    TestManager.elements.forEach(el => map.removeLayer(el)); TestManager.elements = [];
+    targetMarkersGroup.clearLayers();
+    
+    document.getElementById('test-header').style.display = 'none'; document.getElementById('test-result-modal').style.display = 'none'; document.getElementById('test-setup-modal').style.display = 'none';
+    document.getElementById('main-side-btns').style.display = 'flex'; document.getElementById('top-info-container').style.display = 'flex';
+    State.appMode = 'view_water'; document.getElementById('current-mode-badge').innerText = '👀 水利 閲覧'; document.getElementById('current-mode-badge').style.backgroundColor = '#3b82f6';
+    
+    if (!map.hasLayer(markersGroup)) map.addLayer(markersGroup);
+    switchSearchTab('water');
+};
+
+function initNearestTest() {
+    let area = document.getElementById('test-area-select').value; let pool = State.allData.filter(row => (area === "" || row["地区"] === area) && row["緯度"] && row["経度"]);
+    if(pool.length < 5) return showMessage(`この地区には水利が ${pool.length} 件しかありません。最低5件以上必要です。`);
+    let base = pool[Math.floor(Math.random() * pool.length)];
+    let fireLat = parseFloat(base["緯度"]) + (Math.random() - 0.5) * 0.002; let fireLng = parseFloat(base["経度"]) + (Math.random() - 0.5) * 0.002; let fireLatLng = L.latLng(fireLat, fireLng);
+    let allInRadius = pool.map(r => ({ row: r, dist: map.distance(fireLatLng, L.latLng(r["緯度"], r["経度"])) })).filter(r => r.dist <= 200).sort((a, b) => a.dist - b.dist);
+    let targetCount = Math.min(5, allInRadius.length);
+    if (targetCount === 0) { allInRadius = pool.map(r => ({ row: r, dist: map.distance(fireLatLng, L.latLng(r["緯度"], r["経度"])) })).sort((a, b) => a.dist - b.dist); targetCount = Math.min(5, allInRadius.length); }
+    TestManager.question = { fireLat: fireLat, fireLng: fireLng, targets: allInRadius.slice(0, targetCount), allInRadius: allInRadius };
+    TestManager.isActive = false; TestManager.elements = [];
+    if(TestManager.fireCircle) { map.removeLayer(TestManager.fireCircle); TestManager.fireCircle = null; }
+    startTestUI(); map.on('click', onMapClickForNearest); showNearestQuestion();
+}
+window.retryNearestTest = function() { TestManager.elements.forEach(el => map.removeLayer(el)); TestManager.elements = []; targetMarkersGroup.clearLayers(); showNearestQuestion(); }
+function showNearestQuestion() {
+    TestManager.userTapsForNearest = []; let q = TestManager.question;
+    document.getElementById('test-progress').innerText = `🔥 火災周辺5ヶ所当てテスト`; document.getElementById('test-question').innerText = `半径200m以内の水利を【 ${q.targets.length}ヶ所 】タップせよ！`; document.getElementById('test-instruction').innerHTML = `<span style="color:#f59e0b;">現在：0 / ${q.targets.length} ヶ所 指定完了</span>`;
+    if(TestManager.fireMarker) map.removeLayer(TestManager.fireMarker); if(TestManager.fireCircle) map.removeLayer(TestManager.fireCircle);
+    TestManager.fireMarker = L.marker([q.fireLat, q.fireLng], { icon: L.divIcon({ className: 'marker-fire-wrapper', html: '<div class="marker-fire-anim">🔥</div>', iconSize: [34, 34], iconAnchor: [17, 34] }) }).addTo(map);
+    TestManager.fireCircle = L.circle([q.fireLat, q.fireLng], { radius: 200, color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.15, dashArray: '5, 5' }).addTo(map);
+    map.setView([q.fireLat, q.fireLng], 16); 
+    renderTargetMarkersForTest(L.latLng(q.fireLat, q.fireLng));
+    setTimeout(() => { TestManager.isActive = true; }, 300);
+}
+function onMapClickForNearest(e) {
+    if(!TestManager.isActive) return; let q = TestManager.question; TestManager.userTapsForNearest.push(e.latlng);
+    let userMarker = L.circleMarker(e.latlng, {radius: 8, color: '#ffffff', fillColor: '#3b82f6', fillOpacity: 1, weight: 2}).addTo(map); TestManager.elements.push(userMarker);
+    document.getElementById('test-instruction').innerHTML = `<span style="color:#f59e0b;">現在：${TestManager.userTapsForNearest.length} / ${q.targets.length} ヶ所 指定完了</span>`;
+    if(TestManager.userTapsForNearest.length >= q.targets.length) { TestManager.isActive = false; showNearestAnswers(q, TestManager.userTapsForNearest); }
+}
+function showNearestAnswers(q, userTaps) {
+    let limitDist = document.getElementById('test-hard-mode').checked ? 10 : 20; let pairs = [];
+    for(let i=0; i<q.targets.length; i++) {
+        let tLatLng = L.latLng(q.targets[i].row["緯度"], q.targets[i].row["経度"]);
+        for(let j=0; j<userTaps.length; j++) { pairs.push({ aIdx: i, uIdx: j, dist: map.distance(tLatLng, userTaps[j]), targetLatlng: tLatLng }); }
+    }
+    pairs.sort((a,b) => a.dist - b.dist);
+    let usedA = new Set(); let usedU = new Set(); let results = [];
+    pairs.forEach(p => { if(!usedA.has(p.aIdx) && !usedU.has(p.uIdx)) { usedA.add(p.aIdx); usedU.add(p.uIdx); results.push(p); } });
+    let roundCorrect = 0;
+    results.forEach(p => {
+        let isCorrect = p.dist <= limitDist; if(isCorrect) roundCorrect++;
+        let ansIcon = L.divIcon({ className: (q.targets[p.aIdx].row["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank', iconSize: [24, 24], iconAnchor: [12, 12] });
+        TestManager.elements.push(L.marker(p.targetLatlng, {icon: ansIcon}).addTo(map));
+        if(!isCorrect) TestManager.elements.push(L.marker(userTaps[p.uIdx], {icon: L.divIcon({ className: 'marker-miss', html: '❌', iconSize: [20, 20], iconAnchor: [10, 10] })}).addTo(map));
+    });
+    for(let j=0; j<userTaps.length; j++) {
+        if(!usedU.has(j)) TestManager.elements.push(L.marker(userTaps[j], {icon: L.divIcon({ className: 'marker-miss', html: '❌', iconSize: [20, 20], iconAnchor: [10, 10] })}).addTo(map));
+    }
+    q.allInRadius.forEach(item => {
+        let r = item.row; let isTarget = q.targets.some(t => t.row["水利番号"] === r["水利番号"]);
+        if (!isTarget) {
+            let ansIcon = L.divIcon({ className: (r["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank', iconSize: [24, 24], iconAnchor: [12, 12] });
+            TestManager.elements.push(L.marker([r["緯度"], r["経度"]], {icon: ansIcon, opacity: 0.5}).addTo(map));
+        }
+    });
+    let allLatLngs = [...userTaps, ...q.allInRadius.map(t => L.latLng(t.row["緯度"], t.row["経度"])), L.latLng(q.fireLat, q.fireLng)]; map.fitBounds(L.latLngBounds(allLatLngs), {padding: [50,50], maxZoom: 18});
+    document.getElementById('test-instruction').innerHTML = `<div style="margin-bottom: 8px;"><span style="color:#10b981; font-size:14px; background:#fff; padding:3px 10px; border-radius:10px;">${q.targets.length}ヶ所中 ${roundCorrect}ヶ所正解！</span></div><div style="display: flex; gap: 10px; justify-content: center;"><button onclick="retryNearestTest()" style="padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">🔄 もう一度</button><button onclick="initNearestTest()" style="padding: 6px 12px; background: #e83e8c; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">▶️ 次の問題</button></div>`;
+}
+
+function initExcavateTest() {
+    let bounds = map.getBounds(); TestManager.excavatePool = State.allData.filter(row => row["緯度"] && row["経度"] && bounds.contains(L.latLng(row["緯度"], row["経度"])));
+    if (TestManager.excavatePool.length === 0) return showMessage("画面に映っている範囲に水利がありません。");
+    TestManager.missLimit = parseInt(document.getElementById('test-miss-limit').value); TestManager.hitCount = 0; TestManager.missCount = 0; TestManager.isActive = false; TestManager.elements = []; TestManager.excavatePool.forEach(q => q.excavated = false); 
+    startTestUI(); updateExcavateHeader(); map.on('click', onMapClickForExcavate); 
+    renderTargetMarkersForTest(map.getCenter());
+    setTimeout(() => { TestManager.isActive = true; }, 500);
+}
+function updateExcavateHeader() {
+    document.getElementById('test-progress').innerText = `🎯 ターゲット：全 ${TestManager.excavatePool.length} 個`;
+    let lifeText = TestManager.missLimit === 999 ? "無制限" : `残り ${TestManager.missLimit - TestManager.missCount} 回`;
+    document.getElementById('test-question').innerHTML = `🔍 発見：${TestManager.hitCount} / ${TestManager.excavatePool.length} 個 &nbsp;&nbsp; <span style="color:#ef4444;">❤️ ${lifeText}</span>`;
+    document.getElementById('test-instruction').innerText = "記憶を頼りに水利がありそうな場所をタップしてください！";
+}
+function onMapClickForExcavate(e) {
+    if (!TestManager.isActive) return; let limitDist = document.getElementById('test-hard-mode').checked ? 10 : 20; let hitIndex = -1; let minDist = Infinity;
+    TestManager.excavatePool.forEach((q, index) => {
+        if (q.excavated) return; let dist = map.distance(e.latlng, L.latLng(q["緯度"], q["経度"]));
+        if (dist <= limitDist && dist < minDist) { minDist = dist; hitIndex = index; }
+    });
+    if (hitIndex !== -1) {
+        let q = TestManager.excavatePool[hitIndex]; q.excavated = true; TestManager.hitCount++;
+        let ansIcon = L.divIcon({ className: (q["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank', iconSize: [24, 24], iconAnchor: [12, 12] });
+        TestManager.elements.push(L.marker([q["緯度"], q["経度"]], {icon: ansIcon}).addTo(map));
+    } else {
+        TestManager.missCount++; TestManager.elements.push(L.marker(e.latlng, {icon: L.divIcon({ className: 'marker-miss', html: '❌', iconSize: [20, 20], iconAnchor: [10, 10] })}).addTo(map));
+    }
+    updateExcavateHeader();
+    if (TestManager.hitCount >= TestManager.excavatePool.length || TestManager.missCount >= TestManager.missLimit) { 
+        TestManager.isActive = false; let isCleared = TestManager.hitCount >= TestManager.excavatePool.length;
+        document.getElementById('test-instruction').innerHTML = `<span style="color:#10b981; font-size:14px; background:#fff; padding:2px 8px; border-radius:10px; cursor:pointer;">${isCleared ? '完全制覇！' : 'ゲームオーバー！'} 地図をタップして結果へ👉</span>`;
+        setTimeout(() => { map.once('click', () => showExcavateResult(isCleared)); }, 1000);
+    }
+}
+function showExcavateResult(isCleared) {
+    map.off('click', onMapClickForExcavate); document.getElementById('test-header').style.display = 'none';
+    let score = Math.round((TestManager.hitCount / TestManager.excavatePool.length) * 100);
+    TestManager.excavatePool.forEach(q => {
+        if (!q.excavated) {
+            let ansIcon = L.divIcon({ className: ((q["水利種別"] === "消火栓") ? 'marker-hydrant' : 'marker-tank') + ' missed-marker', iconSize: [24, 24], iconAnchor: [12, 12] });
+            TestManager.elements.push(L.marker([q["緯度"], q["経度"]], {icon: ansIcon}).addTo(map));
+        }
+    });
+    document.getElementById('test-score-label').innerText = "発掘率"; document.getElementById('test-score-display').innerText = `${score}%`; document.getElementById('test-score-display').style.color = score >= 80 ? '#e83e8c' : '#f59e0b';
+    document.getElementById('test-correct-display').innerText = `${TestManager.excavatePool.length}個中 ${TestManager.hitCount}個 発見！`; document.getElementById('test-message-display').innerHTML = `お手つき: ${TestManager.missCount} 回<br><br>${isCleared ? "🏆 完全制覇！" : "💀 お手つき上限に達しました..."}`;
+    document.getElementById('test-result-modal').style.display = 'flex';
+}
+
+function initTargetTest() {
+    let selectedJurisdiction = document.getElementById('test-jurisdiction-select').value; let selectedType = document.getElementById('test-target-type-select').value;
+    let pool = State.targetsData.filter(row => {
+        if (!row["緯度"] || !row["経度"]) return false; let matchJuri = (selectedJurisdiction === "" || row["管轄署"] === selectedJurisdiction); let matchType = (selectedType === "" || row["種別"] === selectedType); return matchJuri && matchType;
+    });
+    if(pool.length === 0) return showMessage(`指定された条件の目標物データが見つかりません。`);
+    let target = pool[Math.floor(Math.random() * pool.length)];
+    TestManager.question = target; TestManager.isActive = false; TestManager.elements = [];
+    startTestUI(); showTargetQuestion(target); map.on('click', onMapClickForTarget);
+}
+function showTargetQuestion(target) {
+    document.getElementById('test-progress').innerText = `📍 目標物ピンポイント当て (${target["管轄署"] || '管轄不明'})`; document.getElementById('test-question').innerText = `Q. 「${target["名称"]}」はどこ？`; document.getElementById('test-instruction').innerHTML = `<span style="color:#f59e0b;">マップ上の正しい位置を1回だけタップしてください</span>`;
+    if (document.getElementById('test-jurisdiction-select').value !== "") {
+        let areaHints = Object.keys(State.areaMapping).filter(key => State.areaMapping[key] === target["管轄署"]); let hintWater = State.allData.find(w => areaHints.includes(w["地区"]));
+        if (hintWater) { map.setView([hintWater["緯度"], hintWater["経度"]], 13); }
+    } else { map.setView([34.2305, 135.1705], 13); }
+    setTimeout(() => { TestManager.isActive = true; }, 500);
+}
+function onMapClickForTarget(e) {
+    if(!TestManager.isActive) return; TestManager.isActive = false; 
+    let target = TestManager.question; let targetLatLng = L.latLng(target["緯度"], target["経度"]); let dist = map.distance(e.latlng, targetLatLng);
+    let limitDist = document.getElementById('test-hard-mode').checked ? 30 : 60; let isCorrect = dist <= limitDist;
+    
+    let userMarker = L.marker(e.latlng, {icon: L.divIcon({ className: 'marker-miss', html: isCorrect ? '🎯' : '❌', iconSize: [24, 24], iconAnchor: [12, 12] })}).addTo(map);
+    
+    let color = getTargetColor(target["種別"]);
+    let correctHtml = `<div class="marker-target-wrapper"><div class="marker-target-label" style="border-left: 4px solid ${color}; color: #0f172a; border-color: ${color};">${target["名称"]}</div></div>`;
+    let correctIcon = L.divIcon({ className: 'marker-target-container', html: correctHtml, iconSize: [0, 0] });
+    
+    let ansMarker = L.marker(targetLatLng, {icon: correctIcon}).addTo(map);
+    let line = L.polyline([e.latlng, targetLatLng], {color: isCorrect ? '#10b981' : '#ef4444', weight: 3, dashArray: '5, 5'}).addTo(map);
+    
+    TestManager.elements.push(userMarker, ansMarker, line); map.fitBounds(L.latLngBounds([e.latlng, targetLatLng]), {padding: [50, 50], maxZoom: 17});
+    document.getElementById('test-instruction').innerHTML = `<div style="margin-bottom: 8px;"><span style="color:${isCorrect ? '#10b981' : '#ef4444'}; font-size:15px; font-weight:bold; background:#fff; padding:3px 10px; border-radius:10px;">${isCorrect ? '大正解🎉' : '残念！'} 誤差: ${Math.round(dist)}m (基準:${limitDist}m)</span></div><div style="display: flex; gap: 10px; justify-content: center;"><button onclick="initTargetTest()" style="padding: 8px 15px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">▶️ 次のクイズへ</button></div>`;
+}
+
+function updateListTable(data, type) {
+    let thead = document.getElementById('table-head'); let tbody = document.getElementById('table-body'); tbody.innerHTML = ''; 
+    document.getElementById('list-count').innerText = data.length; document.getElementById('table-count').innerText = data.length;
+    if (type === 'water') {
+        thead.innerHTML = '<tr><th>水利番号</th><th>地区</th><th>種別</th><th>区分</th><th>前回調査日</th><th>要調査</th><th>点検結果</th><th>異常の種類</th><th>コメント</th></tr>';
+        data.forEach(row => {
+            let tr = document.createElement('tr'); let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok"; let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
+            tr.innerHTML = `<td style="font-weight:bold;">${row["水利番号"]}</td><td>${row["地区"] || "-"}</td><td>${row["水利種別"]}</td><td>${categoryText}</td><td style="font-weight:bold; color:#0369a1;">${row["前回調査日"] || "未実施"}</td><td><span class="badge ${badgeClass}">${row["要調査"]}</span></td><td>${row["点検結果"] || "-"}</td><td>${row["異常の種類"] || "-"}</td><td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"] || "-"}</td>`;
+            tr.addEventListener('click', () => { 
+                if (row["緯度"] && row["経度"]) { 
+                    document.getElementById('list-container').style.display = 'none';
+                    map.setView([row["緯度"], row["経度"]], 18);
+                    setTimeout(() => { 
+                        markersGroup.eachLayer(marker => { 
+                            if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) {
+                                markersGroup.zoomToShowLayer(marker, () => marker.openPopup());
+                            } 
+                        }); 
+                    }, 300); 
+                } 
+            });
+            tbody.appendChild(tr);
+        });
+    } else {
+        thead.innerHTML = '<tr><th>目標物名称</th><th>種別</th><th>管轄署</th><th>住所</th></tr>';
+        data.forEach(row => {
+            let color = getTargetColor(row["種別"]);
+            let tr = document.createElement('tr'); tr.innerHTML = `<td style="font-weight:bold; color:${color};">${row["名称"]}</td><td>${row["種別"] || "-"}</td><td>${row["管轄署"] || "-"}</td><td>${row["住所"] || "-"}</td>`;
+            tr.addEventListener('click', () => { 
+                if (row["緯度"] && row["経度"]) { 
+                    document.getElementById('list-container').style.display = 'none';
+                    map.setView([row["緯度"], row["経度"]], 17);
+                    setTimeout(() => { 
+                        targetMarkersGroup.eachLayer(marker => { 
+                            if (marker.getLatLng().lat == row["緯度"] && marker.getLatLng().lng == row["経度"]) {
+                                targetMarkersGroup.zoomToShowLayer(marker, () => marker.openPopup());
+                            } 
+                        }); 
+                    }, 300); 
+                } 
+            });
+            tbody.appendChild(tr);
+        });
+    }
+}
+
+function execSearch(skipFit) {
+    if (State.searchTab === 'water') {
+        let selectedCategory = document.getElementById('filter-category').value; let selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value); let isAllAreas = document.querySelectorAll('.area-checkbox').length === selectedAreas.length; let selectedStatus = document.getElementById('filter-status').value; let selectedError = document.getElementById('filter-error').value; let selectedPaint = document.getElementById('filter-paint').value; let keyword = document.getElementById('search-text').value.trim().toLowerCase(); let filterDateVal = document.getElementById('filter-date').value; let filterDateCond = document.getElementById('filter-date-cond').value; let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
+        State.currentFilteredData = State.allData.filter(row => {
+            let isPublic = isPublicWater(row["水利番号"]); let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic); let matchArea = isAllAreas || selectedAreas.includes(row["地区"]); let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
+            let matchError = true; if (selectedError === "異常あり") matchError = (row["異常の種類"] !== "" && row["異常の種類"] !== "なし"); else if (selectedError !== "") matchError = (row["異常の種類"] === selectedError); 
+            let matchPaint = (selectedPaint === "") || (row["塗装レベル"] === selectedPaint);
+            let matchDate = true; if (filterDateTime && row["前回調査日"]) { let rowDateTime = parseLocalDate(row["前回調査日"]).getTime(); if (filterDateCond === "before") matchDate = (rowDateTime <= filterDateTime); else if (filterDateCond === "after") matchDate = (rowDateTime >= filterDateTime); }
+            let matchKeyword = true; if (keyword !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
+            return matchCategory && matchArea && matchStatus && matchError && matchPaint && matchDate && matchKeyword;
+        });
+        renderMarkers(State.currentFilteredData, skipFit); updateListTable(State.currentFilteredData, 'water');
+    } else {
+        let selectedJuri = document.getElementById('filter-target-jurisdiction').value; let selectedType = document.getElementById('filter-target-type').value; let keyword = document.getElementById('filter-target-name').value.trim().toLowerCase();
+        State.currentTargetFilteredData = State.targetsData.filter(row => {
+            let matchJuri = (selectedJuri === "" || row["管轄署"] === selectedJuri); let matchType = (selectedType === "" || row["種別"] === selectedType); let matchKeyword = (keyword === "" || (row["名称"] || "").toLowerCase().includes(keyword));
+            return matchJuri && matchType && matchKeyword;
+        });
+        renderTargetMarkers(State.currentTargetFilteredData, skipFit); updateListTable(State.currentTargetFilteredData, 'target');
+    }
+    if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none';
+}
+
+window.downloadCSV = function() {
+    if (State.searchTab === 'water') {
+        if (State.currentFilteredData.length === 0) return showMessage("リストが空です");
+        let csvContent = "\uFEFF水利番号,地区,水利種別,設置区分,前回調査日,要調査,点検結果,異常の種類,塗装レベル,コメント\r\n"; State.currentFilteredData.forEach(row => { let catText = isPublicWater(row["水利番号"]) ? "公設" : "私設"; csvContent += [row["水利番号"], row["地区"]||"-", row["水利種別"], catText, row["前回調査日"]||"未実施", row["要調査"], row["点検結果"]||"-", row["異常の種類"]||"-", row["塗装レベル"]||"-", (row["コメント"]||"-").replace(/,/g, "，")].join(",") + "\r\n"; });
+        let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `地水利点検リスト_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    } else {
+        if (State.currentTargetFilteredData.length === 0) return showMessage("リストが空です");
+        let csvContent = "\uFEFF目標物名称,種別,管轄署,住所\r\n"; State.currentTargetFilteredData.forEach(row => { csvContent += [row["名称"]||"-", row["種別"]||"-", row["管轄署"]||"-", row["住所"]||"-"].join(",") + "\r\n"; });
+        let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `目標物リスト_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
+};
+window.printReport = function() { document.getElementById('print-date').innerText = `${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日`; window.print(); };
