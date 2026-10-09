@@ -71,9 +71,9 @@ window.quitTestMode = function() {
     badge.style.backgroundColor = '#3b82f6';
     
     if (!map.hasLayer(markersGroup)) map.addLayer(markersGroup);
-    switchSearchTab('water');
-};
-
+    switchSearchTab('water', true); 
+    execSearch(true);
+    };
 // --- 🔥 5ヶ所当てテスト ---
 function initNearestTest() {
     let area = document.getElementById('test-area-select').value; 
