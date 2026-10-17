@@ -62,29 +62,28 @@ async function loadData() {
 
 // 現場からの点検結果送信処理
 window.submitReport = async function(id) {
-    // ▼ 追加：ゴーストタッチ（勝手に送信）防止用の確認画面
     if (!window.confirm("データを送信しますか？\n（※写真が2枚ある場合は、両方セットしてから「OK」を押してください）")) {
-        return; // キャンセルを押した場合はここで処理を止める
+        return;
     }
+
     let btn = document.getElementById("btn-" + id);
     let resultVal = document.getElementById("input-result-" + id).value; 
     let errorVal = document.getElementById("input-error-" + id).value;
     let paintVal = document.getElementById("input-paint-" + id).value; 
     let commentVal = document.getElementById("input-comment-" + id).value;
     
-    // 写真ファイルの取得（新しく追加した部分）
     let farFile = document.getElementById("input-far-" + id).files[0];
     let nearFile = document.getElementById("input-near-" + id).files[0];
     
     btn.disabled = true; 
     btn.innerText = "送信中... (写真がある場合は数秒かかります)";
-    btn.style.backgroundColor = "#f59e0b"; // 処理中オレンジ
+    btn.style.backgroundColor = "#f59e0b";
     
     try {
-        // ① もし写真があれば、圧縮してPOST送信（先ほど作ったGASのdoPostへ）
+        // ① 写真データの送信
         if (farFile || nearFile) {
-            let farBase64 = await resizeImageBase64(farFile);
-            let nearBase64 = await resizeImageBase64(nearFile);
+            let farBase64 = farFile ? await resizeImageBase64(farFile) : null;
+            let nearBase64 = nearFile ? await resizeImageBase64(nearFile) : null;
             
             let photoPayload = {
                 action: "upload_photos",
@@ -93,29 +92,44 @@ window.submitReport = async function(id) {
                 nearImage: nearBase64
             };
             
-            await fetch(CONFIG.GAS_API_URL, {
+            let postRes = await fetch(CONFIG.GAS_API_URL, {
                 method: 'POST',
                 redirect: 'follow',
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(photoPayload)
             });
+
+            // ▼ ここが隠れていたエラーをあぶり出す新しいコードです！
+            let responseText = await postRes.text();
+            try {
+                let postData = JSON.parse(responseText);
+                if (postData.status === "Error") {
+                    alert("【GASエラー】\n" + postData.message);
+                    btn.disabled = false; btn.innerText = "スプレッドシートへ送信";
+                    return; // 写真が失敗したらここで処理をストップ
+                }
+            } catch (parseError) {
+                alert("【通信エラー】GASのURLが古い可能性があります。\n受信データ: " + responseText.substring(0, 50));
+                btn.disabled = false; btn.innerText = "スプレッドシートへ送信";
+                return;
+            }
         }
 
-        // ② 今まで通りの文字データの送信（GET送信）
+        // ② 文字データの送信
         let requestUrl = `${CONFIG.GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}&t=${Date.now()}`;
         
         let res = await (await fetch(requestUrl)).json();
         
         if (res.status === "Success") {
             btn.innerText = "送信完了！"; 
-            btn.style.backgroundColor = "#28a745"; // 成功グリーン
+            btn.style.backgroundColor = "#28a745";
             setTimeout(() => { map.closePopup(); execSearch(true); }, 1500);
         } else { 
-            showMessage("送信エラー: " + res.message); 
+            alert("【文字データ送信エラー】\n" + res.message); 
             btn.disabled = false; btn.innerText = "送信失敗（再試行）"; 
         }
     } catch (err) { 
-        showMessage("送信に失敗しました。電波状態を確認してください。"); 
+        alert("送信に失敗しました。\n詳細: " + err.message); 
         btn.disabled = false; btn.innerText = "スプレッドシートへ送信"; 
     }
 };
