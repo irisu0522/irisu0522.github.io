@@ -143,6 +143,8 @@ function renderMarkers(dataToRender, skipFit) {
             </div>
         `;
     }
+
+    L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent, { closeOnClick: false, autoClose: false }).addTo(markersGroup);
 // --- 目標物ピンの描画処理 ---
 function renderTargetMarkers(dataToRender, skipFit) {
     targetMarkersGroup.clearLayers(); 
