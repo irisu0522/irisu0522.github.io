@@ -75,6 +75,7 @@ map.on('dragstart', function() {
 });
 
 // --- ヘルパー関数 ---
+// --- ヘルパー関数 ---
 function isPublicWater(suiriNumber) {
     let str = String(suiriNumber || "");
     if (!str || !str.includes("-")) return true; 
@@ -92,6 +93,16 @@ function getTargetColor(type) {
     return '#64748b'; 
 }
 
+// ★追加：Googleドライブの共有URLを、直接画像を表示するURLに変換する関数
+function getDriveImageUrl(url) {
+    if (!url) return "";
+    let match = url.match(/\/d\/(.*?)\//);
+    if (match && match[1]) {
+        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+    }
+    return url; // 変換できない場合はそのまま返す
+}
+
 // --- 水利ピンの描画処理 ---
 function renderMarkers(dataToRender, skipFit) {
     markersGroup.clearLayers(); 
@@ -107,8 +118,26 @@ function renderMarkers(dataToRender, skipFit) {
         let customIcon = L.divIcon({ className: className, iconSize: [24, 24], iconAnchor: [12, 12] }); 
         let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
         
+        // ★追加：写真のURLを画像表示用に変換
+        let farImageUrl = getDriveImageUrl(row["遠景写真"]);
+        let nearImageUrl = getDriveImageUrl(row["近景写真"]);
+
+        // ポップアップの基本情報
         let popupContent = `<div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>${isAlert ? `<div class="popup-alert">⚠️ 要点検</div>` : ''}<table class="popup-table"><tr><th>地区</th><td>${row["地区"] || "-"}</td></tr><tr><th>区分</th><td>${categoryText}</td></tr><tr><th>前回点検</th><td>${row["前回調査日"] || "未実施"}</td></tr><tr><th>点検結果</th><td>${row["点検結果"] || "未入力"}</td></tr><tr><th>異常の種類</th><td>${row["異常の種類"] || "-"}</td></tr><tr><th>塗装レベル</th><td>${row["塗装レベル"] || "-"}</td></tr><tr><th>コメント</th><td>${row["コメント"] || "-"}</td></tr></table>`;
         
+        // ★追加：写真が登録されていれば、画像を表示するエリアを追加
+        if (farImageUrl || nearImageUrl) {
+            popupContent += `<div style="display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap;">`;
+            if (farImageUrl) {
+                popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 遠景</div><img src="${farImageUrl}" style="width: 100%; border-radius: 4px; border: 1px solid #ddd;"></div>`;
+            }
+            if (nearImageUrl) {
+                popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 近景</div><img src="${nearImageUrl}" style="width: 100%; border-radius: 4px; border: 1px solid #ddd;"></div>`;
+            }
+            popupContent += `</div>`;
+        }
+        
+        // 点検入力フォーム（点検モードの時だけ表示）
         if (State.appMode === 'edit') {
         popupContent += `
             <button class="form-toggle" onclick="toggleForm('${row["水利番号"]}')">✏️ 点検結果を入力する</button>
@@ -145,12 +174,12 @@ function renderMarkers(dataToRender, skipFit) {
     }
 
     L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent, { closeOnClick: false, autoClose: false }).addTo(markersGroup);
-  }); // ← ★消えていた記号（復活）
+  });
 
   if (!skipFit && State.searchTab === 'water') {
       if (markersGroup.getLayers().length > 0) { map.fitBounds(markersGroup.getBounds(), { padding: [50, 50], maxZoom: 17 }); }
   }
-} // ← ★消えていた記号（復活）
+}
 // --- 目標物ピンの描画処理 ---
 function renderTargetMarkers(dataToRender, skipFit) {
     targetMarkersGroup.clearLayers(); 
