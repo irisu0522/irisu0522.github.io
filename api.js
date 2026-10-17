@@ -4,7 +4,7 @@
 
 const CONFIG = {
     // 🌟 最新のGASデプロイURL
-    GAS_API_URL: "https://script.google.com/macros/s/AKfycbw4kvzRzNjkOF2lKulHVtoqml0mjP1GQHBvNVD9mXq05ipvMsZaiRC6GCAYXqmOtmzD/exec",
+    GAS_API_URL: "https://script.google.com/macros/s/AKfycbxFSNIyJ9hFpbqSDWC8UPpsNdpe1k7E8nri7IZpE7HIXkv7VXmFpTB1J_-uUOkXlBVgcA/exec",
     EDIT_MODE_PIN: "1190"
 };
 
