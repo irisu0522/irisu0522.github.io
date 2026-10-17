@@ -62,6 +62,10 @@ async function loadData() {
 
 // 現場からの点検結果送信処理
 window.submitReport = async function(id) {
+    // ▼ 追加：ゴーストタッチ（勝手に送信）防止用の確認画面
+    if (!window.confirm("データを送信しますか？\n（※写真が2枚ある場合は、両方セットしてから「OK」を押してください）")) {
+        return; // キャンセルを押した場合はここで処理を止める
+    }
     let btn = document.getElementById("btn-" + id);
     let resultVal = document.getElementById("input-result-" + id).value; 
     let errorVal = document.getElementById("input-error-" + id).value;
