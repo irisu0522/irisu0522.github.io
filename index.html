@@ -5,68 +5,95 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>地水利マップ（本番システム）</title>
     
-    <!-- リーフレット(地図ライブラリ)の読み込み -->
+    <!-- 🌟 Leafletライブラリの読み込み -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- マーカークラスター(ピンをまとめる機能)の読み込み -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     
-    <!-- PWA / スマホアプリ化の設定 -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1e293b">
-    
-    <!-- iOS (iPhone/iPad) 向けのアプリアイコン・フルスクリーン設定 -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="地水利マップ">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2875/2875337.png">
-
-    <!-- 外部CSSの読み込み -->
+    <!-- 🌟 分割したCSSファイルの読み込み -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     
-    <!-- カスタムメッセージボックス -->
+    <!-- 汎用アラートモーダル -->
     <div id="custom-alert" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.6); z-index:10006; align-items:center; justify-content:center;">
         <div style="background:white; padding:20px; border-radius:10px; width:80%; max-width:300px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
             <p id="custom-alert-msg" style="font-size:14px; font-weight:bold; color:#334155; line-height:1.5; margin-bottom:20px;"></p>
-            <button onclick="document.getElementById('custom-alert').style.display='none'" style="width:100%; padding:10px; background:#3b82f6; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">OK</button>
+            <button onclick="document.getElementById('custom-alert').style.display='none'" style="width:100%; padding:12px; background:#3b82f6; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">OK</button>
         </div>
     </div>
 
-    <!-- 初期スタート画面 -->
+    <!-- スタート画面 -->
     <div id="mode-overlay">
         <div class="mode-title">🗺️ 地水利マップシステム</div>
         <div class="mode-subtitle">和歌山市内の地水利状況を地図上で確認・点検できるシステムです。</div>
         <div id="data-update-date">📅 データ最終更新日: 読込中...</div>
         
-        <div class="update-history-box">
-            <b style="font-size:12px; color:#1e293b;">📢 システムの使い方・便利機能</b>
-            <ul style="margin: 5px 0 0; padding-left: 20px;">
-                <li><b style="color:#dc3545;">🚨全数調査</b>ボタン：右下のボタンを押すと「公設」「今年の5月1日以前に点検」が自動セットされ、今年点検すべき水利が一発で抽出されます。</li>
-                <li><b style="color:#17a2b8;">📊リスト</b>表示：抽出した水利を一覧で確認し、行をタップすると地図上の位置へ瞬時に移動します。</li>
-                <li>検索パネルの「地区」で<b>複数選択</b>ができるようになりました。</li>
-            </ul>
-        </div>
+        <button onclick="document.getElementById('manual-modal').style.display='flex'" style="background:#f1f5f9; color:#3b82f6; border:1px solid #cbd5e1; padding:12px 20px; border-radius:8px; font-size:14px; font-weight:bold; margin-bottom:25px; cursor:pointer; display:flex; align-items:center; gap:8px;">📖 システムの詳しい使い方を見る</button>
         
-        <button class="mode-btn mode-view" onclick="startApp('view')">👀 閲覧モードで開始</button>
-        <div class="mode-desc">データの確認や検索のみ行います（誤操作防止用）</div>
+        <button class="mode-btn mode-view" onclick="startApp('view_water')">🚰 水利 閲覧モード</button>
+        <div class="mode-desc">水利データの確認や検索のみ行います（誤操作防止用）</div>
         
-        <button class="mode-btn mode-edit" onclick="promptPasscode()">🛠️ 点検モードで開始</button>
+        <button class="mode-btn mode-target" onclick="startApp('view_target')">📍 目標物 閲覧モード</button>
+        <div class="mode-desc">目標物データを中心に確認・検索します</div>
+
+        <button class="mode-btn mode-edit" onclick="promptPasscode()">🛠️ 水利 点検モード</button>
         <div class="mode-desc">現場でピンをタップし、点検結果を入力・送信します</div>
         
+        <!-- 💡 アプリ改善要望ボタン -->
+        <div style="width:85%; max-width:320px; margin-top:15px; margin-bottom:10px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:15px; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+            <p style="font-size:12px; color:#b45309; margin:0 0 10px 0; font-weight:bold;">💡 アプリ改善にご協力ください</p>
+            <button onclick="document.getElementById('report-modal').style.display='flex';" style="width:100%; padding:12px; background:#f59e0b; color:white; border:none; border-radius:8px; font-weight:bold; font-size:14px; cursor:pointer; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.2);">📢 不具合・要望を報告する</button>
+        </div>
+        
         <div class="line-warning-box">
-            <b style="color: #e03131; font-size: 12px; display: block; margin-bottom: 4px;">🚫 SNS等へのリンク共有禁止</b>
-            不特定多数が見られるSNSへのURL貼り付けは、データ保護のため絶対に禁止します。<br><br>
             <b style="color: #e03131; font-size: 12px; display: block; margin-bottom: 4px;">⚠️ アプリを利用する際のお願い</b>
-            本システムはスマホアプリ化に対応しています。ブラウザの「共有」ボタンから<b>「ホーム画面に追加」</b>を行ってご利用ください。
+            LINE等のアプリ内から直接リンクを開くと、現在地取得機能が正常に動かない不具合が発生します。<br>
+            恐れ入りますが、<b>このページのURLをコピーし、SafariやChromeなどの「検索アプリ」に貼り付けて</b>開き直してください。
         </div>
     </div>
 
-    <!-- 点検モード用 パスワード入力モーダル -->
+    <!-- 使い方モーダル -->
+    <div id="manual-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.7); z-index:10005; align-items:center; justify-content:center;">
+        <div style="background:white; padding:25px; border-radius:12px; width:85%; max-width:400px; max-height:80vh; overflow-y:auto;">
+            <h2 style="margin-top:0; color:#1e293b; font-size:18px; text-align:center; border-bottom:2px solid #cbd5e1; padding-bottom:10px;">📖 便利な機能と使い方</h2>
+            <ul style="padding-left: 20px; font-size:13px; color:#334155; line-height:1.8;">
+                <li><b style="color:#dc3545;">🚨全数調査</b>：右下のボタンを押すと「今年点検すべき公設水利」が一発で抽出されます。</li>
+                <li><b style="color:#17a2b8;">📊リスト連動・印刷</b>：抽出したデータはリスト表示（Excel出力・印刷対応）され、タップすると地図上の該当地点へ瞬時に移動します。</li>
+                <li><b style="color:#3b82f6;">🔍高度な絞り込み</b>：検索パネルを開くと、水利や目標物を「複数の地区」「異常の種類」などで細かく絞り込めます。点検計画の策定に便利です。</li>
+                <li><b style="color:#10b981;">📍GPSルート確認</b>：右下の現在地ボタンを押すと、自分の移動に合わせてマップが追従します。目標物周辺での迷路防止に活用してください。</li>
+                <li><b style="color:#f59e0b;">🌐レイヤー切替</b>：マップ右上のボタンから、航空写真への切り替えや、不要なピンの非表示（ON/OFF）が可能です。</li>
+            </ul>
+            <button onclick="document.getElementById('manual-modal').style.display='none'" style="width:100%; padding:12px; margin-top:15px; background:#3b82f6; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">閉じる</button>
+        </div>
+    </div>
+
+    <!-- 不具合・要望入力フォームモーダル -->
+    <div id="report-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.7); z-index:10006; align-items:center; justify-content:center;">
+        <div style="background:white; padding:25px; border-radius:12px; width:85%; max-width:400px;">
+            <h2 style="margin-top:0; color:#1e293b; font-size:18px; border-bottom:2px solid #cbd5e1; padding-bottom:10px;">📢 報告・要望を送信</h2>
+            <div style="margin-bottom: 15px;">
+                <label style="display:block; font-size:13px; font-weight:bold; margin-bottom:5px; color:#475569;">種類</label>
+                <select id="report-type" style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1; font-size:14px;">
+                    <option value="バグ・不具合">🐛 バグ・不具合</option>
+                    <option value="機能の要望">✨ 機能の要望</option>
+                    <option value="その他">📝 その他</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display:block; font-size:13px; font-weight:bold; margin-bottom:5px; color:#475569;">内容</label>
+                <textarea id="report-content" rows="4" style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e1; font-size:14px; box-sizing:border-box; resize:none;" placeholder="ここが動かない、こんな機能が欲しい等をご記入ください"></textarea>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('report-modal').style.display='none'" style="flex:1; padding:12px; background:#94a3b8; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">キャンセル</button>
+                <button id="submit-report-btn" onclick="submitReportForm()" style="flex:1; padding:12px; background:#3b82f6; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">送信する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 点検モードパスワード -->
     <div id="pin-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.6); z-index:10001; align-items:center; justify-content:center;">
         <div style="background:white; padding:20px; border-radius:10px; width:80%; max-width:300px; text-align:center;">
             <h3 style="margin-top:0; color:#1e293b;">🔐 暗証番号入力</h3>
@@ -79,26 +106,22 @@
         </div>
     </div>
 
-    <!-- 🎓 隠し機能：テスト設定モーダル -->
+    <!-- 効果測定モーダル -->
     <div id="test-setup-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.7); z-index:10001; align-items:center; justify-content:center;">
-        <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width:350px; text-align:center;">
-            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 秘密の効果測定</h2>
-            
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button id="btn-mode-nearest" onclick="selectTestMode('nearest')" style="flex:1; padding:10px 5px; background:#e83e8c; color:white; border:none; border-radius:5px; font-weight:bold; font-size:13px; transition:0.2s;">🔥 周辺5ヶ所当て</button>
-                <button id="btn-mode-excavate" onclick="selectTestMode('excavate')" style="flex:1; padding:10px 5px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; font-weight:bold; font-size:13px; transition:0.2s;">🗺️ エリア全発掘</button>
+        <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width:360px; text-align:center;">
+            <h2 style="margin-top:0; color:#1e293b; font-size:22px;">🎓 効果測定</h2>
+            <div style="display:flex; gap:6px; margin-bottom:15px;">
+                <button id="btn-mode-nearest" onclick="selectTestMode('nearest')" style="flex:1; padding:10px 2px; background:#e83e8c; color:white; border:none; border-radius:5px; font-weight:bold; font-size:12px; transition:0.2s;">🔥 5ヶ所当て</button>
+                <button id="btn-mode-excavate" onclick="selectTestMode('excavate')" style="flex:1; padding:10px 2px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; font-weight:bold; font-size:12px; transition:0.2s;">🗺️ 全発掘</button>
+                <button id="btn-mode-target" onclick="selectTestMode('target')" style="flex:1; padding:10px 2px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; font-weight:bold; font-size:12px; transition:0.2s;">📍 目標物当て</button>
             </div>
-
-            <!-- モード1: 周辺当て設定 -->
             <div id="setup-nearest" style="display:block;">
-                <p style="font-size:12px; color:#475569; margin-bottom:15px; text-align:left;">火災現場（🔥）から<b style="color:#e83e8c;">半径200m以内にある水利をすべて（最大5ヶ所）</b>タップで指定するモードです。すべて指定後に一斉に答え合わせをします。</p>
+                <p style="font-size:12px; color:#475569; margin-bottom:15px; text-align:left;">火災現場（🔥）から<b style="color:#e83e8c;">半径200m以内にある水利（最大5ヶ所）</b>をタップで指定するモードです。</p>
                 <div style="text-align:left; margin-bottom:10px;">
                     <label style="font-size:12px; font-weight:bold;">📍 出題エリア</label>
                     <select id="test-area-select" style="width:100%; padding:8px; margin-top:5px; border:1px solid #cbd5e1; border-radius:5px;"></select>
                 </div>
             </div>
-
-            <!-- モード2: エリア発掘設定 -->
             <div id="setup-excavate" style="display:none;">
                 <p style="font-size:12px; color:#475569; margin-bottom:15px; line-height:1.5;"><b style="color:#0369a1;">現在画面に映っている範囲</b> にある全ての水利を記憶を頼りに掘り当ててください！</p>
                 <div style="text-align:left; margin-bottom:15px;">
@@ -110,15 +133,27 @@
                     </select>
                 </div>
             </div>
-
-            <!-- 共通難易度設定 -->
+            <div id="setup-target" style="display:none;">
+                <p style="font-size:12px; color:#475569; margin-bottom:15px; text-align:left;">指定した管轄・種別の「目標物（交差点など）」の正確な位置をマップ上でタップして当てる訓練です。</p>
+                <div style="text-align:left; margin-bottom:10px;">
+                    <label style="font-size:12px; font-weight:bold;">🏢 管轄署</label>
+                    <select id="test-jurisdiction-select" style="width:100%; padding:8px; margin-top:5px; border:1px solid #cbd5e1; border-radius:5px;">
+                        <option value="">すべての管轄（和歌山市全域）</option>
+                    </select>
+                </div>
+                <div style="text-align:left; margin-bottom:10px;">
+                    <label style="font-size:12px; font-weight:bold;">🏷️ 目標物の種別</label>
+                    <select id="test-target-type-select" style="width:100%; padding:8px; margin-top:5px; border:1px solid #cbd5e1; border-radius:5px;">
+                        <option value="">すべての種別</option>
+                    </select>
+                </div>
+            </div>
             <div style="text-align:left; margin-bottom:20px; background:#fff1f2; padding:10px; border-radius:5px; border:1px solid #fecdd3;">
                 <label style="font-size:12px; font-weight:bold; color:#be123c; display:flex; align-items:center; gap:8px;">
-                    <input type="checkbox" id="test-hard-mode" style="transform:scale(1.2);"> 🔥 鬼モード（誤差10m以内で正解）
+                    <input type="checkbox" id="test-hard-mode" style="transform:scale(1.3);"> 🔥 鬼モード（許容誤差の半減）
                 </label>
-                <p style="font-size:10px; color:#be123c; margin:5px 0 0 0;">※通常は誤差20m以内で正解となりますが、鬼モードは実際の場所から10m以内でなければ不正解になるガチ勢向け設定です。</p>
+                <p style="font-size:10px; color:#be123c; margin:5px 0 0 0;">※鬼モード時は正解の判定エリアが大幅に狭くなり、より正確な位置記憶が求められます。</p>
             </div>
-
             <div style="display:flex; gap:10px;">
                 <button onclick="document.getElementById('test-setup-modal').style.display='none'" style="flex:1; padding:12px; background:#94a3b8; color:white; border:none; border-radius:6px; font-weight:bold;">戻る</button>
                 <button onclick="execTestMode()" style="flex:1; padding:12px; background:#3b82f6; color:white; border:none; border-radius:6px; font-weight:bold; box-shadow:0 4px 6px rgba(0,0,0,0.2);">テスト開始！</button>
@@ -126,18 +161,15 @@
         </div>
     </div>
 
-    <!-- 🎓 テスト中ヘッダー UI -->
+    <!-- テスト中ヘッダー -->
     <div id="test-header" style="display:none; position:fixed; top:0; left:0; width:100%; background:#1e293b; color:white; z-index:10002; padding:12px 20px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.3);">
         <div id="test-progress" style="font-size:12px; color:#cbd5e1; font-weight:bold; margin-bottom:4px;"></div>
         <div id="test-question" style="font-size:16px; font-weight:bold; margin-bottom:4px;"></div>
         <div id="test-instruction" style="font-size:12px; color:#f59e0b; font-weight:bold;"></div>
-        <button onclick="quitTestMode()" style="position:absolute; right:15px; top:12px; background:rgba(255,255,255,0.2); border:none; color:white; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">やめる</button>
+        <button onclick="quitTestMode()" style="position:absolute; right:15px; top:12px; background:rgba(255,255,255,0.2); border:none; color:white; padding:8px 12px; border-radius:4px; font-size:13px; font-weight:bold; cursor:pointer;">やめる</button>
     </div>
 
-    <!-- 🎓 テスト：判定フィードバック トースト -->
-    <div id="test-feedback" style="display:none; position:fixed; top:100px; left:50%; transform:translateX(-50%); z-index:10005; padding:15px 30px; border-radius:10px; font-size:20px; font-weight:bold; text-align:center; color:white; pointer-events:none; transition: opacity 0.2s; box-shadow:0 10px 30px rgba(0,0,0,0.3); white-space:nowrap;"></div>
-
-    <!-- 🎓 テスト結果発表モーダル（エリア発掘用） -->
+    <!-- テスト結果表示 -->
     <div id="test-result-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; height:100dvh; background:rgba(0,0,0,0.8); z-index:10003; align-items:center; justify-content:center;">
         <div style="background:white; padding:30px; border-radius:15px; width:85%; max-width:350px; text-align:center;">
             <h2 style="margin-top:0; color:#1e293b; font-size:24px;">🏆 訓練結果</h2>
@@ -151,7 +183,7 @@
         </div>
     </div>
 
-    <!-- メイン地図画面 UI部品 -->
+    <!-- UI類 -->
     <div id="top-info-container">
         <div id="current-mode-badge"></div>
         <div id="view-count-badge">👁️ 閲覧数: 取得中...</div>
@@ -163,21 +195,33 @@
     </div>
     
     <div id="main-container">
-        <!-- 🔍 検索パネル -->
+        <!-- 検索パネル -->
         <div id="search-panel">
-            <select id="filter-category"><option value="">🏢 すべての設置区分</option><option value="公設">公設のみ（私設・空白を除外）</option><option value="私設">私設のみ</option></select>
-            
-            <div class="multi-select-container" id="filter-area-container">
-                <div class="multi-select-button" id="filter-area-btn" onclick="document.getElementById('filter-area-dropdown').style.display = document.getElementById('filter-area-dropdown').style.display === 'block' ? 'none' : 'block';">🌐 すべての地区</div>
-                <div class="multi-select-dropdown" id="filter-area-dropdown"></div>
+            <div class="search-tabs">
+                <button id="tab-water" class="search-tab active" onclick="switchSearchTab('water')">🚰 水利</button>
+                <button id="tab-target" class="search-tab" onclick="switchSearchTab('target')">📍 目標物</button>
             </div>
 
-            <select id="filter-status"><option value="">🟢 すべての状態</option><option value="要点検">🔴 要点検のみ</option><option value="点検済">🔵 点検済のみ</option></select>
-            <select id="filter-error"><option value="">⚠️ 異常の種類 (すべて)</option><option value="異常あり">🚨 何らかの異常あり</option><option value="なし">✅ 異常なし</option><option value="蓋開閉困難">🔧 蓋開閉困難</option><option value="土没">🍂 土没</option><option value="水没">💧 水没</option><option value="バルブ開閉不良">⚙️ バルブ開閉不良</option><option value="道路陥没（大）">🕳️ 道路陥没（大）</option><option value="道路陥没（小）">🕳️ 道路陥没（小）</option><option value="塗装剥がれ">🎨 塗装剥がれ</option><option value="塗装間違い">❌ 塗装間違い</option><option value="その他">❓ その他</option></select>
-            <select id="filter-paint"><option value="">🎨 塗装レベル (すべて)</option><option value="100%">100%</option><option value="50%">50%</option><option value="0%">0%</option></select>
-            <div class="date-group"><input type="date" id="filter-date" placeholder="点検日"><select id="filter-date-cond" style="min-width: 90px; flex-grow: 0;"><option value="before">以前に点検</option><option value="after">以降に点検</option></select></div>
-            <input type="text" id="search-text" placeholder="水利番号などで検索...">
-            <div style="display: flex; gap: 8px; width: 100%;">
+            <div id="filter-group-water" class="filter-group active">
+                <select id="filter-category"><option value="">🏢 すべての設置区分</option><option value="公設">公設のみ</option><option value="私設">私設のみ</option></select>
+                <div class="multi-select-container" id="filter-area-container">
+                    <div class="multi-select-button" id="filter-area-btn" onclick="document.getElementById('filter-area-dropdown').style.display = document.getElementById('filter-area-dropdown').style.display === 'block' ? 'none' : 'block';">🌐 すべての地区</div>
+                    <div class="multi-select-dropdown" id="filter-area-dropdown"></div>
+                </div>
+                <select id="filter-status"><option value="">🟢 すべての状態</option><option value="要点検">🔴 要点検のみ</option><option value="点検済">🔵 点検済のみ</option></select>
+                <select id="filter-error"><option value="">⚠️ 異常の種類 (すべて)</option><option value="異常あり">🚨 異常あり</option><option value="なし">✅ 異常なし</option><option value="蓋開閉困難">🔧 蓋開閉困難</option><option value="土没">🍂 土没</option><option value="水没">💧 水没</option><option value="バルブ開閉不良">⚙️ バルブ不良</option><option value="道路陥没（大）">🕳️ 陥没（大）</option><option value="道路陥没（小）">🕳️ 陥没（小）</option><option value="塗装剥がれ">🎨 塗装剥がれ</option><option value="塗装間違い">❌ 塗装間違い</option><option value="その他">❓ その他</option></select>
+                <select id="filter-paint"><option value="">🎨 塗装レベル (すべて)</option><option value="100%">100%</option><option value="50%">50%</option><option value="0%">0%</option></select>
+                <div class="date-group"><input type="date" id="filter-date" placeholder="点検日"><select id="filter-date-cond" style="min-width: 90px; flex-grow: 0;"><option value="before">以前に点検</option><option value="after">以降に点検</option></select></div>
+                <input type="text" id="search-text" placeholder="水利番号などで検索...">
+            </div>
+
+            <div id="filter-group-target" class="filter-group">
+                <select id="filter-target-jurisdiction"><option value="">🏢 すべての管轄</option></select>
+                <select id="filter-target-type"><option value="">🏷️ すべての種別</option></select>
+                <input type="text" id="filter-target-name" placeholder="目標物名称で検索..." style="width: 100%;">
+            </div>
+
+            <div id="search-buttons">
                 <button id="search-btn" style="flex: 2;">検索・絞り込み</button>
                 <button id="reset-btn" style="flex: 1; background-color: #6c757d;">リセット</button>
             </div>
@@ -195,41 +239,28 @@
         </div>
     </div>
 
-    <!-- リスト表示コンテナ -->
+    <!-- リスト表示パネル -->
     <div id="list-container">
         <div class="list-header">
-            <h3>📊 抽出水利一覧リスト (<span id="table-count">0</span>件)</h3>
+            <h3>📊 抽出一覧リスト (<span id="table-count">0</span>件)</h3>
             <div class="list-btn-group">
-                <button class="list-btn btn-csv" onclick="downloadCSV()">📥 Excel/CSV出力</button>
+                <button class="list-btn btn-csv" onclick="downloadCSV()">📥 Excel出力</button>
                 <button class="list-btn btn-print" onclick="printReport()">🖨️ 報告書印刷</button>
-                <button class="list-btn btn-close" onclick="toggleList(false)">✕ 閉じる</button>
+                <button class="list-btn btn-close" id="list-close-btn">✕ 閉じる</button>
             </div>
         </div>
         <div class="table-wrapper">
             <table class="result-table">
-                <thead><tr><th>水利番号</th><th>地区</th><th>種別</th><th>区分</th><th>前回調査日</th><th>要調査</th><th>点検結果</th><th>異常の種類</th><th>コメント</th></tr></thead>
+                <thead id="table-head"></thead>
                 <tbody id="table-body"></tbody>
             </table>
         </div>
     </div>
 
-    <!-- 外部JavaScriptの読み込み -->
+    <!-- 🌟 分割したJSファイルの読み込み -->
     <script src="api.js"></script>
-    <script src="map.js"></script>
     <script src="app.js"></script>
-    <script src="test_mode.js"></script>
-
-    <script>
-        // PWA用 Service Worker の登録
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js').then(function(registration) {
-                    console.log('ServiceWorker 登録成功');
-                }).catch(function(err) {
-                    console.log('ServiceWorker 登録失敗: ', err);
-                });
-            });
-        }
-    </script>
+    <script src="map.js"></script>
+    <script src="test_mode.js"></script> <!-- 🌟 追加：テストモードロジック -->
 </body>
 </html>
