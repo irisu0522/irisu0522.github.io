@@ -64,28 +64,47 @@ async function loadData() {
 window.submitReport = async function(id) {
     let btn = document.getElementById("btn-" + id);
     let resultVal = document.getElementById("input-result-" + id).value; 
-    let errorVal = document.getElementById("input-error-" + id).value; 
+    let errorVal = document.getElementById("input-error-" + id).value;
     let paintVal = document.getElementById("input-paint-" + id).value; 
     let commentVal = document.getElementById("input-comment-" + id).value;
     
-    btn.disabled = true; btn.innerText = "送信中...";
+    // 写真ファイルの取得（新しく追加した部分）
+    let farFile = document.getElementById("input-far-" + id).files[0];
+    let nearFile = document.getElementById("input-near-" + id).files[0];
     
-    let requestUrl = `${CONFIG.GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}&t=${Date.now()}`;
+    btn.disabled = true; 
+    btn.innerText = "送信中... (写真がある場合は数秒かかります)";
+    btn.style.backgroundColor = "#f59e0b"; // 処理中オレンジ
     
     try {
-        let res = await (await fetch(requestUrl, { redirect: 'follow' })).json();
+        // ① もし写真があれば、圧縮してPOST送信（先ほど作ったGASのdoPostへ）
+        if (farFile || nearFile) {
+            let farBase64 = await resizeImageBase64(farFile);
+            let nearBase64 = await resizeImageBase64(nearFile);
+            
+            let photoPayload = {
+                action: "upload_photos",
+                id: id,
+                farImage: farBase64,
+                nearImage: nearBase64
+            };
+            
+            await fetch(CONFIG.GAS_API_URL, {
+                method: 'POST',
+                redirect: 'follow',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(photoPayload)
+            });
+        }
+
+        // ② 今まで通りの文字データの送信（GET送信）
+        let requestUrl = `${CONFIG.GAS_API_URL}?action=update&id=${encodeURIComponent(id)}&result=${encodeURIComponent(resultVal)}&error=${encodeURIComponent(errorVal)}&paint=${encodeURIComponent(paintVal)}&comment=${encodeURIComponent(commentVal)}&t=${Date.now()}`;
+        
+        let res = await (await fetch(requestUrl)).json();
+        
         if (res.status === "Success") {
-            btn.innerText = "送信完了！"; btn.style.backgroundColor = "#28a745";
-            let targetIndex = State.allData.findIndex(row => row["水利番号"] === id);
-            if (targetIndex !== -1) {
-                let today = new Date(); 
-                State.allData[targetIndex]["前回調査日"] = `${today.getFullYear()}/${("0" + (today.getMonth() + 1)).slice(-2)}/${("0" + today.getDate()).slice(-2)}`;
-                State.allData[targetIndex]["要調査"] = "点検済"; 
-                State.allData[targetIndex]["点検結果"] = resultVal; 
-                State.allData[targetIndex]["異常の種類"] = errorVal; 
-                State.allData[targetIndex]["塗装レベル"] = paintVal; 
-                State.allData[targetIndex]["コメント"] = commentVal;
-            }
+            btn.innerText = "送信完了！"; 
+            btn.style.backgroundColor = "#28a745"; // 成功グリーン
             setTimeout(() => { map.closePopup(); execSearch(true); }, 1500);
         } else { 
             showMessage("送信エラー: " + res.message); 
@@ -96,7 +115,6 @@ window.submitReport = async function(id) {
         btn.disabled = false; btn.innerText = "スプレッドシートへ送信"; 
     }
 };
-
 // 不具合・要望の送信処理
 window.submitReportForm = async function() {
     let typeVal = document.getElementById("report-type").value;
@@ -129,3 +147,30 @@ window.submitReportForm = async function() {
         btn.innerText = "送信する";
     }
 };
+// 画像を自動で圧縮する関数（長辺800px・画質70%にリサイズ）
+async function resizeImageBase64(file) {
+    return new Promise((resolve) => {
+        if (!file) { resolve(null); return; }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const MAX_SIZE = 800; // スマホで十分綺麗に見えるサイズ
+                let width = img.width, height = img.height;
+                
+                if (width > height) {
+                    if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+                } else {
+                    if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+                }
+                canvas.width = width; canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+            }
+            img.src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+    });
+}
