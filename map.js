@@ -93,16 +93,16 @@ function getTargetColor(type) {
     return '#64748b'; 
 }
 
-// ★追加：Googleドライブの共有URLを、直接画像を表示するURLに変換する関数
+// ★Googleドライブの共有URLを、直接画像を表示するURLに変換する関数（最新版）
 function getDriveImageUrl(url) {
     if (!url) return "";
     let match = url.match(/\/d\/(.*?)\//);
     if (match && match[1]) {
-        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+        // ★ここを変更：最新の表示用URLに変更しました
+        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
     }
-    return url; // 変換できない場合はそのまま返す
+    return url;
 }
-
 // --- 水利ピンの描画処理 ---
 function renderMarkers(dataToRender, skipFit) {
     markersGroup.clearLayers(); 
