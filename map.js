@@ -144,8 +144,13 @@ function renderMarkers(dataToRender, skipFit) {
         `;
     }
 
-    // ピンを地図に追加する処理
     L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent, { closeOnClick: false, autoClose: false }).addTo(markersGroup);
+  }); // ← ★消えていた記号（復活）
+
+  if (!skipFit && State.searchTab === 'water') {
+      if (markersGroup.getLayers().length > 0) { map.fitBounds(markersGroup.getBounds(), { padding: [50, 50], maxZoom: 17 }); }
+  }
+} // ← ★消えていた記号（復活）
 // --- 目標物ピンの描画処理 ---
 function renderTargetMarkers(dataToRender, skipFit) {
     targetMarkersGroup.clearLayers(); 
