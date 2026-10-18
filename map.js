@@ -218,7 +218,10 @@ function renderTargetMarkersForTest(centerLatLng) {
         let marker = L.marker([row["緯度"], row["経度"]], {icon: customIcon, zIndexOffset: 900}).addTo(targetMarkersGroup);
         TestManager.elements.push(marker);
 
-        // --- ★追加：画像を画面いっぱいに拡大表示する機能 ---
+        
+    });
+}
+// --- ★追加：画像を画面いっぱいに拡大表示する機能 ---
 function openImageModal(imgUrl) {
     let modal = document.getElementById('image-modal');
     if (!modal) {
@@ -241,6 +244,4 @@ function openImageModal(imgUrl) {
     // タップされた写真のURLをセットして、画面に表示！
     document.getElementById('image-modal-img').src = imgUrl;
     modal.style.display = 'flex';
-}
-    });
 }
