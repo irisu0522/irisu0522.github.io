@@ -125,16 +125,15 @@ function renderMarkers(dataToRender, skipFit) {
         // ポップアップの基本情報
         let popupContent = `<div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>${isAlert ? `<div class="popup-alert">⚠️ 要点検</div>` : ''}<table class="popup-table"><tr><th>地区</th><td>${row["地区"] || "-"}</td></tr><tr><th>区分</th><td>${categoryText}</td></tr><tr><th>前回点検</th><td>${row["前回調査日"] || "未実施"}</td></tr><tr><th>点検結果</th><td>${row["点検結果"] || "未入力"}</td></tr><tr><th>異常の種類</th><td>${row["異常の種類"] || "-"}</td></tr><tr><th>塗装レベル</th><td>${row["塗装レベル"] || "-"}</td></tr><tr><th>コメント</th><td>${row["コメント"] || "-"}</td></tr></table>`;
         
-        // ★写真が登録されていれば、画像を表示するエリアを追加
+        // ★変更：写真が登録されていれば、画像と「写真更新日」を表示
         if (farImageUrl || nearImageUrl) {
+            let photoDateStr = row["写真更新日"] ? `<span style="font-size:9px; font-weight:normal;">(${row["写真更新日"]})</span>` : "";
             popupContent += `<div style="display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap;">`;
             if (farImageUrl) {
-                // ↓ onerror="this.parentNode.style.display='none'" を追加
-                popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 遠景</div><img src="${farImageUrl}" style="width: 100%; border-radius: 4px; border: 1px solid #ddd;" onerror="this.parentNode.style.display='none'"></div>`;
+                popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 遠景 ${photoDateStr}</div><img src="${farImageUrl}" style="width: 100%; border-radius: 4px; border: 1px solid #ddd;" onerror="this.parentNode.style.display='none'"></div>`;
             }
             if (nearImageUrl) {
-                // ↓ onerror="this.parentNode.style.display='none'" を追加
-                popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 近景</div><img src="${nearImageUrl}" style="width: 100%; border-radius: 4px; border: 1px solid #ddd;" onerror="this.parentNode.style.display='none'"></div>`;
+                popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 近景 ${photoDateStr}</div><img src="${nearImageUrl}" style="width: 100%; border-radius: 4px; border: 1px solid #ddd;" onerror="this.parentNode.style.display='none'"></div>`;
             }
             popupContent += `</div>`;
         }
@@ -146,7 +145,7 @@ function renderMarkers(dataToRender, skipFit) {
             <div class="input-form" id="form-${row["水利番号"]}">
                 <div class="form-group">
                     <label>点検結果</label>
-                    <select id="input-result-${row["水利番号"]}"><option value="点検済（良好）">点検済（良好）</option><option value="要調査">要調査（要対応）</option></select>
+                    <select id="input-result-${row["水利番号"]}"><option value="点検済（良好）">点検済（良好）</option><option value="要調査">要調査（要対応）</option><option value="写真のみ追加">写真のみ追加（点検日は更新しない）</option></select>
                 </div>
                 <div class="form-group">
                     <label>異常の種類</label>
