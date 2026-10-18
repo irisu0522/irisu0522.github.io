@@ -147,43 +147,62 @@ function updateListTable(data, type) {
 // --- 検索・抽出処理 ---
 function execSearch(skipFit) {
     if (State.searchTab === 'water') {
-        let selectedCategory = document.getElementById('filter-category').value; let selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value); let isAllAreas = document.querySelectorAll('.area-checkbox').length === selectedAreas.length; let selectedStatus = document.getElementById('filter-status').value; let selectedError = document.getElementById('filter-error').value; let selectedPaint = document.getElementById('filter-paint').value; let keyword = document.getElementById('search-text').value.trim().toLowerCase(); let filterDateVal = document.getElementById('filter-date').value; let filterDateCond = document.getElementById('filter-date-cond').value; let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
+        let selectedCategory = document.getElementById('filter-category').value; 
+        let selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value); 
+        let isAllAreas = document.querySelectorAll('.area-checkbox').length === selectedAreas.length; 
+        let selectedStatus = document.getElementById('filter-status').value; 
+        let selectedError = document.getElementById('filter-error').value; 
+        let selectedPaint = document.getElementById('filter-paint').value; 
+        let keyword = document.getElementById('search-text').value.trim().toLowerCase(); 
+        let filterDateVal = document.getElementById('filter-date').value; 
+        let filterDateCond = document.getElementById('filter-date-cond').value; 
+        let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
+        
+        // ★追加：写真フィルターの値を取得（HTMLに追加するまでは空扱い）
+        let filterPhotoEl = document.getElementById('filter-photo');
+        let selectedPhoto = filterPhotoEl ? filterPhotoEl.value : "";
+
         State.currentFilteredData = State.allData.filter(row => {
-            let isPublic = isPublicWater(row["水利番号"]); let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic); let matchArea = isAllAreas || selectedAreas.includes(row["地区"]); let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
-            let matchError = true; if (selectedError === "異常あり") matchError = (row["異常の種類"] !== "" && row["異常の種類"] !== "なし"); else if (selectedError !== "") matchError = (row["異常の種類"] === selectedError); 
+            let isPublic = isPublicWater(row["水利番号"]); 
+            let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic); 
+            let matchArea = isAllAreas || selectedAreas.includes(row["地区"]); 
+            let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
+            let matchError = true; 
+            if (selectedError === "異常あり") matchError = (row["異常の種類"] !== "" && row["異常の種類"] !== "なし"); 
+            else if (selectedError !== "") matchError = (row["異常の種類"] === selectedError); 
             let matchPaint = (selectedPaint === "") || (row["塗装レベル"] === selectedPaint);
-            let matchDate = true; if (filterDateTime && row["前回調査日"]) { let rowDateTime = parseLocalDate(row["前回調査日"]).getTime(); if (filterDateCond === "before") matchDate = (rowDateTime <= filterDateTime); else if (filterDateCond === "after") matchDate = (rowDateTime >= filterDateTime); }
-            let matchKeyword = true; if (keyword !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
-            return matchCategory && matchArea && matchStatus && matchError && matchPaint && matchDate && matchKeyword;
+            let matchDate = true; 
+            if (filterDateTime && row["前回調査日"]) { 
+                let rowDateTime = parseLocalDate(row["前回調査日"]).getTime(); 
+                if (filterDateCond === "before") matchDate = (rowDateTime <= filterDateTime); 
+                else if (filterDateCond === "after") matchDate = (rowDateTime >= filterDateTime); 
+            }
+            let matchKeyword = true; 
+            if (keyword !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
+            
+            // ★追加：写真の有無で判定（写真URLか更新日のどれかがあれば「あり」とする）
+            let hasPhoto = !!(row["遠景写真"] || row["近景写真"] || row["写真更新日"]);
+            let matchPhoto = true;
+            if (selectedPhoto === "あり") matchPhoto = hasPhoto;
+            else if (selectedPhoto === "なし") matchPhoto = !hasPhoto;
+
+            return matchCategory && matchArea && matchStatus && matchError && matchPaint && matchDate && matchKeyword && matchPhoto;
         });
         renderMarkers(State.currentFilteredData, skipFit); updateListTable(State.currentFilteredData, 'water');
     } else {
-        let selectedJuri = document.getElementById('filter-target-jurisdiction').value; let selectedType = document.getElementById('filter-target-type').value; let keyword = document.getElementById('filter-target-name').value.trim().toLowerCase();
+        let selectedJuri = document.getElementById('filter-target-jurisdiction').value; 
+        let selectedType = document.getElementById('filter-target-type').value; 
+        let keyword = document.getElementById('filter-target-name').value.trim().toLowerCase();
         State.currentTargetFilteredData = State.targetsData.filter(row => {
-            let matchJuri = (selectedJuri === "" || row["管轄署"] === selectedJuri); let matchType = (selectedType === "" || row["種別"] === selectedType); let matchKeyword = (keyword === "" || (row["名称"] || "").toLowerCase().includes(keyword));
+            let matchJuri = (selectedJuri === "" || row["管轄署"] === selectedJuri); 
+            let matchType = (selectedType === "" || row["種別"] === selectedType); 
+            let matchKeyword = (keyword === "" || (row["名称"] || "").toLowerCase().includes(keyword));
             return matchJuri && matchType && matchKeyword;
         });
         renderTargetMarkers(State.currentTargetFilteredData, skipFit); updateListTable(State.currentTargetFilteredData, 'target');
     }
     if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none';
 }
-
-window.downloadCSV = function() {
-    if (State.searchTab === 'water') {
-        if (State.currentFilteredData.length === 0) return showMessage("リストが空です");
-        let csvContent = "\uFEFF水利番号,地区,水利種別,設置区分,前回調査日,要調査,点検結果,異常の種類,塗装レベル,コメント\r\n"; State.currentFilteredData.forEach(row => { let catText = isPublicWater(row["水利番号"]) ? "公設" : "私設"; csvContent += [row["水利番号"], row["地区"]||"-", row["水利種別"], catText, row["前回調査日"]||"未実施", row["要調査"], row["点検結果"]||"-", row["異常の種類"]||"-", row["塗装レベル"]||"-", (row["コメント"]||"-").replace(/,/g, "，")].join(",") + "\r\n"; });
-        let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `地水利点検リスト_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    } else {
-        if (State.currentTargetFilteredData.length === 0) return showMessage("リストが空です");
-        let csvContent = "\uFEFF目標物名称,種別,管轄署,住所\r\n"; State.currentTargetFilteredData.forEach(row => { csvContent += [row["名称"]||"-", row["種別"]||"-", row["管轄署"]||"-", row["住所"]||"-"].join(",") + "\r\n"; });
-        let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `目標物リスト_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    }
-};
-
-window.printReport = function() { 
-    document.getElementById('print-date').innerText = `${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日`; 
-    window.print(); 
-};
 
 // --- DOM読み込み後のイベント設定 ---
 document.addEventListener('DOMContentLoaded', () => {
