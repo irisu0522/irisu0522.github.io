@@ -161,11 +161,11 @@ function renderMarkers(dataToRender, skipFit) {
                 
                 <div class="form-group" style="margin-top:10px;">
                     <label style="color:#0369a1;">📸 遠景写真（全体）</label>
-                    <input type="file" id="input-far-${row['水利番号']}" accept="image/*" capture="environment" style="font-size:11px; padding:5px; background:#fff; border:1px solid #ccc; width:100%; box-sizing:border-box;">
+                    <input type="file" id="input-far-${row['水利番号']}" accept="image/* style="font-size:11px; padding:5px; background:#fff; border:1px solid #ccc; width:100%; box-sizing:border-box;">
                 </div>
                 <div class="form-group">
                     <label style="color:#0369a1;">📸 近景写真（異常箇所）</label>
-                    <input type="file" id="input-near-${row['水利番号']}" accept="image/*" capture="environment" style="font-size:11px; padding:5px; background:#fff; border:1px solid #ccc; width:100%; box-sizing:border-box;">
+                    <input type="file" id="input-near-${row['水利番号']}" accept="image/* style="font-size:11px; padding:5px; background:#fff; border:1px solid #ccc; width:100%; box-sizing:border-box;">
                 </div>
                 
                 <button class="form-submit-btn" id="btn-${row["水利番号"]}" onclick="submitReport('${row["水利番号"]}')">スプレッドシートへ送信</button>
