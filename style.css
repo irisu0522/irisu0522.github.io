@@ -128,3 +128,72 @@ body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; 
     .btn-gps.tracking { background-color: #ecfdf5 !important; color: #16a34a !important; border-top: 2px solid #16a34a; }
     .btn-gps.tracking .btn-icon { filter: none; }
 }
+/* ==========================================
+   📄 PDF出力（印刷）用のスタイル
+   ========================================== */
+#pdf-report-container {
+    display: none; /* 普段は画面から隠す */
+    background: white;
+}
+
+@media print {
+    /* 印刷時はアプリの画面を全て隠し、PDF用コンテナだけを表示する */
+    body * { visibility: hidden; }
+    #pdf-report-container, #pdf-report-container * { visibility: visible; }
+    #pdf-report-container {
+        display: block;
+        position: absolute;
+        left: 0; top: 0;
+        width: 100%;
+    }
+
+    /* 1件ごとにページを分ける（改ページ） */
+    .pdf-page {
+        page-break-after: always;
+        padding: 20mm;
+        box-sizing: border-box;
+    }
+
+    /* 台帳のデザイン */
+    .pdf-header {
+        text-align: center;
+        border-bottom: 3px solid #1e293b;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+    }
+    .pdf-title { font-size: 24px; font-weight: bold; margin: 0; }
+    .pdf-date { font-size: 12px; color: #555; text-align: right; margin-top: 5px; }
+
+    .pdf-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+    .pdf-table th, .pdf-table td {
+        border: 1px solid #cbd5e1;
+        padding: 10px;
+    }
+    .pdf-table th { background-color: #f1f5f9; width: 30%; text-align: left; }
+
+    /* 写真レイアウト（横並び） */
+    .pdf-photo-area {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+    }
+    .pdf-photo-box {
+        flex: 1;
+        border: 1px solid #cbd5e1;
+        padding: 10px;
+        text-align: center;
+        background: #f8fafc;
+    }
+    .pdf-photo-box img {
+        max-width: 100%;
+        max-height: 300px;
+        object-fit: contain;
+        margin-top: 10px;
+    }
+    .pdf-photo-label { font-weight: bold; color: #0369a1; font-size: 14px; }
+}
