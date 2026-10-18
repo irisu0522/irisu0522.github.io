@@ -102,10 +102,29 @@ function updateListTable(data, type) {
     let thead = document.getElementById('table-head'); let tbody = document.getElementById('table-body'); tbody.innerHTML = ''; 
     document.getElementById('list-count').innerText = data.length; document.getElementById('table-count').innerText = data.length;
     if (type === 'water') {
-        thead.innerHTML = '<tr><th>水利番号</th><th>地区</th><th>種別</th><th>区分</th><th>前回調査日</th><th>要調査</th><th>点検結果</th><th>異常の種類</th><th>コメント</th></tr>';
+        // ★変更1：「写真」という見出し（th）を増やしました
+        thead.innerHTML = '<tr><th>水利番号</th><th>地区</th><th>種別</th><th>区分</th><th>前回調査日</th><th>写真</th><th>要調査</th><th>点検結果</th><th>異常の種類</th><th>コメント</th></tr>';
+        
         data.forEach(row => {
-            let tr = document.createElement('tr'); let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok"; let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
-            tr.innerHTML = `<td style="font-weight:bold;">${row["水利番号"]}</td><td>${row["地区"] || "-"}</td><td>${row["水利種別"]}</td><td>${categoryText}</td><td style="font-weight:bold; color:#0369a1;">${row["前回調査日"] || "未実施"}</td><td><span class="badge ${badgeClass}">${row["要調査"]}</span></td><td>${row["点検結果"] || "-"}</td><td>${row["異常の種類"] || "-"}</td><td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"] || "-"}</td>`;
+            let tr = document.createElement('tr'); 
+            let badgeClass = (row["要調査"] === "要点検") ? "badge-alert" : "badge-ok"; 
+            let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
+            
+            // ★追加：写真がある場合、小さなサムネイル画像を作る
+            let photoHtml = '<span style="color:#94a3b8; font-size:10px;">未添付</span>';
+            let farImg = row["遠景写真"] || row["近景写真"]; // どちらかがあれば表示
+            if (farImg) {
+                let match = farImg.match(/\/d\/(.*?)\//);
+                if (match && match[1]) {
+                    let thumbUrl = `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+                    // 写真タップ時は拡大（openImageModal）し、地図ジャンプ（stopPropagation）は防ぐ
+                    photoHtml = `<img src="${thumbUrl}" style="width:35px; height:35px; object-fit:cover; border-radius:4px; cursor:pointer; border:1px solid #cbd5e1;" onclick="event.stopPropagation(); if(typeof openImageModal === 'function') openImageModal('${thumbUrl}')" onerror="this.style.display='none'">`;
+                }
+            }
+
+            // ★変更2：<td>${photoHtml}</td> を列の中に追加しました
+            tr.innerHTML = `<td style="font-weight:bold;">${row["水利番号"]}</td><td>${row["地区"] || "-"}</td><td>${row["水利種別"]}</td><td>${categoryText}</td><td style="font-weight:bold; color:#0369a1;">${row["前回調査日"] || "未実施"}</td><td style="text-align:center; vertical-align:middle;">${photoHtml}</td><td><span class="badge ${badgeClass}">${row["要調査"]}</span></td><td>${row["点検結果"] || "-"}</td><td>${row["異常の種類"] || "-"}</td><td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${row["コメント"] || "-"}</td>`;
+            
             tr.addEventListener('click', () => { 
                 if (row["緯度"] && row["経度"]) { 
                     document.getElementById('list-container').style.display = 'none';
