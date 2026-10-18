@@ -222,7 +222,73 @@ function execSearch(skipFit) {
     }
     if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none';
 }
+// --- Excel出力機能（復活） ---
+window.downloadCSV = function() {
+    if (State.searchTab === 'water') {
+        if (State.currentFilteredData.length === 0) return showMessage("リストが空です");
+        let csvContent = "\uFEFF水利番号,地区,水利種別,設置区分,前回調査日,要調査,点検結果,異常の種類,塗装レベル,コメント\r\n"; State.currentFilteredData.forEach(row => { let catText = isPublicWater(row["水利番号"]) ? "公設" : "私設"; csvContent += [row["水利番号"], row["地区"]||"-", row["水利種別"], catText, row["前回調査日"]||"未実施", row["要調査"], row["点検結果"]||"-", row["異常の種類"]||"-", row["塗装レベル"]||"-", (row["コメント"]||"-").replace(/,/g, "，")].join(",") + "\r\n"; });
+        let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `地水利点検リスト_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    } else {
+        if (State.currentTargetFilteredData.length === 0) return showMessage("リストが空です");
+        let csvContent = "\uFEFF目標物名称,種別,管轄署,住所\r\n"; State.currentTargetFilteredData.forEach(row => { csvContent += [row["名称"]||"-", row["種別"]||"-", row["管轄署"]||"-", row["住所"]||"-"].join(",") + "\r\n"; });
+        let link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `目標物リスト_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
+};
 
+// --- ★新機能：PDF台帳出力機能 ---
+window.printReport = function() { 
+    if (State.searchTab !== 'water' || State.currentFilteredData.length === 0) {
+        return showMessage("出力する水利データがありません。リストを抽出してください。");
+    }
+
+    let container = document.getElementById('pdf-report-container');
+    container.innerHTML = ''; // 一旦中身を空にする
+    let todayStr = `${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日`;
+
+    // 抽出されている水利データを1件ずつ台帳化する
+    State.currentFilteredData.forEach((row, index) => {
+        let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
+        let isAlert = row["要調査"] === "要点検" ? "🔴 要点検" : "🟢 点検済";
+
+        // 写真URLの変換処理
+        let farImgUrl = row["遠景写真"] ? getDriveImageUrl(row["遠景写真"]) : "";
+        let nearImgUrl = row["近景写真"] ? getDriveImageUrl(row["近景写真"]) : "";
+        let photoDateStr = row["写真更新日"] ? `（更新：${row["写真更新日"]}）` : "";
+
+        let photoHtml = '';
+        if (farImgUrl || nearImgUrl) {
+            photoHtml = `<div class="pdf-photo-area">`;
+            if (farImgUrl) photoHtml += `<div class="pdf-photo-box"><div class="pdf-photo-label">📸 遠景写真 ${photoDateStr}</div><img src="${farImgUrl}"></div>`;
+            if (nearImgUrl) photoHtml += `<div class="pdf-photo-box"><div class="pdf-photo-label">📸 近景写真（異常箇所） ${photoDateStr}</div><img src="${nearImgUrl}"></div>`;
+            photoHtml += `</div>`;
+        } else {
+            photoHtml = `<div style="text-align:center; padding: 40px; color:#94a3b8; border: 1px dashed #cbd5e1;">写真データは添付されていません</div>`;
+        }
+
+        // 1件分のHTMLを作成
+        let pageHtml = `
+            <div class="pdf-page">
+                <div class="pdf-header">
+                    <h1 class="pdf-title">地水利 点検・調査台帳</h1>
+                    <div class="pdf-date">出力日：${todayStr}</div>
+                </div>
+                <table class="pdf-table">
+                    <tr><th>水利番号</th><td style="font-weight:bold; font-size:16px;">${row["水利番号"]}</td></tr>
+                    <tr><th>地区 / 設置区分</th><td>${row["地区"] || "-"} / ${categoryText}</td></tr>
+                    <tr><th>水利種別</th><td>${row["水利種別"]}</td></tr>
+                    <tr><th>点検状況</th><td style="font-weight:bold;">${isAlert} (前回調査日: ${row["前回調査日"] || "未実施"})</td></tr>
+                    <tr><th>点検結果 / 異常</th><td>${row["点検結果"] || "-"} / ${row["異常の種類"] || "-"}</td></tr>
+                    <tr><th>コメント</th><td>${row["コメント"] || "-"}</td></tr>
+                </table>
+                ${photoHtml}
+            </div>
+        `;
+        container.innerHTML += pageHtml;
+    });
+
+    // データのセットが終わったら、ブラウザの印刷機能を呼び出す
+    setTimeout(() => { window.print(); }, 500); 
+};
 // --- DOM読み込み後のイベント設定 ---
 document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', function(e) {
