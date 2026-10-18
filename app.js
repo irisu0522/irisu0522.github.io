@@ -199,13 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
         else { document.getElementById('filter-target-jurisdiction').value = ""; document.getElementById('filter-target-type').value = ""; document.getElementById('filter-target-name').value = ""; }
         execSearch(false); 
     };
-
-    document.getElementById('survey-btn').onclick = function() { 
-        if (!map.hasLayer(markersGroup)) map.addLayer(markersGroup);
-        switchSearchTab('water', true); 
-        document.getElementById('filter-category').value = "公設"; toggleAllAreas(true); document.getElementById('filter-status').value = ""; document.getElementById('filter-error').value = ""; document.getElementById('filter-paint').value = ""; document.getElementById('filter-date').value = `${new Date().getFullYear()}-05-01`; document.getElementById('filter-date-cond').value = "before"; document.getElementById('search-text').value = ""; document.getElementById('search-panel').style.display = 'flex'; 
-        execSearch(false); 
-    };
     
     document.getElementById('list-toggle-btn').onclick = function() {
         let container = document.getElementById('list-container');
