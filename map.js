@@ -123,17 +123,17 @@ function renderMarkers(dataToRender, skipFit) {
         let nearImageUrl = getDriveImageUrl(row["近景写真"]);
 
         // ポップアップの基本情報
-        let popupContent = `<div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>${isAlert ? `<div class="popup-alert">⚠️ 要点検</div>` : ''}<table class="popup-table"><tr><th>地区</th><td>${row["地区"] || "-"}</td></tr><tr><th>区分</th><td>${categoryText}</td></tr><tr><th>前回点検</th><td>${row["前回調査日"] || "未実施"}</td></tr><tr><th>点検結果</th><td>${row["点検結果"] || "未入力"}</td></tr><tr><th>異常の種類</th><td>${row["異常の種類"] || "-"}</td></tr><tr><th>塗装レベル</th><td>${row["塗装レベル"] || "-"}</td></tr><tr><th>コメント</th><td>${row["コメント"] || "-"}</td></tr></table>`;
+        let popupContent = `<div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>${isAlert ? `<div class="popup-alert">⚠️ 要点検</div>` : ''}<table class="popup-table"><tr><th>地区</th><td>${row["地区"] || "-"}</td></tr><tr><th>区分</th><td>${categoryText}</td></tr><tr><th>前回点検</th><td>${row["前回調査日"] || "未実施"}</td></tr><tr><th>写真更新</th><td>${row["写真更新日"] || "未添付"}</td></tr><tr><th>点検結果</th><td>${row["点検結果"] || "未入力"}</td></tr><tr><th>異常の種類</th><td>${row["異常の種類"] || "-"}</td></tr><tr><th>塗装レベル</th><td>${row["塗装レベル"] || "-"}</td></tr><tr><th>コメント</th><td>${row["コメント"] || "-"}</td></tr></table>`;
         
-        // ★変更：写真が登録されていれば、画像と「写真更新日」を表示
+       // ★変更：写真が登録されていれば、画像と「写真更新日」を表示（タップで拡大）
         if (farImageUrl || nearImageUrl) {
             let photoDateStr = row["写真更新日"] ? `<span style="font-size:9px; font-weight:normal;">(${row["写真更新日"]})</span>` : "";
             popupContent += `<div style="display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap;">`;
             if (farImageUrl) {
-                popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 遠景 ${photoDateStr}</div><img src="${farImageUrl}" style="width: 100%; border-radius: 4px; border: 1px solid #ddd;" onerror="this.parentNode.style.display='none'"></div>`;
+                popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 遠景 ${photoDateStr}</div><img src="${farImageUrl}" style="width: 100%; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="openImageModal('${farImageUrl}')" onerror="this.parentNode.style.display='none'"></div>`;
             }
             if (nearImageUrl) {
-                popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 近景 ${photoDateStr}</div><img src="${nearImageUrl}" style="width: 100%; border-radius: 4px; border: 1px solid #ddd;" onerror="this.parentNode.style.display='none'"></div>`;
+                popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 近景 ${photoDateStr}</div><img src="${nearImageUrl}" style="width: 100%; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="openImageModal('${nearImageUrl}')" onerror="this.parentNode.style.display='none'"></div>`;
             }
             popupContent += `</div>`;
         }
@@ -217,5 +217,30 @@ function renderTargetMarkersForTest(centerLatLng) {
         let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [0, 0] });
         let marker = L.marker([row["緯度"], row["経度"]], {icon: customIcon, zIndexOffset: 900}).addTo(targetMarkersGroup);
         TestManager.elements.push(marker);
+
+        // --- ★追加：画像を画面いっぱいに拡大表示する機能 ---
+function openImageModal(imgUrl) {
+    let modal = document.getElementById('image-modal');
+    if (!modal) {
+        // 初回のみ、拡大用の黒い背景画面を作る
+        modal = document.createElement('div');
+        modal.id = 'image-modal';
+        modal.style.cssText = 'display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.8); align-items:center; justify-content:center; flex-direction:column;';
+        
+        // 閉じるボタンと、大きい写真を入れる枠
+        modal.innerHTML = `
+            <span style="position:absolute; top:20px; right:30px; color:white; font-size:35px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('image-modal').style.display='none'">&times;</span>
+            <img id="image-modal-img" style="max-width:95%; max-height:85%; object-fit:contain; border-radius:8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+        `;
+        // 黒い背景をタップしても閉じるようにする
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) modal.style.display = 'none';
+        });
+        document.body.appendChild(modal);
+    }
+    // タップされた写真のURLをセットして、画面に表示！
+    document.getElementById('image-modal-img').src = imgUrl;
+    modal.style.display = 'flex';
+}
     });
 }
