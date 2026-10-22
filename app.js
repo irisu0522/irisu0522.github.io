@@ -401,12 +401,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none'; 
     };
 
-    document.getElementById('gps-btn').onclick = function() { 
-        let btn = document.getElementById('gps-btn'); 
-        if (State.isTracking) { 
-            State.isTracking = false; map.stopLocate(); btn.classList.remove('tracking'); btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>'; 
-        } else { 
-            State.isTracking = true; btn.classList.add('tracking'); btn.innerHTML = '<span class="btn-icon">🟢</span><span class="btn-text pc-only">追従中</span><span class="btn-text sp-only">追従中</span>'; map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true}); 
-        } 
-    };
+    document.getElementById('gps-btn').onclick = function() {
+    let btn = document.getElementById('gps-btn');
+    if (State.isTracking) {
+        State.isTracking = false; 
+        map.stopLocate(); 
+        btn.classList.remove('tracking'); 
+        btn.innerHTML = '<span class="btn-icon">📍</span><span class="btn-text pc-only">現在地</span><span class="btn-text sp-only">現在地</span>';
+    } else {
+        State.isTracking = true; 
+        btn.classList.add('tracking'); 
+        btn.innerHTML = '<span class="btn-icon">🟢</span><span class="btn-text pc-only">追従中</span><span class="btn-text sp-only">追従中</span>';
+        
+        // ★変更1：強制ズーム（setView: true）をやめて false にする
+        map.locate({setView: false, watch: true, enableHighAccuracy: true});
+    }
+};
+
+// ★変更2：強制ズームの代わりに、GPSを受信するたびに「今の縮尺」を維持して中心を移動させる
+map.on('locationfound', function(e) {
+    if (State.isTracking) {
+        map.setView(e.latlng, map.getZoom()); // ここで getZoom() を使って縮尺を維持！
+    }
 });
