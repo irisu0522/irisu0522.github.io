@@ -229,6 +229,9 @@ function execSearch(skipFit) {
         // ★追加：写真フィルターの値を取得（HTMLに追加するまでは空扱い）
         let filterPhotoEl = document.getElementById('filter-photo');
         let selectedPhoto = filterPhotoEl ? filterPhotoEl.value : "";
+        let filterPhotoDateVal = document.getElementById('filter-photo-date') ? document.getElementById('filter-photo-date').value : ""; 
+        let filterPhotoDateCond = document.getElementById('filter-photo-date-cond') ? document.getElementById('filter-photo-date-cond').value : "after"; 
+        let filterPhotoDateTime = filterPhotoDateVal ? parseLocalDate(filterPhotoDateVal).getTime() : null;
 
         State.currentFilteredData = State.allData.filter(row => {
             let isPublic = isPublicWater(row["水利番号"]); 
@@ -253,6 +256,19 @@ function execSearch(skipFit) {
             let matchPhoto = true;
             if (selectedPhoto === "あり") matchPhoto = hasPhoto;
             else if (selectedPhoto === "なし") matchPhoto = !hasPhoto;
+            let matchPhotoDate = true;
+            if (filterPhotoDateTime) {
+                if (row["写真更新日"]) {
+                    let rowPhotoDateTime = parseLocalDate(row["写真更新日"]).getTime();
+                    if (filterPhotoDateCond === "before") matchPhotoDate = (rowPhotoDateTime <= filterPhotoDateTime);
+                    else if (filterPhotoDateCond === "after") matchPhotoDate = (rowPhotoDateTime >= filterPhotoDateTime);
+                } else {
+                    matchPhotoDate = false; // 日付検索をしているのに更新日が無いデータは弾く
+                }
+            }
+
+            // ★最後の一文に && matchPhotoDate を付け足す！
+            return matchCategory && matchArea && matchStatus && matchError && matchPaint && matchDate && matchKeyword && matchPhoto && matchPhotoDate;
 
             return matchCategory && matchArea && matchStatus && matchError && matchPaint && matchDate && matchKeyword && matchPhoto;
         });
