@@ -424,3 +424,4 @@ map.on('locationfound', function(e) {
         map.setView(e.latlng, map.getZoom()); // ここで getZoom() を使って縮尺を維持！
     }
 });
+});
