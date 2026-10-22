@@ -138,41 +138,51 @@ function renderMarkers(dataToRender, skipFit) {
             popupContent += `</div>`;
         }
         
-        // 点検入力フォーム（点検モードの時だけ表示）
-        if (State.appMode === 'edit') {
-        popupContent += `
-            <button class="form-toggle" onclick="toggleForm('${row["水利番号"]}')">✏️ 点検結果を入力する</button>
+       // 点検入力フォーム（点検モード or 非番パトロールモードの時だけ表示）
+        if (State.appMode === 'edit' || State.appMode === 'photo_only') {
+            let isPhotoMode = (State.appMode === 'photo_only');
+            
+            popupContent += `
+            <button class="form-toggle" onclick="toggleForm('${row["水利番号"]}')">${isPhotoMode ? '📸 写真を追加する' : '✏️ 点検結果を入力する'}</button>
             <div class="input-form" id="form-${row["水利番号"]}">
-                <div class="form-group">
-                    <label>点検結果</label>
-                    <select id="input-result-${row["水利番号"]}"><option value="点検済（良好）">点検済（良好）</option><option value="要調査">要調査（要対応）</option><option value="写真のみ追加">写真のみ追加（点検日は更新しない）</option></select>
-                </div>
-                <div class="form-group">
-                    <label>異常の種類</label>
-                    <select id="input-error-${row["水利番号"]}"><option value="異常なし">異常なし</option><option value="フタ開閉困難">フタ開閉困難</option><option value="水漏れ">水漏れ</option><option value="土没">土没</option><option value="その他">その他</option></select>
-                </div>
-                <div class="form-group">
-                    <label>塗装レベル</label>
-                    <select id="input-paint-${row["水利番号"]}"><option value="100%">100%</option><option value="50%">50%</option><option value="0%">0%</option></select>
-                </div>
-                <div class="form-group">
-                    <label>コメント</label>
-                    <input type="text" id="input-comment-${row["水利番号"]}" placeholder="状況など">
+                
+                <!-- 非番モードでは以下の入力枠を丸ごと隠す -->
+                <div style="${isPhotoMode ? 'display:none;' : ''}">
+                    <div class="form-group">
+                        <label>点検結果</label>
+                        <select id="input-result-${row["水利番号"]}">
+                            <option value="写真のみ追加" ${isPhotoMode ? 'selected' : ''}>📸 写真のみ追加（点検日は更新しない）</option>
+                            <option value="点検済（良好）" ${!isPhotoMode ? 'selected' : ''}>✅ 点検済（良好）</option>
+                            <option value="要調査">⚠️ 要調査（要対応）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>異常の種類</label>
+                        <select id="input-error-${row["水利番号"]}"><option value="異常なし">異常なし</option><option value="フタ開閉困難">フタ開閉困難</option><option value="水漏れ">水漏れ</option><option value="土没">土没</option><option value="その他">その他</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>塗装レベル</label>
+                        <select id="input-paint-${row["水利番号"]}"><option value="100%">100%</option><option value="50%">50%</option><option value="0%">0%</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>コメント</label>
+                        <input type="text" id="input-comment-${row["水利番号"]}" placeholder="状況など">
+                    </div>
                 </div>
                 
                 <div class="form-group" style="margin-top:10px;">
                     <label style="color:#0369a1;">📸 遠景写真（全体）</label>
-                    <input type="file" id="input-far-${row['水利番号']}" accept="image/* style="font-size:11px; padding:5px; background:#fff; border:1px solid #ccc; width:100%; box-sizing:border-box;">
+                    <input type="file" id="input-far-${row['水利番号']}" accept="image/*" style="font-size:11px; padding:5px; background:#fff; border:1px solid #ccc; width:100%; box-sizing:border-box;">
                 </div>
                 <div class="form-group">
                     <label style="color:#0369a1;">📸 近景写真（異常箇所）</label>
-                    <input type="file" id="input-near-${row['水利番号']}" accept="image/* style="font-size:11px; padding:5px; background:#fff; border:1px solid #ccc; width:100%; box-sizing:border-box;">
+                    <input type="file" id="input-near-${row['水利番号']}" accept="image/*" style="font-size:11px; padding:5px; background:#fff; border:1px solid #ccc; width:100%; box-sizing:border-box;">
                 </div>
                 
                 <button class="form-submit-btn" id="btn-${row["水利番号"]}" onclick="submitReport('${row["水利番号"]}')">スプレッドシートへ送信</button>
             </div>
-        `;
-    }
+            `;
+        }
 
     L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent, { closeOnClick: false, autoClose: false }).addTo(markersGroup);
   });
