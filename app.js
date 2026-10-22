@@ -25,11 +25,20 @@ const State = {
 // api.js で定義されている loadData を実行
 if (CONFIG.GAS_API_URL && CONFIG.GAS_API_URL.indexOf("http") === 0) { loadData(); }
 
-// --- UI操作関数群 ---
-window.promptPasscode = function() { document.getElementById('pin-input').value = ''; document.getElementById('pin-modal').style.display = 'flex'; };
+// パスワード入力後にどのモードを開くか覚えておくための変数
+let pendingPinMode = 'edit';
+
+window.promptPasscode = function(mode) { 
+    pendingPinMode = mode || 'edit'; 
+    document.getElementById('pin-input').value = ''; 
+    document.getElementById('pin-modal').style.display = 'flex'; 
+};
 window.closePinModal = function() { document.getElementById('pin-modal').style.display = 'none'; };
 window.checkPin = function() {
-    if (document.getElementById('pin-input').value === CONFIG.EDIT_MODE_PIN) { document.getElementById('pin-modal').style.display = 'none'; startApp('edit'); } 
+    if (document.getElementById('pin-input').value === CONFIG.EDIT_MODE_PIN) { 
+        document.getElementById('pin-modal').style.display = 'none'; 
+        startApp(pendingPinMode); // 記憶したモードで開始する
+    } 
     else { showMessage("❌ 暗証番号が違います。"); document.getElementById('pin-input').value = ''; }
 };
 
@@ -64,6 +73,8 @@ function enterApp(mode) {
         badge.innerText = '📍 目標物 閲覧'; badge.style.backgroundColor = '#10b981'; 
     } else if (mode === 'edit') { 
         badge.innerText = '🛠️ 水利 点検'; badge.style.backgroundColor = '#ef4444'; 
+    } else if (mode === 'photo_only') { 
+        badge.innerText = '📸 非番パトロール'; badge.style.backgroundColor = '#8b5cf6'; 
     }
     
     // map.js のオブジェクトを利用
