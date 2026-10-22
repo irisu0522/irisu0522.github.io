@@ -98,8 +98,8 @@ function getDriveImageUrl(url) {
     if (!url) return "";
     let match = url.match(/\/d\/(.*?)\//);
     if (match && match[1]) {
-        // ★ここを変更：最新の表示用URLに変更しました
-        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+        // ★変更：読み込み途中で止まるエラーを防ぐため、常に最新の画像を取得させる（キャッシュ回避）
+        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800&t=${new Date().getTime()}`;
     }
     return url;
 }
