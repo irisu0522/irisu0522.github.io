@@ -126,7 +126,26 @@ window.updateAreaBtnText = function() {
     if(allCheckbox) { allCheckbox.checked = (checkboxes.length === checkedBoxes.length); }
     if (checkedBoxes.length === checkboxes.length) btn.innerText = '🌐 すべての地区'; else if (checkedBoxes.length === 0) btn.innerText = '⚠️ 地区未選択'; else if (checkedBoxes.length === 1) btn.innerText = '📍 ' + checkedBoxes[0].value; else btn.innerText = `📍 ${checkedBoxes.length}地区を選択中`;
 };
-
+// --- 追加：画面を維持したままデータだけを最新に更新する処理 ---
+window.refreshMapData = function() {
+    // 1. ロード中の画面を表示する
+    let loadingEl = document.getElementById('loading');
+    if (loadingEl) {
+        loadingEl.style.display = 'block';
+        loadingEl.innerText = '📡 最新データを再取得中...';
+    }
+    
+    // 2. 開いているポップアップ（吹き出し）があれば閉じておく
+    map.closePopup();
+    
+    // 3. api.jsの機能を使ってスプレッドシートからデータを読み込み直す
+    // （読み込み完了後、自動的に地図のピンが最新状態に書き換わります）
+    if (typeof loadData === 'function') {
+        loadData();
+    } else {
+        showMessage("データ取得機能が見つかりません。");
+    }
+};
 // --- リスト表示関連 ---
 function updateListTable(data, type) {
     let thead = document.getElementById('table-head'); let tbody = document.getElementById('table-body'); tbody.innerHTML = ''; 
