@@ -91,7 +91,26 @@ function enterApp(mode) {
         map.locate({setView: true, maxZoom: 17}); 
     }, 100);
 }
-
+// --- 追加：トップページ（モード選択）に戻る処理 ---
+window.returnToTop = function() {
+    // パスワードの記憶などをリセット
+    pendingPinMode = 'view';
+    State.appMode = 'view';
+    
+    // 画面の表示切り替え（トップ画面を出し、地図上のUIを隠す）
+    document.getElementById('mode-overlay').style.display = 'flex';
+    document.getElementById('top-info-container').style.display = 'none';
+    document.getElementById('list-container').style.display = 'none';
+    document.getElementById('search-panel').style.display = 'none';
+    
+    // GPSが動いていれば自動的にストップする
+    if (State.isTracking) {
+        document.getElementById('gps-btn').click(); 
+    }
+    
+    // 開いているポップアップ（吹き出し）があれば閉じる
+    map.closePopup();
+};
 window.switchSearchTab = function(tabName, skipSearch) {
     State.searchTab = tabName;
     document.getElementById('tab-water').classList.toggle('active', tabName === 'water'); document.getElementById('tab-target').classList.toggle('active', tabName === 'target');
