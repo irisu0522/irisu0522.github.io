@@ -496,7 +496,7 @@ document.getElementById('em-submit-btn').onclick = function() {
     btn.disabled = true;
 
     // ★注意：GASのWebアプリURLに書き換えてください！
-    const EM_API_URL = "【ここにGASのWebアプリURL（デプロイURL）を貼り付けてください】"; 
+    const EM_API_URL = "【https://script.google.com/macros/s/AKfycbxFSNIyJ9hFpbqSDWC8UPpsNdpe1k7E8nri7IZpE7HIXkv7VXmFpTB1J_-uUOkXlBVgcA/exec】"; 
 
     fetch(EM_API_URL, {
         method: 'POST',
