@@ -316,5 +316,131 @@
     <div id="pdf-report-container">
         <!-- ここにJavaScriptで自動的に台帳が流し込まれます -->
     </div>
+<!-- ========================================== -->
+    <!-- 🚨 エマージェンシーモード用 UI（ここから） -->
+    <!-- ========================================== -->
+    
+    <!-- 1. モード切り替えボタン（右上に配置） -->
+    <button id="emergency-toggle-btn" style="position: absolute; top: 60px; right: 10px; z-index: 1000; background-color: #d32f2f; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+      🚨 緊急モード
+    </button>
+
+    <!-- 2. 地図中央のターゲット照準 -->
+    <div id="emergency-crosshair" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; font-size: 40px; color: red; pointer-events: none; text-shadow: 0 0 5px white;">
+      ＋
+    </div>
+
+    <!-- 3. 下部の「ここに記録」ボタン -->
+    <div id="emergency-action-panel" style="display: none; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 90%; max-width: 400px;">
+      <button id="emergency-record-btn" style="width: 100%; background-color: #d32f2f; color: white; font-size: 18px; font-weight: bold; padding: 15px; border: none; border-radius: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.4);">
+        📍 照準の位置に記録する
+      </button>
+    </div>
+
+    <!-- 4. 記録用入力フォーム（モーダル画面） -->
+    <div id="emergency-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center;">
+      <div style="background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto;">
+        <h3 style="margin-top: 0; color: #d32f2f; border-bottom: 2px solid #d32f2f; padding-bottom: 5px;">🚨 被災状況の記録</h3>
+        
+        <label style="font-weight:bold; display:block; margin-top:10px;">災害種別</label>
+        <select id="em-type" style="width: 100%; padding: 10px; margin-bottom: 10px; font-size: 16px;">
+          <option value="土砂崩れ">⛰️ 土砂崩れ</option>
+          <option value="冠水">🌊 冠水</option>
+          <option value="倒木">🌲 倒木</option>
+          <option value="火災">🔥 火災</option>
+          <option value="その他">❓ その他</option>
+        </select>
+
+       <label style="font-weight:bold; display:block;">担当隊</label>
+<input list="team-list" id="em-team" placeholder="例: 中警防1, 東救急" style="width: 100%; padding: 10px; margin-bottom: 10px; font-size: 16px; box-sizing: border-box;">
+<datalist id="team-list">
+  <option value="中指揮1"></option>
+  <option value="中警防1"></option>
+  <option value="中警防2"></option>
+  <option value="中タンク"></option>
+  <option value="中化学"></option>
+  <option value="中梯子"></option>
+  <option value="中救工1"></option>
+  <option value="中救工2"></option>
+  <option value="中支援1"></option>
+  <option value="中搬送1"></option>
+  <option value="中広報1"></option>
+　<option value="中救急1"></option>
+  <option value="中救急2"></option>
+  <option value="宮前救急1"></option>
+  <option value="宮前救急2"></option>
+  <option value="宮前ポンプ1"></option>
+  <option value="宮前ポンプ2"></option>
+  <option value="南救急1"></option>
+  <option value="南ポンプ1"></option>
+  <option value="南タンク1"></option>
+  <option value="南化学1"></option>
+  <option value="南搬送1"></option>
+　<option value="南広報1"></option>
+  <option value="東救急1"></option>
+  <option value="東指揮1"></option>
+  <option value="東ポンプ1"></option>
+  <option value="東ポンプ2"></option>
+  <option value="東化学"></option>
+  <option value="東梯子"></option>
+  <option value="東搬送"></option>
+  <option value="東広報"></option>
+  <option value="岡崎救急"></option>
+  <option value="岡崎ポンプ"></option>
+　<option value="岡崎タンク"></option>
+  <option value="岡崎救工1"></option>
+  <option value="岡崎救工2"></option>
+  <option value="岡崎搬送"></option>
+  <option value="四箇郷救急"></option>
+  <option value="四箇郷ポンプ"></option>
+  <option value="河南救急"></option>
+  <option value="河南ポンプ"></option>
+  <option value="北救急1"></option>
+  <option value="北救急2"></option>
+  <option value="北救急3"></option>
+　<option value="北指揮1"></option>
+  <option value="北ポンプ1"></option>
+  <option value="北ポンプ2"></option>
+  <option value="北梯子"></option>
+　<option value="北救工"></option>
+  <option value="北搬送"></option>
+  <option value="北広報1"></option>
+  <option value="北広報2"></option>
+　<option value="紀伊救急"></option>
+　<option value="紀伊ポンプ"></option>
+　<option value="紀伊タンク"></option>
+　<option value="紀伊搬送"></option>
+　<option value="紀伊広報"></option>
+　<option value="鳴滝救急"></option>
+　<option value="鳴滝ポンプ"></option>
+　<option value="加太救急"></option>
+　<option value="加太ポンプ1"></option>
+　<option value="加ポンプ2"></option>
+  <!-- 必要に応じて他の署の隊も追加 -->
+</datalist>
+
+        <label style="font-weight:bold; display:block;">進捗ステータス</label>
+        <select id="em-status" style="width: 100%; padding: 10px; margin-bottom: 10px; font-size: 16px;">
+          <option value="未着手">🔴 未着手（発見のみ）</option>
+          <option value="活動中">🟡 活動中</option>
+          <option value="完了">⚪ 完了</option>
+        </select>
+
+        <label style="font-weight:bold; display:block;">処置内容・メモ</label>
+        <input type="text" id="em-memo" placeholder="状況などを簡潔に入力" style="width: 100%; padding: 10px; margin-bottom: 15px; font-size: 16px; box-sizing: border-box;">
+
+        <label style="font-weight:bold; display:block;">現場写真</label>
+        <input type="file" id="em-photo" accept="image/*" style="margin-bottom: 20px;">
+
+        <div style="display: flex; justify-content: space-between;">
+          <button id="em-cancel-btn" style="padding: 12px 20px; background: #666; color: white; border: none; border-radius: 5px; font-weight:bold;">キャンセル</button>
+          <button id="em-submit-btn" style="padding: 12px 20px; background: #d32f2f; color: white; font-weight: bold; border: none; border-radius: 5px;">送信する</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ========================================== -->
+    <!-- 🚨 エマージェンシーモード用 UI（ここまで） -->
+    <!-- ========================================== -->    
 </body>
 </html>
