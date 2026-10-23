@@ -158,14 +158,17 @@ function renderMarkers(dataToRender, skipFit) {
                     </div>
                     <div class="form-group">
                         <label>異常の種類</label>
-                        <select id="input-error-${row["水利番号"]}">
-    <option value="異常なし">異常なし</option>
-    <option value="フタ開閉困難">フタ開閉困難</option>
-    <option value="水漏れ">水漏れ</option>
-    <option value="土没">土没</option>
-    <option value="塗装間違い">塗装間違い</option>
-    <option value="標識異常">標識異常</option>
-    <option value="その他">その他</option>
+<select id="input-error-${row["水利番号"]}">
+    <option value="異常なし">✅ 異常なし</option>
+    <option value="蓋開閉困難">🔧 蓋開閉困難</option>
+    <option value="土没">🍂 土没</option>
+    <option value="水没">💧 水没</option>
+    <option value="バルブ不良">⚙️ バルブ不良</option>
+    <option value="陥没 (大)">🕳️ 陥没 (大)</option>
+    <option value="陥没 (小)">🕳️ 陥没 (小)</option>
+    <option value="塗装剥がれ">🎨 塗装剥がれ</option>
+    <option value="塗装間違い">❌ 塗装間違い</option>
+    <option value="その他">❓ その他</option>
 </select>
                     </div>
                     <div class="form-group">
