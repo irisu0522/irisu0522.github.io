@@ -599,6 +599,34 @@ function sendEmergencyData(payload, btn) {
         btn.disabled = false;
     });
 }
+// --- 5. 災害収束（アーカイブ）ボタン ---
+document.getElementById('emergency-archive-btn').onclick = function() {
+    if (!confirm("【警告】すべての災害事案をアーカイブシートに移動し、地図から消去します。本当によろしいですか？")) {
+        return;
+    }
+    
+    let btn = this;
+    btn.innerText = "処理中...";
+    btn.disabled = true;
+
+    fetch(EM_API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'emergency_archive' }),
+        redirect: "follow"
+    })
+    .then(response => response.json())
+    .then(result => {
+        alert(result.message || "すべての記録をアーカイブしました。");
+        if (emergencyMarkers) emergencyMarkers.clearLayers(); // 地図のピンを全消去
+        btn.innerText = "📁 災害収束（全事案をアーカイブ）";
+        btn.disabled = false;
+    })
+    .catch(error => {
+        alert("通信エラーが発生しました。");
+        btn.innerText = "📁 災害収束（全事案をアーカイブ）";
+        btn.disabled = false;
+    });
+};
 // ==========================================
 // 🚨 エマージェンシーモード制御（完全版）ここまで
 // ==========================================
