@@ -299,24 +299,6 @@
             </table>
         </div>
     </div>
-
-    <!-- 🌟 分割したJSファイルの読み込み -->
-    <script src="api.js"></script>
-    <script src="app.js"></script>
-    <script src="map.js"></script>
-    <script src="test_mode.js"></script> <!-- 🌟 追加：テストモードロジック -->
-    <script>
-        // 裏方ファイルの登録
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js');
-            });
-        }
-    </script>
-    <!-- 📄 PDF出力用の個別台帳レイアウト（通常時は非表示） -->
-    <div id="pdf-report-container">
-        <!-- ここにJavaScriptで自動的に台帳が流し込まれます -->
-    </div>
 <!-- ========================================== -->
     <!-- 🚨 エマージェンシーモード用 UI（ここから） -->
     <!-- ========================================== -->
@@ -332,7 +314,7 @@
     </div>
 
     <!-- 3. 下部の「ここに記録」ボタン -->
-    <div id="emergency-action-panel" style="display: none; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 90%; max-width: 400px;">
+    <div id="emergency-action-panel" style="display: none; position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 90%; max-width: 400px;">
       <button id="emergency-record-btn" style="width: 100%; background-color: #d32f2f; color: white; font-size: 18px; font-weight: bold; padding: 15px; border: none; border-radius: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.4);">
         📍 照準の位置に記録する
       </button>
@@ -414,7 +396,7 @@
 　<option value="紀伊広報"></option>
 　<option value="鳴滝救急"></option>
 　<option value="鳴滝ポンプ"></option>
-　<option value="加太救急"></option>
+　<option  value="加太救急"></option>
 　<option value="加太ポンプ1"></option>
 　<option value="加ポンプ2"></option>
   <!-- 必要に応じて他の署の隊も追加 -->
@@ -442,6 +424,24 @@
     
     <!-- ========================================== -->
     <!-- 🚨 エマージェンシーモード用 UI（ここまで） -->
-    <!-- ========================================== -->    
+    <!-- ========================================== --> 
+    <!-- 🌟 分割したJSファイルの読み込み -->
+    <script src="api.js"></script>
+    <script src="app.js"></script>
+    <script src="map.js"></script>
+    <script src="test_mode.js"></script> <!-- 🌟 追加：テストモードロジック -->
+    <script>
+        // 裏方ファイルの登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('./sw.js');
+            });
+        }
+    </script>
+    <!-- 📄 PDF出力用の個別台帳レイアウト（通常時は非表示） -->
+    <div id="pdf-report-container">
+        <!-- ここにJavaScriptで自動的に台帳が流し込まれます -->
+    </div>
+  
 </body>
 </html>
