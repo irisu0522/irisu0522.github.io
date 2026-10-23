@@ -426,33 +426,80 @@ map.on('locationfound', function(e) {
 });
 });
 // ==========================================
-// 🚨 エマージェンシーモード制御（修正・トップ画面起動版）
+// 🚨 エマージェンシーモード制御（完全版）
 // ==========================================
 let isEmergencyMode = false;
 let emergencyLatLng = null;
 let emergencyMarkers = null; 
 
-// 1. トップ画面のボタンから起動される関数
+// ★注意：再度ご自身のGAS URL（デプロイURL）を貼り付けてください！
+const EM_API_URL = "https://script.google.com/macros/s/AKfycbxFSNIyJ9hFpbqSDWC8UPpsNdpe1k7E8nri7IZpE7HIXkv7VXmFpTB1J_-uUOkXlBVgcA/exec"; 
+
+// --- サーバーから最新の災害データを取得してピンを描画 ---
+function loadEmergencyPins() {
+    if (!emergencyMarkers) return;
+    emergencyMarkers.clearLayers(); // いったん全部消す
+
+    fetch(EM_API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'get_emergency_data' }),
+        redirect: "follow"
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (Array.isArray(data)) {
+            data.forEach(record => {
+                let pinColor = record.status === "活動中" ? "yellow" : (record.status === "完了" ? "gray" : "red");
+                
+                let popupHtml = `<b style="font-size:16px;">${record.type}</b> (${record.status})<br>`;
+                popupHtml += `<div style="max-height:120px; overflow-y:auto; font-size:12px; margin:8px 0; padding:5px; background:#f1f5f9; border-radius:5px;">${record.timeline.replace(/\n/g, '<br>')}</div>`;
+                
+                if (record.photoUrl) {
+                    let photoLinks = record.photoUrl.split('\n');
+                    popupHtml += `<div style="margin-bottom:8px;">`;
+                    photoLinks.forEach((url, idx) => {
+                        popupHtml += `<a href="${url}" target="_blank" style="display:inline-block; margin-right:5px; background:#3b82f6; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:11px;">📷 写真${idx+1}</a>`;
+                    });
+                    popupHtml += `</div>`;
+                }
+                
+                // ピンをタップして「追記（アップデート）」するボタン
+                popupHtml += `<button onclick="openEmergencyUpdate('${record.id}', '${record.type}', '${record.status}', ${record.lat}, ${record.lng})" style="width:100%; padding:8px; background:#d32f2f; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">✏️ この事案を更新・追記</button>`;
+                
+                L.circleMarker([record.lat, record.lng], {
+                    radius: 12, color: 'white', weight: 2, fillColor: pinColor, fillOpacity: 0.9
+                }).bindPopup(popupHtml).addTo(emergencyMarkers);
+            });
+        }
+    })
+    .catch(err => console.error("データ取得エラー:", err));
+}
+
+// --- 既存ピンの更新用モーダルを開く ---
+window.openEmergencyUpdate = function(id, type, status, lat, lng) {
+    emergencyLatLng = { lat: lat, lng: lng };
+    document.getElementById('emergency-modal').dataset.incidentId = id; // 既存IDをセット
+    document.getElementById('em-type').value = type;
+    document.getElementById('em-status').value = status;
+    document.getElementById('em-memo').value = ""; // メモは空にして追記待機
+    document.getElementById('em-photo').value = "";
+    document.getElementById('emergency-modal').style.display = 'flex';
+    map.closePopup();
+};
+
+// --- 1. トップ画面から起動 ---
 window.activateEmergencyMode = function() {
     isEmergencyMode = true;
-    
-    // スタート画面を隠す
     document.getElementById('mode-overlay').style.display = 'none';
     
-    // 緊急用ピングループを作成してマップに追加（ここで初めて実行するためエラーにならない）
-    if (!emergencyMarkers) {
-        emergencyMarkers = L.featureGroup().addTo(map);
-    }
+    if (!emergencyMarkers) emergencyMarkers = L.featureGroup().addTo(map);
     
-    // 通常の消火栓ピンや検索パネルを隠す
     if (typeof markersGroup !== 'undefined' && map.hasLayer(markersGroup)) map.removeLayer(markersGroup);
     if (document.getElementById('search-panel')) document.getElementById('search-panel').style.display = 'none';
     
-    // 照準とアクションパネルを表示
     document.getElementById('emergency-crosshair').style.display = 'block';
     document.getElementById('emergency-action-panel').style.display = 'block';
     
-    // 右上のボタンを「終了ボタン」として表示し、押したら画面リロード（安全に初期化）するように設定
     let toggleBtn = document.getElementById('emergency-toggle-btn');
     if (toggleBtn) {
         toggleBtn.style.display = 'block';
@@ -460,20 +507,39 @@ window.activateEmergencyMode = function() {
         toggleBtn.innerText = "✖ 終了して戻る";
         toggleBtn.onclick = function() { location.reload(); };
     }
+
+    loadEmergencyPins(); // 起動時に全事案を読み込む
+    
+    // 既存の「🔄更新」ボタンを緊急モード用にハイジャック
+    let refreshBtn = document.querySelector('button[onclick="refreshMapData()"]');
+    if(refreshBtn) {
+        refreshBtn.onclick = function(e) {
+            e.preventDefault();
+            if (isEmergencyMode) {
+                loadEmergencyPins();
+                alert("災害ダッシュボードを最新に更新しました");
+            } else {
+                refreshMapData(); 
+            }
+        };
+    }
 };
 
-// 2. 「ここに記録する」ボタンを押したとき
+// --- 2. 新規の事案を記録するボタン ---
 document.getElementById('emergency-record-btn').onclick = function() {
-    emergencyLatLng = map.getCenter(); // 画面中央（照準）の座標をロック
+    emergencyLatLng = map.getCenter(); 
+    document.getElementById('emergency-modal').dataset.incidentId = ""; // 新規なのでIDを空に
+    document.getElementById('em-memo').value = ""; 
+    document.getElementById('em-photo').value = "";
     document.getElementById('emergency-modal').style.display = 'flex';
 };
 
-// 3. キャンセルボタン
+// --- 3. キャンセルボタン ---
 document.getElementById('em-cancel-btn').onclick = function() {
     document.getElementById('emergency-modal').style.display = 'none';
 };
 
-// 4. 送信ボタン（GASへデータを送る）
+// --- 4. 送信ボタン（写真Base64変換対応） ---
 document.getElementById('em-submit-btn').onclick = function() {
     let team = document.getElementById('em-team').value;
     if (!team || team === "未定") {
@@ -481,8 +547,13 @@ document.getElementById('em-submit-btn').onclick = function() {
         return;
     }
 
+    let fileInput = document.getElementById('em-photo');
+    let file = fileInput.files[0];
+    let btn = document.getElementById('em-submit-btn');
+
     let payload = {
         action: 'emergency_report',
+        id: document.getElementById('emergency-modal').dataset.incidentId || "", // 追記時はIDを送る
         lat: emergencyLatLng.lat,
         lng: emergencyLatLng.lng,
         type: document.getElementById('em-type').value,
@@ -491,13 +562,23 @@ document.getElementById('em-submit-btn').onclick = function() {
         memo: document.getElementById('em-memo').value
     };
 
-    let btn = document.getElementById('em-submit-btn');
     btn.innerText = "送信中...";
     btn.disabled = true;
 
-    // ★注意：GASのWebアプリURLに書き換えてください！
-    const EM_API_URL = "https://script.google.com/macros/s/AKfycbxFSNIyJ9hFpbqSDWC8UPpsNdpe1k7E8nri7IZpE7HIXkv7VXmFpTB1J_-uUOkXlBVgcA/exec"; 
+    // 写真があればBase64化して送信、なければそのまま送信
+    if (file) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            payload.photoBase64 = e.target.result;
+            sendEmergencyData(payload, btn);
+        };
+        reader.readAsDataURL(file);
+    } else {
+        sendEmergencyData(payload, btn);
+    }
+};
 
+function sendEmergencyData(payload, btn) {
     fetch(EM_API_URL, {
         method: 'POST',
         body: JSON.stringify(payload),
@@ -507,20 +588,17 @@ document.getElementById('em-submit-btn').onclick = function() {
     .then(result => {
         alert("災害情報を記録しました！");
         document.getElementById('emergency-modal').style.display = 'none';
-        
-        let pinColor = payload.status === "活動中" ? "yellow" : (payload.status === "完了" ? "gray" : "red");
-        L.circleMarker([payload.lat, payload.lng], {
-            radius: 12, color: 'white', weight: 2, fillColor: pinColor, fillOpacity: 0.9
-        }).bindPopup(`<b>${payload.type}</b><br>${payload.team} (${payload.status})<br>${payload.memo}`).addTo(emergencyMarkers);
-
-        document.getElementById('em-memo').value = ""; 
-        document.getElementById('em-team').value = ""; 
         btn.innerText = "送信する";
         btn.disabled = false;
+        
+        loadEmergencyPins(); // 送信完了後に自動で全ピンを最新化
     })
     .catch(error => {
         alert("通信エラーが発生しました。");
         btn.innerText = "送信する";
         btn.disabled = false;
     });
-};
+}
+// ==========================================
+// 🚨 エマージェンシーモード制御（完全版）ここまで
+// ==========================================
