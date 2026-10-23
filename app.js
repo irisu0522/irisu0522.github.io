@@ -498,6 +498,7 @@ window.activateEmergencyMode = function() {
     if (document.getElementById('search-panel')) document.getElementById('search-panel').style.display = 'none';
     
     document.getElementById('emergency-crosshair').style.display = 'block';
+    document.getElementById('emergency-archive-btn').style.display = 'block';
     document.getElementById('emergency-action-panel').style.display = 'block';
     
     let toggleBtn = document.getElementById('emergency-toggle-btn');
