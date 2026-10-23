@@ -50,7 +50,8 @@
         
         <button class="mode-btn" style="background-color:#8b5cf6;" onclick="promptPasscode('photo_only')">📸 非番パトロールモード</button>
         <div class="mode-desc">点検入力を省き、最短タップで写真だけをサクサク集める安全な専用モードです</div>
-        
+        <button class="mode-btn" style="background-color:#d32f2f; color:white; font-weight:bold; margin-top:15px; border:2px solid #b71c1c; box-shadow: 0 4px 6px rgba(211,47,47,0.4);" onclick="activateEmergencyMode()">🚨 エマージェンシーモード</button>
+　　　　 <div class="mode-desc" style="color:#d32f2f; font-weight:bold;">※災害時専用。被災状況の共有・タイムライン記録に特化したマップ</div>
         <!-- 💡 アプリ改善要望ボタン -->
         <div style="width:85%; max-width:320px; margin-top:15px; margin-bottom:10px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:15px; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
             <p style="font-size:12px; color:#b45309; margin:0 0 10px 0; font-weight:bold;">💡 アプリ改善にご協力ください</p>
@@ -321,9 +322,9 @@
     <!-- ========================================== -->
     
     <!-- 1. モード切り替えボタン（右上に配置） -->
-    <button id="emergency-toggle-btn" style="position: absolute; top: 60px; right: 10px; z-index: 1000; background-color: #d32f2f; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
-      🚨 緊急モード
-    </button>
+　　<button id="emergency-toggle-btn" style="display: none; position: absolute; top: 60px; right: 10px; z-index: 1000; background-color: #d32f2f; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+  🚨 緊急モード
+　　</button>
 
     <!-- 2. 地図中央のターゲット照準 -->
     <div id="emergency-crosshair" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; font-size: 40px; color: red; pointer-events: none; text-shadow: 0 0 5px white;">
@@ -444,3 +445,102 @@
     <!-- ========================================== -->    
 </body>
 </html>
+// ==========================================
+// 🚨 エマージェンシーモード制御（修正・トップ画面起動版）
+// ==========================================
+let isEmergencyMode = false;
+let emergencyLatLng = null;
+let emergencyMarkers = null; 
+
+// 1. トップ画面のボタンから起動される関数
+window.activateEmergencyMode = function() {
+    isEmergencyMode = true;
+    
+    // スタート画面を隠す
+    document.getElementById('mode-overlay').style.display = 'none';
+    
+    // 緊急用ピングループを作成してマップに追加（ここで初めて実行するためエラーにならない）
+    if (!emergencyMarkers) {
+        emergencyMarkers = L.featureGroup().addTo(map);
+    }
+    
+    // 通常の消火栓ピンや検索パネルを隠す
+    if (typeof markersGroup !== 'undefined' && map.hasLayer(markersGroup)) map.removeLayer(markersGroup);
+    if (document.getElementById('search-panel')) document.getElementById('search-panel').style.display = 'none';
+    
+    // 照準とアクションパネルを表示
+    document.getElementById('emergency-crosshair').style.display = 'block';
+    document.getElementById('emergency-action-panel').style.display = 'block';
+    
+    // 右上のボタンを「終了ボタン」として表示し、押したら画面リロード（安全に初期化）するように設定
+    let toggleBtn = document.getElementById('emergency-toggle-btn');
+    if (toggleBtn) {
+        toggleBtn.style.display = 'block';
+        toggleBtn.style.backgroundColor = "#424242"; 
+        toggleBtn.innerText = "✖ 終了して戻る";
+        toggleBtn.onclick = function() { location.reload(); };
+    }
+};
+
+// 2. 「ここに記録する」ボタンを押したとき
+document.getElementById('emergency-record-btn').onclick = function() {
+    emergencyLatLng = map.getCenter(); // 画面中央（照準）の座標をロック
+    document.getElementById('emergency-modal').style.display = 'flex';
+};
+
+// 3. キャンセルボタン
+document.getElementById('em-cancel-btn').onclick = function() {
+    document.getElementById('emergency-modal').style.display = 'none';
+};
+
+// 4. 送信ボタン（GASへデータを送る）
+document.getElementById('em-submit-btn').onclick = function() {
+    let team = document.getElementById('em-team').value;
+    if (!team || team === "未定") {
+        alert("担当隊を選択または手入力してください。");
+        return;
+    }
+
+    let payload = {
+        action: 'emergency_report',
+        lat: emergencyLatLng.lat,
+        lng: emergencyLatLng.lng,
+        type: document.getElementById('em-type').value,
+        team: team,
+        status: document.getElementById('em-status').value,
+        memo: document.getElementById('em-memo').value
+    };
+
+    let btn = document.getElementById('em-submit-btn');
+    btn.innerText = "送信中...";
+    btn.disabled = true;
+
+    // ★注意：GASのWebアプリURLに書き換えてください！
+    const EM_API_URL = "【https://script.google.com/macros/s/AKfycbxFSNIyJ9hFpbqSDWC8UPpsNdpe1k7E8nri7IZpE7HIXkv7VXmFpTB1J_-uUOkXlBVgcA/exec】"; 
+
+    fetch(EM_API_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        redirect: "follow"
+    })
+    .then(response => response.json())
+    .then(result => {
+        alert("災害情報を記録しました！");
+        document.getElementById('emergency-modal').style.display = 'none';
+        
+        let pinColor = payload.status === "活動中" ? "yellow" : (payload.status === "完了" ? "gray" : "red");
+        L.circleMarker([payload.lat, payload.lng], {
+            radius: 12, color: 'white', weight: 2, fillColor: pinColor, fillOpacity: 0.9
+        }).bindPopup(`<b>${payload.type}</b><br>${payload.team} (${payload.status})<br>${payload.memo}`).addTo(emergencyMarkers);
+
+        document.getElementById('em-memo').value = ""; 
+        document.getElementById('em-team').value = ""; 
+        btn.innerText = "送信する";
+        btn.disabled = false;
+    })
+    .catch(error => {
+        alert("通信エラーが発生しました。");
+        btn.innerText = "送信する";
+        btn.disabled = false;
+    });
+};
