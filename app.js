@@ -600,10 +600,12 @@ function sendEmergencyData(payload, btn) {
         btn.disabled = false;
     });
 }
-// --- 5. 災害収束（アーカイブ）ボタン ---
+// --- 5. 災害収束（アーカイブ）ボタン（誤操作防止ロック付き） ---
 document.getElementById('emergency-archive-btn').onclick = function() {
-    if (!confirm("【警告】すべての災害事案をアーカイブシートに移動し、地図から消去します。本当によろしいですか？")) {
-        return;
+    // 誤操作を100%防ぐための入力式プロンプト
+    let confirmText = prompt("【警告】すべての災害事案をアーカイブし、地図をリセットします。\nよろしければ「収束」と入力してください。");
+    if (confirmText !== "収束") {
+        return; // キャンセル、または入力間違いの場合は安全に停止
     }
     
     let btn = this;
@@ -617,14 +619,14 @@ document.getElementById('emergency-archive-btn').onclick = function() {
     })
     .then(response => response.json())
     .then(result => {
-        alert(result.message || "すべての記録をアーカイブしました。");
-        if (emergencyMarkers) emergencyMarkers.clearLayers(); // 地図のピンを全消去
-        btn.innerText = "📁 災害収束（全事案をアーカイブ）";
+        alert("すべての記録をアーカイブしました。");
+        if (emergencyMarkers) emergencyMarkers.clearLayers(); 
+        btn.innerText = "📁 災害収束（リセット）";
         btn.disabled = false;
     })
     .catch(error => {
         alert("通信エラーが発生しました。");
-        btn.innerText = "📁 災害収束（全事案をアーカイブ）";
+        btn.innerText = "📁 災害収束（リセット）";
         btn.disabled = false;
     });
 };
