@@ -454,14 +454,23 @@ function loadEmergencyPins() {
                 let popupHtml = `<b style="font-size:16px;">${record.type}</b> (${record.status})<br>`;
                 popupHtml += `<div style="max-height:120px; overflow-y:auto; font-size:12px; margin:8px 0; padding:5px; background:#f1f5f9; border-radius:5px;">${record.timeline.replace(/\n/g, '<br>')}</div>`;
                 
+                // ▼▼▼ サムネイル並べ ＆ タップで拡大表示に変更 ▼▼▼
                 if (record.photoUrl) {
-                    let photoLinks = record.photoUrl.split('\n');
-                    popupHtml += `<div style="margin-bottom:8px;">`;
-                    photoLinks.forEach((url, idx) => {
-                        popupHtml += `<a href="${url}" target="_blank" style="display:inline-block; margin-right:5px; background:#3b82f6; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:11px;">📷 写真${idx+1}</a>`;
-                    });
-                    popupHtml += `</div>`;
+                    let photoLinks = record.photoUrl.split('\n').filter(url => url.trim() !== '');
+                    if (photoLinks.length > 0) {
+                        popupHtml += `<div style="display:flex; gap:8px; margin-bottom:12px; overflow-x:auto; padding-bottom:5px;">`;
+                        photoLinks.forEach((url, idx) => {
+                            // iframeを使ってサムネイル風に表示し、クリックで全画面モーダルを開く
+                            popupHtml += `
+                            <div onclick="openEmergencyPhotoModal('${url}')" style="width:80px; height:80px; flex-shrink:0; border-radius:8px; overflow:hidden; position:relative; cursor:pointer; background:#222; box-shadow:0 2px 4px rgba(0,0,0,0.3);">
+                                <div style="position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.6); color:white; font-size:10px; padding:2px 5px; border-radius:4px; z-index:10; pointer-events:none;">📷 写真${idx+1}</div>
+                                <iframe src="${url}" style="width:300%; height:300%; transform:scale(0.333); transform-origin:0 0; border:none; pointer-events:none; opacity:0.9;"></iframe>
+                            </div>`;
+                        });
+                        popupHtml += `</div>`;
+                    }
                 }
+                // ▲▲▲ ここまで ▲▲▲
                 
                 // ピンをタップして「追記（アップデート）」するボタン
                 popupHtml += `<button onclick="openEmergencyUpdate('${record.id}', '${record.type}', '${record.status}', ${record.lat}, ${record.lng})" style="width:100%; padding:8px; background:#d32f2f; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">✏️ この事案を更新・追記</button>`;
@@ -474,6 +483,26 @@ function loadEmergencyPins() {
     })
     .catch(err => console.error("データ取得エラー:", err));
 }
+
+// ▼▼▼ 全画面拡大表示用の機能を追加 ▼▼▼
+window.openEmergencyPhotoModal = function(url) {
+    let modal = document.getElementById('em-photo-modal');
+    // モーダルがまだ無ければHTMLの最後に自動で作る
+    if (!modal) {
+        const modalHtml = `
+        <div id="em-photo-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:10000; justify-content:center; align-items:center; flex-direction:column;">
+            <div onclick="document.getElementById('em-photo-modal').style.display='none'" style="position:absolute; top:15px; right:20px; color:white; font-size:35px; cursor:pointer; font-weight:bold; z-index:10001; text-shadow:0 0 5px black;">×</div>
+            <iframe id="em-photo-iframe" style="width:90%; height:85%; border:none; border-radius:8px; background:#222; box-shadow:0 4px 15px rgba(0,0,0,0.5);"></iframe>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        modal = document.getElementById('em-photo-modal');
+    }
+    // URLをセットしてフワッと表示
+    document.getElementById('em-photo-iframe').src = url;
+    modal.style.display = 'flex';
+};
+// ▲▲▲ ここまで ▲▲▲
+
 
 // --- 既存ピンの更新用モーダルを開く ---
 window.openEmergencyUpdate = function(id, type, status, lat, lng) {
@@ -515,6 +544,7 @@ window.activateEmergencyMode = function() {
     }
 
     loadEmergencyPins(); // 起動時に全事案を読み込む
+}
     
     // 既存の「🔄更新」ボタンを緊急モード用にハイジャック
     let refreshBtn = document.querySelector('button[onclick="refreshMapData()"]');
