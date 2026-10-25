@@ -545,8 +545,8 @@ document.getElementById('em-cancel-btn').onclick = function() {
     document.getElementById('emergency-modal').style.display = 'none';
 };
 
-// --- 4. 送信ボタン（写真Base64変換対応） ---
-document.getElementById('em-submit-btn').onclick = function() {
+// --- 4. 送信ボタン（複数写真の一括圧縮対応） ---
+document.getElementById('em-submit-btn').onclick = async function() { // ← async が追加されています
     let team = document.getElementById('em-team').value;
     if (!team || team === "未定") {
         alert("担当隊を選択または手入力してください。");
@@ -554,67 +554,62 @@ document.getElementById('em-submit-btn').onclick = function() {
     }
 
     let fileInput = document.getElementById('em-photo');
-    let file = fileInput.files[0];
+    let files = fileInput.files; // 複数ファイルを取得
     let btn = document.getElementById('em-submit-btn');
 
     let payload = {
         action: 'emergency_report',
-        id: document.getElementById('emergency-modal').dataset.incidentId || "", // 追記時はIDを送る
+        id: document.getElementById('emergency-modal').dataset.incidentId || "",
         lat: emergencyLatLng.lat,
         lng: emergencyLatLng.lng,
         type: document.getElementById('em-type').value,
         team: team,
         status: document.getElementById('em-status').value,
-        memo: document.getElementById('em-memo').value
+        memo: document.getElementById('em-memo').value,
+        photosBase64: [] // 配列で送信
     };
 
-    btn.innerText = "送信中...";
+    btn.innerText = "圧縮中...";
     btn.disabled = true;
 
-   // --- (前略) payload の定義などはそのまま ---
+    // 複数枚の写真をすべて順番に圧縮する処理
+    if (files.length > 0) {
+        let promises = [];
+        for (let i = 0; i < files.length; i++) {
+            promises.push(new Promise((resolve) => {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    let img = new Image();
+                    img.onload = function() {
+                        let canvas = document.createElement('canvas');
+                        let max_size = 1024;
+                        let width = img.width;
+                        let height = img.height;
 
-    btn.innerText = "送信中...";
-    btn.disabled = true;
+                        if (width > height) {
+                            if (width > max_size) { height = Math.round(height * max_size / width); width = max_size; }
+                        } else {
+                            if (height > max_size) { width = Math.round(width * max_size / height); height = max_size; }
+                        }
 
-    // ▼▼▼ 写真を自動圧縮（長辺1024px, 画質70%）して送信 ▼▼▼
-    if (file) {
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            let img = new Image();
-            img.onload = function() {
-                let canvas = document.createElement('canvas');
-                let max_size = 1024; // 最大サイズ（この数値でデータ量を調整）
-                let width = img.width;
-                let height = img.height;
-
-                if (width > height) {
-                    if (width > max_size) {
-                        height = Math.round(height * max_size / width);
-                        width = max_size;
-                    }
-                } else {
-                    if (height > max_size) {
-                        width = Math.round(width * max_size / height);
-                        height = max_size;
-                    }
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                let ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-
-                // JPEG形式、画質70%で軽量化して送信
-                payload.photoBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                sendEmergencyData(payload, btn);
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    } else {
-        sendEmergencyData(payload, btn);
+                        canvas.width = width; canvas.height = height;
+                        let ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7)); // 圧縮したものを配列に追加
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(files[i]);
+            }));
+        }
+        // 全ての写真の圧縮が終わるまで待つ
+        payload.photosBase64 = await Promise.all(promises);
     }
-};
+
+    btn.innerText = "送信中...";
+    sendEmergencyData(payload, btn);
+}; 
+
 function sendEmergencyData(payload, btn) {
     fetch(EM_API_URL, {
         method: 'POST',
