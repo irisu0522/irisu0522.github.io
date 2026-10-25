@@ -559,7 +559,6 @@ window.activateEmergencyMode = function() {
             }
         };
     }
-};
 
 // --- 2. 新規の事案を記録するボタン ---
 document.getElementById('emergency-record-btn').onclick = function() {
