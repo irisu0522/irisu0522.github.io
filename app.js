@@ -614,7 +614,7 @@ document.getElementById('em-submit-btn').onclick = function() {
     } else {
         sendEmergencyData(payload, btn);
     }
-
+};
 function sendEmergencyData(payload, btn) {
     fetch(EM_API_URL, {
         method: 'POST',
