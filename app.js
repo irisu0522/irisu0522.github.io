@@ -489,13 +489,11 @@ window.openEmergencyUpdate = function(id, type, status, lat, lng) {
 
 // --- 1. トップ画面から起動 ---
 window.activateEmergencyMode = function() {
-    // ▼▼▼ パスワードチェックを追加（ここから） ▼▼▼
     let pass = prompt("🚨 緊急モードのパスワードを入力してください");
     if (pass !== "1190") { // ← 好きなパスワードに変更してください！
         alert("パスワードが間違っています。");
         return; // 間違っていたらここでストップ
     }
-    // ▲▲▲ パスワードチェックを追加（ここまで） ▲▲▲
     isEmergencyMode = true;
     document.getElementById('mode-overlay').style.display = 'none';
     
