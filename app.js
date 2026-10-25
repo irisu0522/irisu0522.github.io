@@ -571,18 +571,49 @@ document.getElementById('em-submit-btn').onclick = function() {
     btn.innerText = "送信中...";
     btn.disabled = true;
 
-    // 写真があればBase64化して送信、なければそのまま送信
+   // --- (前略) payload の定義などはそのまま ---
+
+    btn.innerText = "送信中...";
+    btn.disabled = true;
+
+    // ▼▼▼ 写真を自動圧縮（長辺1024px, 画質70%）して送信 ▼▼▼
     if (file) {
         let reader = new FileReader();
         reader.onload = function(e) {
-            payload.photoBase64 = e.target.result;
-            sendEmergencyData(payload, btn);
+            let img = new Image();
+            img.onload = function() {
+                let canvas = document.createElement('canvas');
+                let max_size = 1024; // 最大サイズ（この数値でデータ量を調整）
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > max_size) {
+                        height = Math.round(height * max_size / width);
+                        width = max_size;
+                    }
+                } else {
+                    if (height > max_size) {
+                        width = Math.round(width * max_size / height);
+                        height = max_size;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                let ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // JPEG形式、画質70%で軽量化して送信
+                payload.photoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                sendEmergencyData(payload, btn);
+            };
+            img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     } else {
         sendEmergencyData(payload, btn);
     }
-};
 
 function sendEmergencyData(payload, btn) {
     fetch(EM_API_URL, {
