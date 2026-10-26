@@ -438,7 +438,7 @@ const EM_API_URL = "https://script.google.com/macros/s/AKfycbxFSNIyJ9hFpbqSDWC8U
 // --- サーバーから最新の災害データを取得してピンを描画 ---
 function loadEmergencyPins() {
     if (!emergencyMarkers) return;
-    emergencyMarkers.clearLayers(); // いったん全部消す
+    emergencyMarkers.clearLayers();
 
     fetch(EM_API_URL, {
         method: 'POST',
@@ -454,7 +454,7 @@ function loadEmergencyPins() {
                 let popupHtml = `<b style="font-size:16px;">${record.type}</b> (${record.status})<br>`;
                 popupHtml += `<div style="max-height:120px; overflow-y:auto; font-size:12px; margin:8px 0; padding:5px; background:#f1f5f9; border-radius:5px;">${record.timeline.replace(/\n/g, '<br>')}</div>`;
                 
-                // ▼▼▼ ブロックを回避する「サムネイル専用ルート」に変更 ▼▼▼
+                // ▼▼▼ 抜け道ルート（Google CDN ＋ no-referrer） ▼▼▼
                 if (record.photoUrl) {
                     let photoLinks = record.photoUrl.split('\n').filter(url => url.trim() !== '');
                     if (photoLinks.length > 0) {
@@ -465,14 +465,14 @@ function loadEmergencyPins() {
                             if (match) fileId = match[1];
 
                             if (fileId) {
-                                // 通常の uc?export ではなく、thumbnail エンドポイントを使う（ブロックされません）
-                                let thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`; // 小さめ
-                                let fullUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`; // 拡大用
-
+                                // 抜け道1: Googleの配信専用サーバー（lh3.googleusercontent.com）のURLに変換
+                                let cdnUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+                                
                                 popupHtml += `
-                                <div onclick="openEmergencyPhotoModal('${fullUrl}')" style="position:relative; width:80px; height:80px; flex-shrink:0; border-radius:8px; overflow:hidden; cursor:pointer; background:#222; box-shadow:0 2px 4px rgba(0,0,0,0.3);">
+                                <div onclick="openEmergencyPhotoModal('${cdnUrl}')" style="position:relative; width:80px; height:80px; flex-shrink:0; border-radius:8px; overflow:hidden; cursor:pointer; background:#222; box-shadow:0 2px 4px rgba(0,0,0,0.3);">
                                     <div style="position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.6); color:white; font-size:10px; padding:2px 5px; border-radius:4px; z-index:10;">📷 写真${idx+1}</div>
-                                    <img src="${thumbUrl}" style="width:100%; height:100%; object-fit:cover;">
+                                    <!-- 抜け道2: referrerpolicy="no-referrer" で足跡を消す -->
+                                    <img src="${cdnUrl}" referrerpolicy="no-referrer" style="width:100%; height:100%; object-fit:cover;">
                                 </div>`;
                             }
                         });
