@@ -165,9 +165,10 @@ function updateListTable(data, type) {
             if (farImg) {
                 let match = farImg.match(/\/d\/(.*?)\//);
                 if (match && match[1]) {
-                    let thumbUrl = `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
-                    // 写真タップ時は拡大（openImageModal）し、地図ジャンプ（stopPropagation）は防ぐ
-                    photoHtml = `<img src="${thumbUrl}" style="width:35px; height:35px; object-fit:cover; border-radius:4px; cursor:pointer; border:1px solid #cbd5e1;" onclick="event.stopPropagation(); if(typeof openImageModal === 'function') openImageModal('${thumbUrl}')" onerror="this.style.display='none'">`;
+                    // ▼▼▼ 抜け道ルート（Google CDN）に変更 ▼▼▼
+                    let cdnUrl = `https://lh3.googleusercontent.com/d/${match[1]}`;
+                    // referrerpolicy="no-referrer" を追加して足跡を消す
+                    photoHtml = `<img src="${cdnUrl}" referrerpolicy="no-referrer" style="width:35px; height:35px; object-fit:cover; border-radius:4px; cursor:pointer; border:1px solid #cbd5e1;" onclick="event.stopPropagation(); if(typeof openImageModal === 'function') openImageModal('${cdnUrl}')" onerror="this.style.display='none'">`;
                 }
             }
 
@@ -323,8 +324,9 @@ window.printReport = function() {
         let photoHtml = '';
         if (farImgUrl || nearImgUrl) {
             photoHtml = `<div class="pdf-photo-area">`;
-            if (farImgUrl) photoHtml += `<div class="pdf-photo-box"><div class="pdf-photo-label">📸 遠景写真 ${photoDateStr}</div><img src="${farImgUrl}"></div>`;
-            if (nearImgUrl) photoHtml += `<div class="pdf-photo-box"><div class="pdf-photo-label">📸 近景写真（異常箇所） ${photoDateStr}</div><img src="${nearImgUrl}"></div>`;
+            // ▼▼▼ referrerpolicy="no-referrer" を追加 ▼▼▼
+            if (farImgUrl) photoHtml += `<div class="pdf-photo-box"><div class="pdf-photo-label">📸 遠景写真 ${photoDateStr}</div><img src="${farImgUrl}" referrerpolicy="no-referrer"></div>`;
+            if (nearImgUrl) photoHtml += `<div class="pdf-photo-box"><div class="pdf-photo-label">📸 近景写真（異常箇所） ${photoDateStr}</div><img src="${nearImgUrl}" referrerpolicy="no-referrer"></div>`;
             photoHtml += `</div>`;
         } else {
             photoHtml = `<div style="text-align:center; padding: 40px; color:#94a3b8; border: 1px dashed #cbd5e1;">写真データは添付されていません</div>`;
