@@ -454,31 +454,31 @@ function loadEmergencyPins() {
                 let popupHtml = `<b style="font-size:16px;">${record.type}</b> (${record.status})<br>`;
                 popupHtml += `<div style="max-height:120px; overflow-y:auto; font-size:12px; margin:8px 0; padding:5px; background:#f1f5f9; border-radius:5px;">${record.timeline.replace(/\n/g, '<br>')}</div>`;
                 
-                // ▼▼▼ 水利モードと完全に同じ「写真サムネイル＆拡大」ルート ▼▼▼
+                // ▼▼▼ ブロックを回避する「サムネイル専用ルート」に変更 ▼▼▼
                 if (record.photoUrl) {
                     let photoLinks = record.photoUrl.split('\n').filter(url => url.trim() !== '');
                     if (photoLinks.length > 0) {
                         popupHtml += `<div style="display:flex; gap:8px; margin-bottom:12px; overflow-x:auto; padding-bottom:5px;">`;
                         photoLinks.forEach((url, idx) => {
-                            // URLからファイルIDだけを抽出
                             let fileId = "";
                             let match = url.match(/id=([^&]+)/);
                             if (match) fileId = match[1];
 
                             if (fileId) {
-                                // 水利モードと同じ「Googleドライブの画像直リンク」を生成
-                                let driveImgUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                                // 通常の uc?export ではなく、thumbnail エンドポイントを使う（ブロックされません）
+                                let thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`; // 小さめ
+                                let fullUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`; // 拡大用
+
                                 popupHtml += `
-                                <div onclick="openEmergencyPhotoModal('${driveImgUrl}')" style="position:relative; width:80px; height:80px; flex-shrink:0; border-radius:8px; overflow:hidden; cursor:pointer; background:#222; box-shadow:0 2px 4px rgba(0,0,0,0.3);">
+                                <div onclick="openEmergencyPhotoModal('${fullUrl}')" style="position:relative; width:80px; height:80px; flex-shrink:0; border-radius:8px; overflow:hidden; cursor:pointer; background:#222; box-shadow:0 2px 4px rgba(0,0,0,0.3);">
                                     <div style="position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.6); color:white; font-size:10px; padding:2px 5px; border-radius:4px; z-index:10;">📷 写真${idx+1}</div>
-                                    <img src="${driveImgUrl}" style="width:100%; height:100%; object-fit:cover;">
+                                    <img src="${thumbUrl}" style="width:100%; height:100%; object-fit:cover;">
                                 </div>`;
                             }
                         });
                         popupHtml += `</div>`;
                     }
                 }
-                // ▲▲▲ ここまで ▲▲▲
                 
                 // ピンをタップして「追記（アップデート）」するボタン
                 popupHtml += `<button onclick="openEmergencyUpdate('${record.id}', '${record.type}', '${record.status}', ${record.lat}, ${record.lng})" style="width:100%; padding:8px; background:#d32f2f; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">✏️ この事案を更新・追記</button>`;
