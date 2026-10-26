@@ -552,46 +552,45 @@ window.activateEmergencyMode = function() {
     loadEmergencyPins(); // 起動時に全事案を読み込む
 }
     
-    // 既存の「更新」ボタンを緊急モード用にハイジャック（PC・スマホ両対応の高速化版）
+   // 既存の「更新」ボタンを緊急モード用にハイジャック（安全な高速化版）
 let refreshBtn = document.querySelector('button[onclick="refreshMapData()"]');
 if(refreshBtn) {
-    // 1. HTML側の古いクリック設定を強制削除（PCでの二重通信による重さを防止）
-    refreshBtn.removeAttribute('onclick');
-    
-    // 2. 新しいクリック動作を上書き
     refreshBtn.onclick = function(e) {
         e.preventDefault();
         
-        // 3. 通信中にボタンを「更新中...」に変え、連打によるフリーズを防止
-        let originalText = refreshBtn.innerHTML;
-        refreshBtn.innerHTML = "⏳ 取得中...";
-        refreshBtn.style.pointerEvents = "none";
-        refreshBtn.style.opacity = "0.7";
-
-        // 4. 2.5秒後にボタンの見た目を元に戻す（GASの平均通信時間を考慮）
-        setTimeout(() => {
-            refreshBtn.innerHTML = originalText;
-            refreshBtn.style.pointerEvents = "auto";
-            refreshBtn.style.opacity = "1";
-        }, 2500);
-
+        // 連打・二重通信防止（処理中はクリックを無視）
+        if (refreshBtn.style.pointerEvents === "none") return;
+        
         if (isEmergencyMode) {
+            let originalText = refreshBtn.innerHTML;
+            refreshBtn.innerHTML = "⏳ 取得中...";
+            refreshBtn.style.pointerEvents = "none";
+            refreshBtn.style.opacity = "0.7";
+            
             loadEmergencyPins();
-            // 重くなる原因だった alert() を一時的に画面上部にポップアップする軽量な表示に変更
+            
             let toast = document.createElement('div');
             toast.innerText = "最新の災害情報を取得しました";
             toast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#4caf50; color:white; padding:10px 20px; border-radius:30px; z-index:10000; font-weight:bold; box-shadow:0 4px 6px rgba(0,0,0,0.3);";
             document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2500);
+            
+            setTimeout(() => {
+                refreshBtn.innerHTML = originalText;
+                refreshBtn.style.pointerEvents = "auto";
+                refreshBtn.style.opacity = "1";
+                if(toast) toast.remove();
+            }, 2500);
         } else {
-            // 水利モードなどの通常の更新処理
+            // 水利モード等の場合：元の機能を呼び出しつつ、3秒間は連打（二重通信）をブロック
+            refreshBtn.style.pointerEvents = "none";
+            setTimeout(() => { refreshBtn.style.pointerEvents = "auto"; }, 3000);
+            
             if (typeof refreshMapData === 'function') {
                 refreshMapData();
             }
         }
     };
 }
-
 // --- 2. 新規の事案を記録するボタン ---
 document.getElementById('emergency-record-btn').onclick = function() {
     emergencyLatLng = map.getCenter(); 
