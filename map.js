@@ -93,13 +93,13 @@ function getTargetColor(type) {
     return '#64748b'; 
 }
 
-// ★Googleドライブの共有URLを、直接画像を表示するURLに変換する関数（最新版）
+// ★Googleドライブの共有URLを、直接画像を表示するURLに変換する関数（最新版・抜け道ルート）
 function getDriveImageUrl(url) {
     if (!url) return "";
     let match = url.match(/\/d\/(.*?)\//);
     if (match && match[1]) {
-        // ★変更：読み込み途中で止まるエラーを防ぐため、常に最新の画像を取得させる（キャッシュ回避）
-        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800&t=${new Date().getTime()}`;
+        // ▼▼▼ 抜け道ルート（Google CDN）に変更 ▼▼▼
+        return `https://lh3.googleusercontent.com/d/${match[1]}`;
     }
     return url;
 }
@@ -130,10 +130,12 @@ function renderMarkers(dataToRender, skipFit) {
             let photoDateStr = row["写真更新日"] ? `<span style="font-size:9px; font-weight:normal;">(${row["写真更新日"]})</span>` : "";
             popupContent += `<div style="display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap;">`;
             if (farImageUrl) {
-                popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 遠景 ${photoDateStr}</div><img src="${farImageUrl}" style="width: 100%; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="openImageModal('${farImageUrl}')" onerror="this.parentNode.style.display='none'"></div>`;
+                // ▼▼▼ referrerpolicy="no-referrer" を追加 ▼▼▼
+                popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 遠景 ${photoDateStr}</div><img src="${farImageUrl}" referrerpolicy="no-referrer" style="width: 100%; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="openImageModal('${farImageUrl}')" onerror="this.parentNode.style.display='none'"></div>`;
             }
             if (nearImageUrl) {
-                popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 近景 ${photoDateStr}</div><img src="${nearImageUrl}" style="width: 100%; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="openImageModal('${nearImageUrl}')" onerror="this.parentNode.style.display='none'"></div>`;
+                // ▼▼▼ referrerpolicy="no-referrer" を追加 ▼▼▼
+                popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 近景 ${photoDateStr}</div><img src="${nearImageUrl}" referrerpolicy="no-referrer" style="width: 100%; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="openImageModal('${nearImageUrl}')" onerror="this.parentNode.style.display='none'"></div>`;
             }
             popupContent += `</div>`;
         }
