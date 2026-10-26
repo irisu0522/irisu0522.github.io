@@ -254,9 +254,10 @@ function openImageModal(imgUrl) {
         modal.style.cssText = 'display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.8); align-items:center; justify-content:center; flex-direction:column;';
         
         // 閉じるボタンと、大きい写真を入れる枠
+        // ▼▼▼ <img> タグに referrerpolicy="no-referrer" を追加 ▼▼▼
         modal.innerHTML = `
             <span style="position:absolute; top:20px; right:30px; color:white; font-size:35px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('image-modal').style.display='none'">&times;</span>
-            <img id="image-modal-img" style="max-width:95%; max-height:85%; object-fit:contain; border-radius:8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+            <img id="image-modal-img" referrerpolicy="no-referrer" style="max-width:95%; max-height:85%; object-fit:contain; border-radius:8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
         `;
         // 黒い背景をタップしても閉じるようにする
         modal.addEventListener('click', function(e) {
