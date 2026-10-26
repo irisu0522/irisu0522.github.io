@@ -699,3 +699,15 @@ document.getElementById('emergency-archive-btn').onclick = function() {
 // ==========================================
 // 🚨 エマージェンシーモード制御（完全版）ここまで
 // ==========================================
+// ▼▼▼ 「トップへ」ボタンを押した際に記憶を完全にリセットする処理 ▼▼▼
+document.addEventListener('click', function(e) {
+    // クリックされたボタン（またはその周辺）を取得
+    let target = e.target.closest('a, button, div'); 
+    
+    // もし押されたボタンに「トップへ」という文字が含まれていたら
+    if (target && target.innerText && target.innerText.includes('トップへ')) {
+        e.preventDefault();
+        e.stopPropagation(); // 重くなっていた古い処理を強制ストップ
+        location.reload();   // 画面を完全にリフレッシュして初期状態に戻す
+    }
+}, true);
