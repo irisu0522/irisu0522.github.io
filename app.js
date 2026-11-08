@@ -845,3 +845,62 @@ window.submitTargetPhoto = function(targetName, safeId) {
     };
     reader.readAsDataURL(file);
 };
+// --- ★追加：目標物の写真をGASに送信する処理（undefined対策版） ---
+window.submitTargetPhoto = function(targetName, safeId) {
+    let fileInput = document.getElementById(`input-target-photo-${safeId}`);
+    let btn = document.getElementById(`btn-target-${safeId}`);
+    
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        return showMessage("📸 写真を選択してください。");
+    }
+
+    btn.innerText = '送信中...（画面を閉じないでください）';
+    btn.disabled = true;
+
+    let file = fileInput.files[0];
+    let reader = new FileReader();
+    
+    reader.onload = function(e) {
+        // 万が一写真データが空の場合の安全対策
+        if (!e.target.result || !e.target.result.includes(',')) {
+            showMessage("❌ 写真データの読み込みに失敗しました。");
+            btn.innerText = 'スプレッドシートへ送信';
+            btn.disabled = false;
+            return;
+        }
+
+        let base64Data = e.target.result.split(',')[1];
+        let payload = {
+            action: 'update_target_photo',
+            name: targetName,
+            mimeType: file.type || 'image/jpeg',
+            filename: file.name || 'photo.jpg', // ★ undefined対策：名前が取得できない場合はphoto.jpgにする
+            fileData: base64Data
+        };
+
+        fetch(CONFIG.GAS_API_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            // ★ undefined対策：異なる形式の成功/エラー応答にも対応
+            if (res.success || res.status === "Success") {
+                showMessage("✅ 目標物の写真を保存しました！");
+                refreshMapData(); 
+            } else {
+                let errMsg = res.error || res.message || "原因不明のエラー";
+                showMessage("❌ エラー: " + errMsg);
+                btn.innerText = 'スプレッドシートへ送信';
+                btn.disabled = false;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showMessage("❌ 通信エラーが発生しました。");
+            btn.innerText = 'スプレッドシートへ送信';
+            btn.disabled = false;
+        });
+    };
+    reader.readAsDataURL(file);
+};
