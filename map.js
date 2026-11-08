@@ -204,7 +204,7 @@ function renderMarkers(dataToRender, skipFit) {
       if (markersGroup.getLayers().length > 0) { map.fitBounds(markersGroup.getBounds(), { padding: [50, 50], maxZoom: 17 }); }
   }
 }
-// --- 目標物ピンの描画処理 ---
+// --- 目標物ピンの描画処理（undefined対策版） ---
 function renderTargetMarkers(dataToRender, skipFit) {
     targetMarkersGroup.clearLayers(); 
     if (State.appMode === 'test') return;
@@ -216,20 +216,23 @@ function renderTargetMarkers(dataToRender, skipFit) {
         let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label" style="border-left: 4px solid ${color}; color: #0f172a; border-color: ${color};">${row["名称"]}</div></div>`;
         let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [0, 0] });
         
-        // 基本情報
-        let popupContent = `<div class="popup-title target" style="border-bottom-color:${color};">${row["名称"]}</div><table class="popup-table"><tr><th>種別</th><td>${row["種別"] || "-"}</td></tr><tr><th>管轄署</th><td>${row["管轄署"] || "-"}</td></tr><tr><th>住所</th><td>${row["住所"] || "-"}</td></tr><tr><th>写真更新</th><td>${row["写真更新日"] || "未添付"}</td></tr></table>`;
+        // 基本情報（undefinedを未添付に変換）
+        let photoDateDisplay = (row["写真更新日"] && row["写真更新日"] !== "undefined") ? row["写真更新日"] : "未添付";
+        let popupContent = `<div class="popup-title target" style="border-bottom-color:${color};">${row["名称"]}</div><table class="popup-table"><tr><th>種別</th><td>${row["種別"] || "-"}</td></tr><tr><th>管轄署</th><td>${row["管轄署"] || "-"}</td></tr><tr><th>住所</th><td>${row["住所"] || "-"}</td></tr><tr><th>写真更新</th><td>${photoDateDisplay}</td></tr></table>`;
         
-        // ★追加：写真がある場合の表示（LGWAN抜け道ルート適用）
-        let targetImgUrl = getDriveImageUrl(row["写真"]);
-        if (targetImgUrl) {
-            let photoDateStr = row["写真更新日"] ? `<span style="font-size:9px; font-weight:normal;">(${row["写真更新日"]})</span>` : "";
-            popupContent += `<div style="margin-top: 10px;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 写真 ${photoDateStr}</div><img src="${targetImgUrl}" referrerpolicy="no-referrer" style="width: 100%; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="openImageModal('${targetImgUrl}')" onerror="this.parentNode.style.display='none'"></div>`;
+        // ★追加：写真がある場合の表示（写真データが存在する時のみ実行）
+        if (row["写真"] && row["写真"] !== "undefined") {
+            let targetImgUrl = getDriveImageUrl(row["写真"]);
+            if (targetImgUrl && targetImgUrl !== "undefined") {
+                let photoDateStr = (row["写真更新日"] && row["写真更新日"] !== "undefined") ? `<span style="font-size:9px; font-weight:normal;">(${row["写真更新日"]})</span>` : "";
+                popupContent += `<div style="margin-top: 10px;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 写真 ${photoDateStr}</div><img src="${targetImgUrl}" referrerpolicy="no-referrer" style="width: 100%; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="openImageModal('${targetImgUrl}')" onerror="this.parentNode.style.display='none'"></div>`;
+            }
         }
 
         // ★追加：点検・パトロールモードの時だけ「写真追加フォーム」を表示
         if (State.appMode === 'edit' || State.appMode === 'photo_only') {
-            // HTMLのIDとしてエラーにならないよう、名称から記号や空白を除外した安全なIDを作る
             let safeId = String(row["名称"]).replace(/[^a-zA-Z0-9ぁ-んァ-ヶ亜-熙]/g, ""); 
+            if (!safeId) safeId = "unknown"; // 名称が記号だけの場合の安全対策
             popupContent += `
             <button class="form-toggle" onclick="toggleForm('target-${safeId}')">📸 写真を追加する</button>
             <div class="input-form" id="form-target-${safeId}">
@@ -249,6 +252,7 @@ function renderTargetMarkers(dataToRender, skipFit) {
         if (targetMarkersGroup.getLayers().length > 0) { map.fitBounds(targetMarkersGroup.getBounds(), { padding: [50, 50], maxZoom: 16 }); }
     }
 }
+
 
 // --- テスト用の特殊マーカー描画処理 ---
 function renderTargetMarkersForTest(centerLatLng) {
