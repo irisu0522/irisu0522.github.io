@@ -270,77 +270,80 @@ function updateListTable(data, type) {
 
 // --- 検索・抽出処理 ---
 function execSearch(skipFit) {
-    if (State.searchTab === 'water') {
-        let selectedCategory = document.getElementById('filter-category').value; 
-        let selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value); 
-        let isAllAreas = document.querySelectorAll('.area-checkbox').length === selectedAreas.length; 
-        let selectedStatus = document.getElementById('filter-status').value; 
-        let selectedError = document.getElementById('filter-error').value; 
-        let selectedPaint = document.getElementById('filter-paint').value; 
-        let keyword = document.getElementById('search-text').value.trim().toLowerCase(); 
-        let filterDateVal = document.getElementById('filter-date').value; 
-        let filterDateCond = document.getElementById('filter-date-cond').value; 
-        let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
+    // 【1】水利データの裏側でのフィルタリングとピン作成（常に実行）
+    let selectedCategory = document.getElementById('filter-category').value; 
+    let selectedAreas = Array.from(document.querySelectorAll('.area-checkbox:checked')).map(cb => cb.value); 
+    let isAllAreas = document.querySelectorAll('.area-checkbox').length === selectedAreas.length; 
+    let selectedStatus = document.getElementById('filter-status').value; 
+    let selectedError = document.getElementById('filter-error').value; 
+    let selectedPaint = document.getElementById('filter-paint').value; 
+    let keywordWater = document.getElementById('search-text').value.trim().toLowerCase(); 
+    let filterDateVal = document.getElementById('filter-date').value; 
+    let filterDateCond = document.getElementById('filter-date-cond').value; 
+    let filterDateTime = filterDateVal ? parseLocalDate(filterDateVal).getTime() : null;
+    
+    let filterPhotoEl = document.getElementById('filter-photo');
+    let selectedPhoto = filterPhotoEl ? filterPhotoEl.value : "";
+    let filterPhotoDateVal = document.getElementById('filter-photo-date') ? document.getElementById('filter-photo-date').value : ""; 
+    let filterPhotoDateCond = document.getElementById('filter-photo-date-cond') ? document.getElementById('filter-photo-date-cond').value : "after"; 
+    let filterPhotoDateTime = filterPhotoDateVal ? parseLocalDate(filterPhotoDateVal).getTime() : null;
+
+    State.currentFilteredData = State.allData.filter(row => {
+        let isPublic = isPublicWater(row["水利番号"]); 
+        let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic); 
+        let matchArea = isAllAreas || selectedAreas.includes(row["地区"]); 
+        let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
+        let matchError = true; 
+        if (selectedError === "異常あり") matchError = (row["異常の種類"] !== "" && row["異常の種類"] !== "なし"); 
+        else if (selectedError !== "") matchError = (row["異常の種類"] === selectedError); 
+        let matchPaint = (selectedPaint === "") || (row["塗装レベル"] === selectedPaint);
+        let matchDate = true; 
+        if (filterDateTime && row["前回調査日"]) { 
+            let rowDateTime = parseLocalDate(row["前回調査日"]).getTime(); 
+            if (filterDateCond === "before") matchDate = (rowDateTime <= filterDateTime); 
+            else if (filterDateCond === "after") matchDate = (rowDateTime >= filterDateTime); 
+        }
+        let matchKeyword = true; 
+        if (keywordWater !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keywordWater);
         
-        // ★追加：写真フィルターの値を取得（HTMLに追加するまでは空扱い）
-        let filterPhotoEl = document.getElementById('filter-photo');
-        let selectedPhoto = filterPhotoEl ? filterPhotoEl.value : "";
-        let filterPhotoDateVal = document.getElementById('filter-photo-date') ? document.getElementById('filter-photo-date').value : ""; 
-        let filterPhotoDateCond = document.getElementById('filter-photo-date-cond') ? document.getElementById('filter-photo-date-cond').value : "after"; 
-        let filterPhotoDateTime = filterPhotoDateVal ? parseLocalDate(filterPhotoDateVal).getTime() : null;
-
-        State.currentFilteredData = State.allData.filter(row => {
-            let isPublic = isPublicWater(row["水利番号"]); 
-            let matchCategory = (selectedCategory === "") || (selectedCategory === "公設" && isPublic) || (selectedCategory === "私設" && !isPublic); 
-            let matchArea = isAllAreas || selectedAreas.includes(row["地区"]); 
-            let matchStatus = (selectedStatus === "") || (row["要調査"] === selectedStatus);
-            let matchError = true; 
-            if (selectedError === "異常あり") matchError = (row["異常の種類"] !== "" && row["異常の種類"] !== "なし"); 
-            else if (selectedError !== "") matchError = (row["異常の種類"] === selectedError); 
-            let matchPaint = (selectedPaint === "") || (row["塗装レベル"] === selectedPaint);
-            let matchDate = true; 
-            if (filterDateTime && row["前回調査日"]) { 
-                let rowDateTime = parseLocalDate(row["前回調査日"]).getTime(); 
-                if (filterDateCond === "before") matchDate = (rowDateTime <= filterDateTime); 
-                else if (filterDateCond === "after") matchDate = (rowDateTime >= filterDateTime); 
+        let hasPhoto = !!(row["遠景写真"] || row["近景写真"] || row["写真更新日"]);
+        let matchPhoto = true;
+        if (selectedPhoto === "あり") matchPhoto = hasPhoto;
+        else if (selectedPhoto === "なし") matchPhoto = !hasPhoto;
+        let matchPhotoDate = true;
+        if (filterPhotoDateTime) {
+            if (row["写真更新日"]) {
+                let rowPhotoDateTime = parseLocalDate(row["写真更新日"]).getTime();
+                if (filterPhotoDateCond === "before") matchPhotoDate = (rowPhotoDateTime <= filterPhotoDateTime);
+                else if (filterPhotoDateCond === "after") matchPhotoDate = (rowPhotoDateTime >= filterPhotoDateTime);
+            } else {
+                matchPhotoDate = false; 
             }
-            let matchKeyword = true; 
-            if (keyword !== "") matchKeyword = (row["水利番号"] + row["水利種別"] + (row["コメント"] || "")).toLowerCase().includes(keyword);
-            
-            // ★追加：写真の有無で判定（写真URLか更新日のどれかがあれば「あり」とする）
-            let hasPhoto = !!(row["遠景写真"] || row["近景写真"] || row["写真更新日"]);
-            let matchPhoto = true;
-            if (selectedPhoto === "あり") matchPhoto = hasPhoto;
-            else if (selectedPhoto === "なし") matchPhoto = !hasPhoto;
-            let matchPhotoDate = true;
-            if (filterPhotoDateTime) {
-                if (row["写真更新日"]) {
-                    let rowPhotoDateTime = parseLocalDate(row["写真更新日"]).getTime();
-                    if (filterPhotoDateCond === "before") matchPhotoDate = (rowPhotoDateTime <= filterPhotoDateTime);
-                    else if (filterPhotoDateCond === "after") matchPhotoDate = (rowPhotoDateTime >= filterPhotoDateTime);
-                } else {
-                    matchPhotoDate = false; // 日付検索をしているのに更新日が無いデータは弾く
-                }
-            }
+        }
+        return matchCategory && matchArea && matchStatus && matchError && matchPaint && matchDate && matchKeyword && matchPhoto && matchPhotoDate;
+    });
+    renderMarkers(State.currentFilteredData, skipFit);
 
-            // ★最後の一文に && matchPhotoDate を付け足す！
-            return matchCategory && matchArea && matchStatus && matchError && matchPaint && matchDate && matchKeyword && matchPhoto && matchPhotoDate;
+    // 【2】目標物データの裏側でのフィルタリングとピン作成（常に実行）
+    let selectedJuri = document.getElementById('filter-target-jurisdiction').value; 
+    let selectedType = document.getElementById('filter-target-type').value; 
+    let keywordTarget = document.getElementById('filter-target-name').value.trim().toLowerCase();
+    
+    State.currentTargetFilteredData = State.targetsData.filter(row => {
+        let matchJuri = (selectedJuri === "" || row["管轄署"] === selectedJuri); 
+        let matchType = (selectedType === "" || row["種別"] === selectedType); 
+        let matchKeyword = (keywordTarget === "" || (row["名称"] || "").toLowerCase().includes(keywordTarget));
+        return matchJuri && matchType && matchKeyword;
+    });
+    renderTargetMarkers(State.currentTargetFilteredData, skipFit);
 
-            return matchCategory && matchArea && matchStatus && matchError && matchPaint && matchDate && matchKeyword && matchPhoto;
-        });
-        renderMarkers(State.currentFilteredData, skipFit); updateListTable(State.currentFilteredData, 'water');
+    // 【3】現在開いているタブに合わせて、下部のリスト一覧を出し分ける
+    if (State.searchTab === 'water') {
+        updateListTable(State.currentFilteredData, 'water');
     } else {
-        let selectedJuri = document.getElementById('filter-target-jurisdiction').value; 
-        let selectedType = document.getElementById('filter-target-type').value; 
-        let keyword = document.getElementById('filter-target-name').value.trim().toLowerCase();
-        State.currentTargetFilteredData = State.targetsData.filter(row => {
-            let matchJuri = (selectedJuri === "" || row["管轄署"] === selectedJuri); 
-            let matchType = (selectedType === "" || row["種別"] === selectedType); 
-            let matchKeyword = (keyword === "" || (row["名称"] || "").toLowerCase().includes(keyword));
-            return matchJuri && matchType && matchKeyword;
-        });
-        renderTargetMarkers(State.currentTargetFilteredData, skipFit); updateListTable(State.currentTargetFilteredData, 'target');
+        updateListTable(State.currentTargetFilteredData, 'target');
     }
+    
     if (window.innerWidth <= 600) document.getElementById('search-panel').style.display = 'none';
 }
 // --- Excel出力機能（復活） ---
