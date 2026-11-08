@@ -738,3 +738,52 @@ document.addEventListener('click', function(e) {
         location.reload();   // 画面を完全にリフレッシュして初期状態に戻す
     }
 }, true);
+// --- ★追加：目標物の写真をGASに送信する処理 ---
+window.submitTargetPhoto = function(targetName, safeId) {
+    let fileInput = document.getElementById(`input-target-photo-${safeId}`);
+    let btn = document.getElementById(`btn-target-${safeId}`);
+    
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        return showMessage("📸 写真を選択してください。");
+    }
+
+    btn.innerText = '送信中...（画面を閉じないでください）';
+    btn.disabled = true;
+
+    let file = fileInput.files[0];
+    let reader = new FileReader();
+    
+    reader.onload = function(e) {
+        let base64Data = e.target.result.split(',')[1];
+        let payload = {
+            action: 'update_target_photo', // GAS側に目標物であることを伝える合言葉
+            name: targetName,
+            mimeType: file.type,
+            filename: file.name,
+            fileData: base64Data
+        };
+
+        fetch(CONFIG.GAS_API_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                showMessage("✅ 目標物の写真を保存しました！");
+                refreshMapData(); // 送信成功後に地図を最新状態に更新
+            } else {
+                showMessage("❌ エラー: " + res.error);
+                btn.innerText = 'スプレッドシートへ送信';
+                btn.disabled = false;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showMessage("❌ 通信エラーが発生しました。");
+            btn.innerText = 'スプレッドシートへ送信';
+            btn.disabled = false;
+        });
+    };
+    reader.readAsDataURL(file);
+};
