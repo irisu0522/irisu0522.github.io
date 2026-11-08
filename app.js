@@ -56,11 +56,48 @@ function setupAreaDropdowns(areas) {
     areas.forEach(area => { testAreaSelect.appendChild(new Option(area, area)); });
 }
 
+// --- ★変更：非番パトロール時に選択ポップアップを出す ---
 window.startApp = function(mode) {
     if (State.allData.length === 0) { State.pendingMode = mode; document.getElementById('loading').style.display = 'block'; return; }
+    
+    // 非番パトロールモードの時だけポップアップを表示して止める
+    if (mode === 'photo_only') {
+        showPatrolSelectModal();
+        return;
+    }
     enterApp(mode);
 };
 
+// --- ★追加：表示レイヤー選択ポップアップを作る関数 ---
+function showPatrolSelectModal() {
+    let modal = document.getElementById('patrol-select-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'patrol-select-modal';
+        modal.style.cssText = 'display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.7); align-items:center; justify-content:center;';
+        modal.innerHTML = `
+            <div style="background:#fff; width:90%; max-width:320px; border-radius:10px; padding:20px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.3);">
+                <h3 style="margin-top:0; color:#1e293b; font-size:18px;">📸 表示レイヤーの選択</h3>
+                <p style="font-size:13px; color:#64748b; margin-bottom:20px;">パトロール画面に表示するピンを選んでください。</p>
+                <button onclick="startPatrolApp('water')" style="display:block; width:100%; padding:12px; margin-bottom:10px; background:#3b82f6; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">🚰 水利のみ表示</button>
+                <button onclick="startPatrolApp('target')" style="display:block; width:100%; padding:12px; margin-bottom:10px; background:#10b981; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">📍 目標物のみ表示</button>
+                <button onclick="startPatrolApp('both')" style="display:block; width:100%; padding:12px; margin-bottom:10px; background:#8b5cf6; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">🌐 両方表示</button>
+                <button onclick="document.getElementById('patrol-select-modal').style.display='none'" style="display:block; width:100%; padding:12px; background:#e2e8f0; color:#475569; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:15px;">キャンセル</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    modal.style.display = 'flex';
+}
+
+// --- ★追加：ポップアップのボタンを押したときの処理 ---
+window.startPatrolApp = function(layerChoice) {
+    document.getElementById('patrol-select-modal').style.display = 'none';
+    State.patrolLayerChoice = layerChoice; // 選んだレイヤーを記憶
+    enterApp('photo_only'); // アプリ起動へ進む
+};
+
+// --- ★変更：アプリ起動時のレイヤー出し分け処理 ---
 function enterApp(mode) {
     State.appMode = mode; 
     document.getElementById('mode-overlay').style.display = 'none'; 
@@ -77,15 +114,33 @@ function enterApp(mode) {
         badge.innerText = '📸 非番パトロール'; badge.style.backgroundColor = '#8b5cf6'; 
     }
     
-    // map.js のオブジェクトを利用
     setTimeout(() => {
         map.invalidateSize();
+        
+        // いったん地図上のピンをすべてリセット（消去）する
+        if (map.hasLayer(markersGroup)) map.removeLayer(markersGroup);
+        if (map.hasLayer(targetMarkersGroup)) map.removeLayer(targetMarkersGroup);
+
+        // モードに応じたピンの配置
         if (mode === 'view_target') {
-            if (map.hasLayer(markersGroup)) map.removeLayer(markersGroup);
-            if (!map.hasLayer(targetMarkersGroup)) map.addLayer(targetMarkersGroup);
+            map.addLayer(targetMarkersGroup);
             switchSearchTab('target'); 
+        } else if (mode === 'photo_only') {
+            // パトロールモード時の出し分け
+            if (State.patrolLayerChoice === 'target') {
+                map.addLayer(targetMarkersGroup);
+                switchSearchTab('target');
+            } else if (State.patrolLayerChoice === 'both') {
+                map.addLayer(markersGroup);
+                map.addLayer(targetMarkersGroup);
+                switchSearchTab('water'); // 検索窓はデフォルトで水利側に設定
+            } else {
+                map.addLayer(markersGroup);
+                switchSearchTab('water');
+            }
         } else {
-            if (!map.hasLayer(markersGroup)) map.addLayer(markersGroup);
+            // 水利閲覧・点検モード時
+            map.addLayer(markersGroup);
             switchSearchTab('water'); 
         }
         map.locate({setView: true, maxZoom: 17}); 
