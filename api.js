@@ -30,6 +30,10 @@ async function loadData() {
         State.areaMapping = result.mapping || {};   
         State.currentFilteredData = [...State.allData]; 
         State.currentTargetFilteredData = [...State.targetsData];
+        // ★追加：進入可否エリアのデータを格納して描画
+        State.accessAreasData = result.accessAreas || [];
+        if (typeof updateAccessAuthorFilter === 'function') updateAccessAuthorFilter();
+        if (typeof renderAccessAreas === 'function') renderAccessAreas();
         
         // 画面のUI更新
         document.getElementById('view-count-badge').innerText = `👁️ 閲覧数: ${result.viewCount || 0}`;
@@ -192,3 +196,24 @@ async function resizeImageBase64(file) {
         reader.readAsDataURL(file);
     });
 }
+// --- ★追加：進入可否エリアの保存通信 ---
+window.saveAccessAreaToGAS = async function(payload) {
+    const res = await fetch(`${CONFIG.GAS_API_URL}?t=${Date.now()}`, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+    });
+    return await res.json();
+};
+
+// --- ★追加：進入可否エリアの削除通信 ---
+window.deleteAccessAreaFromGAS = async function(id) {
+    const res = await fetch(`${CONFIG.GAS_API_URL}?t=${Date.now()}`, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'delete_access_area', id: id })
+    });
+    return await res.json();
+};
