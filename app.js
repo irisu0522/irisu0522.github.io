@@ -18,6 +18,7 @@ function parseLocalDate(dateStr) {
 // 🌟 全体の状態管理
 const State = {
     allData: [], currentFilteredData: [], targetsData: [], currentTargetFilteredData: [],
+    accessAreasData: [], accessAuthorFilter: 'ALL', // ★追加
     areaMapping: {}, appMode: 'view', searchTab: 'water', isTracking: false,
     currentLocationMarker: null, pendingMode: null
 };
@@ -143,6 +144,9 @@ function enterApp(mode) {
             map.addLayer(markersGroup);
             switchSearchTab('water'); 
         }
+        // ★追加：非番パトロール時のみ作図ボタンを表示し、進入可否レイヤーを更新
+        if (typeof toggleAccessDrawButton === 'function') toggleAccessDrawButton(mode === 'photo_only');
+        if (typeof renderAccessAreas === 'function') renderAccessAreas();
         map.locate({setView: true, maxZoom: 17}); 
     }, 100);
 }
