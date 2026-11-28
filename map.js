@@ -315,20 +315,34 @@ const ACCESS_CATEGORIES = {
     purple: { label: '🟣 その他（自由）', color: '#9333ea', placeholder: '例：奥の空き地で転回可能' }
 };
 
+const ACCESS_FILTER_STORAGE_KEY = 'suiri_access_author_filter_v2';
+
+// 前回の登録者フィルタ設定をブラウザから復元
+function loadSavedAccessFilter() {
+    try {
+        const raw = localStorage.getItem(ACCESS_FILTER_STORAGE_KEY);
+        if (!raw) return 'ALL';
+        const parsed = JSON.parse(raw);
+        if (parsed === 'ALL' || Array.isArray(parsed)) return parsed;
+    } catch (e) {}
+    return 'ALL';
+}
+State.accessAuthorFilter = loadSavedAccessFilter();
+
 function escapeHtml(str) {
     return String(str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
-// --- 右上コントロール（登録者フィルタ＆作図ボタン） ---
+// --- ★変更：右上コントロール（複数選択ボタン＆作図ボタン） ---
 const accessControl = L.control({ position: 'topright' });
 accessControl.onAdd = function() {
     const div = L.DomUtil.create('div', 'access-map-controls');
     div.style.cssText = 'display:flex; flex-direction:column; gap:6px; align-items:flex-end; margin-top:6px;';
     div.innerHTML = `
-        <select id="access-author-filter" onchange="onChangeAccessAuthorFilter(this.value)"
-            style="background:#fff; color:#1e293b; border:2px solid #cbd5e1; border-radius:6px; padding:6px 8px; font-size:12px; font-weight:bold; box-shadow:0 2px 6px rgba(0,0,0,0.2); max-width:150px; cursor:pointer;">
-            <option value="ALL">🚒 進入可否: 全員</option>
-        </select>
+        <button id="access-author-filter-btn" onclick="openAccessAuthorModal(null)"
+            style="background:#fff; color:#1e293b; border:2px solid #cbd5e1; border-radius:6px; padding:7px 10px; font-size:12px; font-weight:bold; box-shadow:0 2px 6px rgba(0,0,0,0.2); cursor:pointer;">
+            🚒 進入可否: 全員
+        </button>
         <button id="access-draw-start-btn" onclick="openAccessShapeMenu()"
             style="display:none; background:#8b5cf6; color:#fff; border:2px solid #fff; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:bold; box-shadow:0 3px 8px rgba(0,0,0,0.3); cursor:pointer;">
             ✏️ 作図する
@@ -344,45 +358,126 @@ window.toggleAccessDrawButton = function(show) {
     if (btn) btn.style.display = show ? 'block' : 'none';
 };
 
-// --- 登録者フィルタの選択肢を更新 ---
+// --- ★変更：右上ボタンのラベル表示を更新 ---
 window.updateAccessAuthorFilter = function() {
-    const select = document.getElementById('access-author-filter');
-    if (!select) return;
-    const savedMe = localStorage.getItem('suiri_access_author') || '';
-    const authors = [...new Set((State.accessAreasData || []).map(r => String(r["登録者"] || "匿名").trim()).filter(Boolean))].sort();
-    const currentVal = State.accessAuthorFilter || 'ALL';
-
-    select.innerHTML = '<option value="ALL">🚒 進入可否: 全員</option>';
-    if (savedMe) {
-        select.innerHTML += `<option value="ME">👤 自分のみ (${escapeHtml(savedMe)})</option>`;
-    }
-    authors.forEach(a => {
-        if (a !== savedMe) {
-            select.innerHTML += `<option value="${escapeHtml(a)}">👤 ${escapeHtml(a)}</option>`;
+    const btn = document.getElementById('access-author-filter-btn');
+    if (!btn) return;
+    const filter = State.accessAuthorFilter;
+    if (filter === 'ALL') {
+        btn.innerText = '🚒 進入可否: 全員';
+    } else if (Array.isArray(filter)) {
+        if (filter.length === 0) {
+            btn.innerText = '🚒 進入可否: 非表示';
+        } else if (filter.length === 1) {
+            btn.innerText = `🚒 ${filter[0]}`;
+        } else {
+            btn.innerText = `🚒 進入可否: ${filter.length}名`;
         }
-    });
-    select.value = ([...select.options].some(o => o.value === currentVal)) ? currentVal : 'ALL';
+    }
 };
 
-window.onChangeAccessAuthorFilter = function(val) {
-    State.accessAuthorFilter = val;
-    renderAccessAreas();
+// --- ★追加：登録者（ニックネーム）複数選択モーダル ---
+let pendingAccessModalMode = null;
+
+window.openAccessAuthorModal = function(targetMode) {
+    pendingAccessModalMode = targetMode || null;
+
+    let modal = document.getElementById('access-author-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'access-author-modal';
+        modal.style.cssText = 'display:none; position:fixed; z-index:10001; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.7); align-items:center; justify-content:center;';
+        modal.innerHTML = `
+            <div style="background:#fff; width:92%; max-width:340px; border-radius:12px; padding:18px; box-shadow:0 4px 20px rgba(0,0,0,0.35); box-sizing:border-box;">
+                <h3 style="margin:0 0 6px; font-size:16px; color:#1e293b; text-align:center;">🚒 表示する作図の登録者</h3>
+                <p style="margin:0 0 12px; font-size:12px; color:#64748b; text-align:center;">チェックを入れた人の進入可否データのみ表示します（複数選択可）</p>
+                <div style="display:flex; gap:8px; margin-bottom:10px;">
+                    <button type="button" onclick="toggleAllAccessAuthors(true)" style="flex:1; padding:8px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">✅ 全員選択</button>
+                    <button type="button" onclick="toggleAllAccessAuthors(false)" style="flex:1; padding:8px; background:#f8fafc; color:#475569; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">⬜ すべて解除</button>
+                </div>
+                <div id="access-author-checkbox-list" style="max-height:42vh; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; padding:8px; margin-bottom:14px; background:#f8fafc;"></div>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" onclick="document.getElementById('access-author-modal').style.display='none'" style="flex:1; padding:11px; background:#e2e8f0; color:#475569; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">キャンセル</button>
+                    <button type="button" id="access-author-confirm-btn" onclick="applyAccessAuthorSelection()" style="flex:1.6; padding:11px; background:#2563eb; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">決定</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    // 登録者一覧を作成（自分の記憶ニックネームがあれば先頭へ）
+    const savedMe = localStorage.getItem('suiri_access_author') || '';
+    let authors = [...new Set((State.accessAreasData || []).map(r => String(r["登録者"] || "匿名").trim()).filter(Boolean))].sort();
+    if (savedMe && authors.includes(savedMe)) {
+        authors = [savedMe, ...authors.filter(a => a !== savedMe)];
+    }
+
+    const listEl = document.getElementById('access-author-checkbox-list');
+    const currentFilter = State.accessAuthorFilter;
+
+    if (authors.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center; color:#64748b; font-size:12px; padding:16px 4px;">まだ作図データがありません。<br>そのままマップを開けます。</div>';
+    } else {
+        listEl.innerHTML = authors.map(author => {
+            const isChecked = (currentFilter === 'ALL') || (Array.isArray(currentFilter) && currentFilter.includes(author));
+            const meTag = (savedMe && author === savedMe) ? ' <span style="font-size:10px; background:#dbeafe; color:#1d4ed8; padding:2px 5px; border-radius:4px; margin-left:4px;">自分</span>' : '';
+            return `
+                <label style="display:flex; align-items:center; gap:10px; padding:9px 8px; border-bottom:1px solid #e2e8f0; font-size:14px; color:#1e293b; cursor:pointer; background:#fff; border-radius:4px; margin-bottom:4px;">
+                    <input type="checkbox" class="access-author-cb" value="${escapeHtml(author)}" ${isChecked ? 'checked' : ''} style="width:18px; height:18px; accent-color:#2563eb;">
+                    <span>👤 ${escapeHtml(author)}${meTag}</span>
+                </label>
+            `;
+        }).join('');
+    }
+
+    const confirmBtn = document.getElementById('access-author-confirm-btn');
+    confirmBtn.innerText = pendingAccessModalMode ? '🗺️ マップを開く' : '✅ 表示を更新';
+    modal.style.display = 'flex';
 };
 
-// --- 進入可否エリアの地図描画 ---
+window.toggleAllAccessAuthors = function(checked) {
+    document.querySelectorAll('.access-author-cb').forEach(cb => { cb.checked = checked; });
+};
+
+window.applyAccessAuthorSelection = function() {
+    const allCbs = Array.from(document.querySelectorAll('.access-author-cb'));
+    if (allCbs.length === 0) {
+        State.accessAuthorFilter = 'ALL';
+    } else {
+        const checkedVals = allCbs.filter(cb => cb.checked).map(cb => cb.value);
+        State.accessAuthorFilter = (checkedVals.length === allCbs.length) ? 'ALL' : checkedVals;
+    }
+
+    try {
+        localStorage.setItem(ACCESS_FILTER_STORAGE_KEY, JSON.stringify(State.accessAuthorFilter));
+    } catch (e) {}
+
+    document.getElementById('access-author-modal').style.display = 'none';
+    updateAccessAuthorFilter();
+
+    if (pendingAccessModalMode) {
+        const nextMode = pendingAccessModalMode;
+        pendingAccessModalMode = null;
+        enterApp(nextMode, true); // 2回目はモーダルをスキップして起動
+    } else {
+        renderAccessAreas();
+    }
+};
+
+// --- 進入可否エリアの地図描画（複数選択対応・線の太さを半分に変更） ---
 window.renderAccessAreas = function() {
     accessAreasGroup.clearLayers();
     if (State.appMode === 'test') return;
     const list = State.accessAreasData || [];
-    const savedMe = localStorage.getItem('suiri_access_author') || '';
-    const filterVal = State.accessAuthorFilter || 'ALL';
+    const filter = State.accessAuthorFilter;
+
+    // 非表示（空配列）の場合は何も描かない
+    if (Array.isArray(filter) && filter.length === 0) return;
 
     list.forEach(row => {
         const author = String(row["登録者"] || "匿名").trim();
-        if (filterVal === 'ME') {
-            if (!savedMe || author !== savedMe) return;
-        } else if (filterVal !== 'ALL') {
-            if (author !== filterVal) return;
+        if (filter !== 'ALL') {
+            if (!Array.isArray(filter) || !filter.includes(author)) return;
         }
 
         const cat = ACCESS_CATEGORIES[row["区分"]] || ACCESS_CATEGORIES.purple;
@@ -393,7 +488,8 @@ window.renderAccessAreas = function() {
 
         let layer = null;
         if (shape === 'line' && Array.isArray(coords) && coords.length >= 2) {
-            layer = L.polyline(coords, { pane: 'accessPane', color: cat.color, weight: 6, opacity: 0.85 });
+            // ★変更：線の太さを半分（6 → 3）に調整
+            layer = L.polyline(coords, { pane: 'accessPane', color: cat.color, weight: 3, opacity: 0.85 });
         } else if (shape === 'circle' && Array.isArray(coords) && coords.length === 2) {
             const r = Number(row["半径"]) || 30;
             layer = L.circle(coords, { pane: 'accessPane', radius: r, color: cat.color, weight: 3, fillColor: cat.color, fillOpacity: 0.22 });
@@ -529,10 +625,11 @@ window.undoAccessPoint = function() {
 function redrawTempAccessShape() {
     AccessDraw.tempGroup.clearLayers();
     AccessDraw.points.forEach(pt => {
-        L.circleMarker(pt, { radius: 6, color: '#fff', weight: 2, fillColor: '#8b5cf6', fillOpacity: 1 }).addTo(AccessDraw.tempGroup);
+        L.circleMarker(pt, { radius: 5, color: '#fff', weight: 2, fillColor: '#8b5cf6', fillOpacity: 1 }).addTo(AccessDraw.tempGroup);
     });
     if (AccessDraw.shape === 'line' && AccessDraw.points.length >= 2) {
-        L.polyline(AccessDraw.points, { color: '#8b5cf6', weight: 5, dashArray: '6,6' }).addTo(AccessDraw.tempGroup);
+        // ★変更：作図中の線も半分（5 → 2.5）に調整
+        L.polyline(AccessDraw.points, { color: '#8b5cf6', weight: 2.5, dashArray: '6,6' }).addTo(AccessDraw.tempGroup);
     } else if (AccessDraw.shape === 'polygon' && AccessDraw.points.length >= 3) {
         L.polygon(AccessDraw.points, { color: '#8b5cf6', weight: 3, fillColor: '#8b5cf6', fillOpacity: 0.25 }).addTo(AccessDraw.tempGroup);
     } else if (AccessDraw.shape === 'circle' && AccessDraw.points.length === 1) {
