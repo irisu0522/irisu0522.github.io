@@ -499,8 +499,12 @@ window.renderAccessAreas = function() {
         if (!layer) return;
 
         const memoHtml = row["メモ"] ? escapeHtml(row["メモ"]).replace(/\n/g, '<br>') : '（メモなし）';
-        const deleteBtnHtml = (State.appMode === 'photo_only')
-            ? `<button onclick="confirmDeleteAccessArea('${escapeHtml(row["ID"])}')" style="width:100%; margin-top:10px; padding:8px; background:#ef4444; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">🗑️ この図形を削除</button>`
+        // ★変更：非番パトロール時のみ「編集」と「削除」ボタンを表示
+        const actionBtnsHtml = (State.appMode === 'photo_only')
+            ? `<div style="display:flex; gap:6px; margin-top:10px;">
+                   <button onclick="openAccessEditModal('${escapeHtml(row["ID"])}')" style="flex:1; padding:8px; background:#2563eb; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">✏️ 色・メモを編集</button>
+                   <button onclick="confirmDeleteAccessArea('${escapeHtml(row["ID"])}')" style="flex:0.8; padding:8px; background:#ef4444; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">🗑️ 削除</button>
+               </div>`
             : '';
 
         const popupHtml = `
@@ -513,12 +517,9 @@ window.renderAccessAreas = function() {
                     👤 登録者: ${escapeHtml(author)}<br>
                     📅 更新日: ${escapeHtml(row["更新日"] || "-")}
                 </div>
-                ${deleteBtnHtml}
+                ${actionBtnsHtml}
             </div>
         `;
-        layer.bindPopup(popupHtml).addTo(accessAreasGroup);
-    });
-};
 
 // --- 作図ステート管理 ---
 const AccessDraw = {
