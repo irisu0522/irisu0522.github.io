@@ -528,7 +528,8 @@ const AccessDraw = {
     points: [],
     radius: 30,
     tempGroup: L.featureGroup().addTo(map),
-    selectedCategory: 'red'
+    selectedCategory: 'red',
+    editingId: null // ★追加：編集中の図形ID（新規時はnull）
 };
 
 // ① 図形選択ポップアップ
@@ -667,8 +668,20 @@ window.finishAccessDrawing = function() {
     openAccessSaveModal();
 };
 
-// ④ 区分・メモ・ニックネーム入力モーダル
-function openAccessSaveModal() {
+// ★追加：既存図形の編集モーダルを開く
+window.openAccessEditModal = function(id) {
+    const target = (State.accessAreasData || []).find(r => String(r["ID"]).trim() === String(id).trim());
+    if (!target) {
+        return showMessage("対象の図形データが見つかりません。");
+    }
+    map.closePopup();
+    openAccessSaveModal(target);
+};
+
+// ④ 区分・メモ・ニックネーム入力モーダル（新規登録・編集 兼用）
+function openAccessSaveModal(editData = null) {
+    AccessDraw.editingId = editData ? String(editData["ID"]).trim() : null;
+
     let modal = document.getElementById('access-save-modal');
     if (!modal) {
         modal = document.createElement('div');
@@ -676,7 +689,7 @@ function openAccessSaveModal() {
         modal.style.cssText = 'display:none; position:fixed; z-index:10000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.7); align-items:center; justify-content:center;';
         modal.innerHTML = `
             <div style="background:#fff; width:92%; max-width:360px; border-radius:12px; padding:18px; box-shadow:0 4px 20px rgba(0,0,0,0.35); max-height:90vh; overflow-y:auto; box-sizing:border-box;">
-                <h3 style="margin:0 0 12px; font-size:16px; color:#1e293b; text-align:center;">🚒 進入可否の登録</h3>
+                <h3 id="access-save-modal-title" style="margin:0 0 12px; font-size:16px; color:#1e293b; text-align:center;">🚒 進入可否の登録</h3>
                 <div style="font-size:12px; font-weight:bold; color:#475569; margin-bottom:6px;">区分を選択：</div>
                 <div id="access-cat-buttons" style="display:flex; flex-direction:column; gap:6px; margin-bottom:8px;"></div>
                 <div id="access-blue-warning" style="display:none; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; font-size:11px; font-weight:bold; padding:7px; border-radius:6px; margin-bottom:10px;">
@@ -712,9 +725,25 @@ function openAccessSaveModal() {
         catBox.appendChild(btn);
     });
 
-    document.getElementById('access-memo-input').value = '';
-    document.getElementById('access-author-input').value = localStorage.getItem('suiri_access_author') || '';
-    selectAccessCategory('red');
+    const titleEl = document.getElementById('access-save-modal-title');
+    const submitBtn = document.getElementById('access-save-submit-btn');
+
+    if (editData) {
+        // ★編集モード：現在の値をセット
+        titleEl.innerText = '✏️ 進入可否の編集';
+        submitBtn.innerText = '変更を保存';
+        document.getElementById('access-memo-input').value = editData["メモ"] || '';
+        document.getElementById('access-author-input').value = editData["登録者"] || '';
+        selectAccessCategory(ACCESS_CATEGORIES[editData["区分"]] ? editData["区分"] : 'purple');
+    } else {
+        // 新規登録モード
+        titleEl.innerText = '🚒 進入可否の登録';
+        submitBtn.innerText = 'スプレッドシートへ保存';
+        document.getElementById('access-memo-input').value = '';
+        document.getElementById('access-author-input').value = localStorage.getItem('suiri_access_author') || '';
+        selectAccessCategory('red');
+    }
+
     modal.style.display = 'flex';
 }
 
@@ -731,34 +760,54 @@ function selectAccessCategory(key) {
     document.getElementById('access-memo-input').placeholder = cat.placeholder;
 }
 
-// ⑤ GASへ保存送信
+// ⑤ GASへ保存・更新送信
 window.submitAccessArea = async function() {
     const btn = document.getElementById('access-save-submit-btn');
     const memo = document.getElementById('access-memo-input').value.trim();
     const author = document.getElementById('access-author-input').value.trim();
+    const isEdit = Boolean(AccessDraw.editingId);
 
-    if (author) localStorage.setItem('suiri_access_author', author);
-
-    const coordsToSend = (AccessDraw.shape === 'circle') ? AccessDraw.points[0] : AccessDraw.points;
-    const payload = {
-        action: 'save_access_area',
-        shape: AccessDraw.shape,
-        category: AccessDraw.selectedCategory,
-        coords: coordsToSend,
-        radius: (AccessDraw.shape === 'circle') ? AccessDraw.radius : '',
-        memo: memo,
-        author: author || '匿名'
-    };
+    if (!isEdit && author) localStorage.setItem('suiri_access_author', author);
 
     btn.disabled = true;
-    btn.innerText = '保存中...';
+    btn.innerText = isEdit ? '更新中...' : '保存中...';
 
     try {
-        const res = await saveAccessAreaToGAS(payload);
+        let res;
+        if (isEdit) {
+            // ★既存図形の更新送信
+            const payload = {
+                action: 'update_access_area',
+                id: AccessDraw.editingId,
+                category: AccessDraw.selectedCategory,
+                memo: memo,
+                author: author || '匿名'
+            };
+            res = await updateAccessAreaInGAS(payload);
+        } else {
+            // 新規登録送信
+            const coordsToSend = (AccessDraw.shape === 'circle') ? AccessDraw.points[0] : AccessDraw.points;
+            const payload = {
+                action: 'save_access_area',
+                shape: AccessDraw.shape,
+                category: AccessDraw.selectedCategory,
+                coords: coordsToSend,
+                radius: (AccessDraw.shape === 'circle') ? AccessDraw.radius : '',
+                memo: memo,
+                author: author || '匿名'
+            };
+            res = await saveAccessAreaToGAS(payload);
+        }
+
         if (res.success) {
             document.getElementById('access-save-modal').style.display = 'none';
-            cancelAccessDrawing();
-            showMessage('✅ 進入可否エリアを保存しました！');
+            if (isEdit) {
+                AccessDraw.editingId = null;
+                showMessage('✅ 進入可否の内容を更新しました！');
+            } else {
+                cancelAccessDrawing();
+                showMessage('✅ 進入可否エリアを保存しました！');
+            }
             if (typeof refreshMapData === 'function') refreshMapData();
         } else {
             showMessage('❌ 保存エラー: ' + (res.error || res.message || '不明なエラー'));
@@ -768,10 +817,9 @@ window.submitAccessArea = async function() {
         showMessage('❌ 通信エラーが発生しました。電波状態を確認してください。');
     } finally {
         btn.disabled = false;
-        btn.innerText = 'スプレッドシートへ保存';
+        btn.innerText = isEdit ? '変更を保存' : 'スプレッドシートへ保存';
     }
 };
-
 // ⑥ GASへ削除送信
 window.confirmDeleteAccessArea = async function(id) {
     if (!window.confirm('この進入可否図形を削除しますか？')) return;
