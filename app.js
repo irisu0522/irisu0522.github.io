@@ -57,17 +57,70 @@ function setupAreaDropdowns(areas) {
     areas.forEach(area => { testAreaSelect.appendChild(new Option(area, area)); });
 }
 
-// --- ★変更：非番パトロール時に選択ポップアップを出す ---
+// --- ★変更：アプリ起動処理（旧パトロール用モーダルを削除し共通化） ---
 window.startApp = function(mode) {
-    if (State.allData.length === 0) { State.pendingMode = mode; document.getElementById('loading').style.display = 'block'; return; }
-    
-    // 非番パトロールモードの時だけポップアップを表示して止める
-    if (mode === 'photo_only') {
-        showPatrolSelectModal();
+    if (State.allData.length === 0) {
+        State.pendingMode = mode;
+        document.getElementById('loading').style.display = 'block';
         return;
     }
     enterApp(mode);
 };
+
+// --- ★変更：アプリ起動時の処理（全4モードで登録者選択モーダルを表示） ---
+function enterApp(mode, skipAuthorModal) {
+    // 全4モード開始時に、進入可否の登録者（複数選択）モーダルを挟む
+    if (!skipAuthorModal && ['view_water', 'view_target', 'edit', 'photo_only'].includes(mode)) {
+        if (typeof openAccessAuthorModal === 'function') {
+            openAccessAuthorModal(mode);
+            return;
+        }
+    }
+
+    State.appMode = mode; 
+    document.getElementById('mode-overlay').style.display = 'none'; 
+    document.getElementById('top-info-container').style.display = 'flex'; 
+    let badge = document.getElementById('current-mode-badge');
+    
+    if (mode === 'view_water') { 
+        badge.innerText = '👀 水利 閲覧'; badge.style.backgroundColor = '#3b82f6'; 
+    } else if (mode === 'view_target') { 
+        badge.innerText = '📍 目標物 閲覧'; badge.style.backgroundColor = '#10b981'; 
+    } else if (mode === 'edit') { 
+        badge.innerText = '🛠️ 水利 点検'; badge.style.backgroundColor = '#ef4444'; 
+    } else if (mode === 'photo_only') { 
+        badge.innerText = '📸 非番パトロール'; badge.style.backgroundColor = '#8b5cf6'; 
+    }
+    
+    setTimeout(() => {
+        map.invalidateSize();
+        
+        // いったん地図上のピンをすべてリセット（消去）する
+        if (map.hasLayer(markersGroup)) map.removeLayer(markersGroup);
+        if (map.hasLayer(targetMarkersGroup)) map.removeLayer(targetMarkersGroup);
+
+        // モードに応じたピンの配置
+        if (mode === 'view_target') {
+            map.addLayer(targetMarkersGroup);
+            switchSearchTab('target'); 
+        } else if (mode === 'photo_only') {
+            // ★変更：非番パトロール時は最初から水利・目標物の両方を表示（A案）
+            map.addLayer(markersGroup);
+            map.addLayer(targetMarkersGroup);
+            switchSearchTab('water');
+        } else {
+            // 水利閲覧・点検モード時
+            map.addLayer(markersGroup);
+            switchSearchTab('water'); 
+        }
+
+        // 非番パトロール時のみ作図ボタンを表示し、進入可否レイヤーを更新
+        if (typeof toggleAccessDrawButton === 'function') toggleAccessDrawButton(mode === 'photo_only');
+        if (typeof updateAccessAuthorFilter === 'function') updateAccessAuthorFilter();
+        if (typeof renderAccessAreas === 'function') renderAccessAreas();
+        map.locate({setView: true, maxZoom: 17}); 
+    }, 100);
+}
 
 // --- ★追加：表示レイヤー選択ポップアップを作る関数 ---
 function showPatrolSelectModal() {
