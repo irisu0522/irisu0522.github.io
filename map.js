@@ -1,5 +1,5 @@
 // ==========================================
-// map.js : Leaflet地図の制御・描画を専門に扱うファイル
+// map.js : Leaflet地図の制御・描画を専門に扱うファイル（完全版）
 // ==========================================
 
 // --- 地図タイルの設定 ---
@@ -15,9 +15,9 @@ const map = L.map('map', { center: [34.2305, 135.1705], zoom: 14, layers: [googl
 let markersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 50 }); 
 let targetMarkersGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16, maxClusterRadius: 60 });
 
-// --- ★追加：進入可否エリア用レイヤー（水利ピンより背面に配置） ---
+// --- 進入可否エリア用レイヤー（水利ピンより背面に配置） ---
 map.createPane('accessPane');
-map.getPane('accessPane').style.zIndex = 350; // 通常のピン(600)より後ろに固定
+map.getPane('accessPane').style.zIndex = 350;
 let accessAreasGroup = L.featureGroup().addTo(map);
 
 // --- レイヤーコントロールの追加 ---
@@ -80,7 +80,6 @@ map.on('dragstart', function() {
 });
 
 // --- ヘルパー関数 ---
-// --- ヘルパー関数 ---
 function isPublicWater(suiriNumber) {
     let str = String(suiriNumber || "");
     if (!str || !str.includes("-")) return true; 
@@ -98,16 +97,16 @@ function getTargetColor(type) {
     return '#64748b'; 
 }
 
-// ★Googleドライブの共有URLを、直接画像を表示するURLに変換する関数（最新版・抜け道ルート）
+// Googleドライブの共有URLを直接画像表示用URL（Google CDN）に変換
 function getDriveImageUrl(url) {
     if (!url) return "";
     let match = url.match(/\/d\/(.*?)\//);
     if (match && match[1]) {
-        // ▼▼▼ 抜け道ルート（Google CDN）に変更 ▼▼▼
         return `https://lh3.googleusercontent.com/d/${match[1]}`;
     }
     return url;
 }
+
 // --- 水利ピンの描画処理 ---
 function renderMarkers(dataToRender, skipFit) {
     markersGroup.clearLayers(); 
@@ -123,37 +122,29 @@ function renderMarkers(dataToRender, skipFit) {
         let customIcon = L.divIcon({ className: className, iconSize: [24, 24], iconAnchor: [12, 12] }); 
         let categoryText = isPublicWater(row["水利番号"]) ? "公設" : "私設";
         
-        // ★追加：写真のURLを画像表示用に変換
         let farImageUrl = getDriveImageUrl(row["遠景写真"]);
         let nearImageUrl = getDriveImageUrl(row["近景写真"]);
 
-        // ポップアップの基本情報
         let popupContent = `<div class="popup-title">${row["水利種別"]} (${row["水利番号"]})</div>${isAlert ? `<div class="popup-alert">⚠️ 要点検</div>` : ''}<table class="popup-table"><tr><th>地区</th><td>${row["地区"] || "-"}</td></tr><tr><th>区分</th><td>${categoryText}</td></tr><tr><th>前回点検</th><td>${row["前回調査日"] || "未実施"}</td></tr><tr><th>写真更新</th><td>${row["写真更新日"] || "未添付"}</td></tr><tr><th>点検結果</th><td>${row["点検結果"] || "未入力"}</td></tr><tr><th>異常の種類</th><td>${row["異常の種類"] || "-"}</td></tr><tr><th>塗装レベル</th><td>${row["塗装レベル"] || "-"}</td></tr><tr><th>コメント</th><td>${row["コメント"] || "-"}</td></tr></table>`;
         
-       // ★変更：写真が登録されていれば、画像と「写真更新日」を表示（タップで拡大）
         if (farImageUrl || nearImageUrl) {
             let photoDateStr = row["写真更新日"] ? `<span style="font-size:9px; font-weight:normal;">(${row["写真更新日"]})</span>` : "";
             popupContent += `<div style="display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap;">`;
             if (farImageUrl) {
-                // ▼▼▼ referrerpolicy="no-referrer" を追加 ▼▼▼
                 popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 遠景 ${photoDateStr}</div><img src="${farImageUrl}" referrerpolicy="no-referrer" style="width: 100%; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="openImageModal('${farImageUrl}')" onerror="this.parentNode.style.display='none'"></div>`;
             }
             if (nearImageUrl) {
-                // ▼▼▼ referrerpolicy="no-referrer" を追加 ▼▼▼
                 popupContent += `<div style="flex: 1; min-width: 45%;"><div style="font-size: 10px; color: #666; margin-bottom: 2px;">📸 近景 ${photoDateStr}</div><img src="${nearImageUrl}" referrerpolicy="no-referrer" style="width: 100%; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="openImageModal('${nearImageUrl}')" onerror="this.parentNode.style.display='none'"></div>`;
             }
             popupContent += `</div>`;
         }
         
-       // 点検入力フォーム（点検モード or 非番パトロールモードの時だけ表示）
         if (State.appMode === 'edit' || State.appMode === 'photo_only') {
             let isPhotoMode = (State.appMode === 'photo_only');
             
             popupContent += `
             <button class="form-toggle" onclick="toggleForm('${row["水利番号"]}')">${isPhotoMode ? '📸 写真を追加する' : '✏️ 点検結果を入力する'}</button>
             <div class="input-form" id="form-${row["水利番号"]}">
-                
-                <!-- 非番モードでは以下の入力枠を丸ごと隠す -->
                 <div style="${isPhotoMode ? 'display:none;' : ''}">
                     <div class="form-group">
                         <label>点検結果</label>
@@ -165,18 +156,18 @@ function renderMarkers(dataToRender, skipFit) {
                     </div>
                     <div class="form-group">
                         <label>異常の種類</label>
-<select id="input-error-${row["水利番号"]}">
-    <option value="異常なし">✅ 異常なし</option>
-    <option value="蓋開閉困難">🔧 蓋開閉困難</option>
-    <option value="土没">🍂 土没</option>
-    <option value="水没">💧 水没</option>
-    <option value="バルブ不良">⚙️ バルブ不良</option>
-    <option value="陥没 (大)">🕳️ 陥没 (大)</option>
-    <option value="陥没 (小)">🕳️ 陥没 (小)</option>
-    <option value="塗装剥がれ">🎨 塗装剥がれ</option>
-    <option value="塗装間違い">❌ 塗装間違い</option>
-    <option value="その他">❓ その他</option>
-</select>
+                        <select id="input-error-${row["水利番号"]}">
+                            <option value="異常なし">✅ 異常なし</option>
+                            <option value="蓋開閉困難">🔧 蓋開閉困難</option>
+                            <option value="土没">🍂 土没</option>
+                            <option value="水没">💧 水没</option>
+                            <option value="バルブ不良">⚙️ バルブ不良</option>
+                            <option value="陥没 (大)">🕳️ 陥没 (大)</option>
+                            <option value="陥没 (小)">🕳️ 陥没 (小)</option>
+                            <option value="塗装剥がれ">🎨 塗装剥がれ</option>
+                            <option value="塗装間違い">❌ 塗装間違い</option>
+                            <option value="その他">❓ その他</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>塗装レベル</label>
@@ -202,13 +193,14 @@ function renderMarkers(dataToRender, skipFit) {
             `;
         }
 
-    L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent, { closeOnClick: false, autoClose: false }).addTo(markersGroup);
-  });
+        L.marker([row["緯度"], row["経度"]], {icon: customIcon}).bindPopup(popupContent, { closeOnClick: false, autoClose: false }).addTo(markersGroup);
+    });
 
-  if (!skipFit && State.searchTab === 'water') {
-      if (markersGroup.getLayers().length > 0) { map.fitBounds(markersGroup.getBounds(), { padding: [50, 50], maxZoom: 17 }); }
-  }
+    if (!skipFit && State.searchTab === 'water') {
+        if (markersGroup.getLayers().length > 0) { map.fitBounds(markersGroup.getBounds(), { padding: [50, 50], maxZoom: 17 }); }
+    }
 }
+
 // --- 目標物ピンの描画処理（undefined対策版） ---
 function renderTargetMarkers(dataToRender, skipFit) {
     targetMarkersGroup.clearLayers(); 
@@ -221,11 +213,9 @@ function renderTargetMarkers(dataToRender, skipFit) {
         let iconHtml = `<div class="marker-target-wrapper"><div class="marker-target-label" style="border-left: 4px solid ${color}; color: #0f172a; border-color: ${color};">${row["名称"]}</div></div>`;
         let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [0, 0] });
         
-        // 基本情報（undefinedを未添付に変換）
         let photoDateDisplay = (row["写真更新日"] && row["写真更新日"] !== "undefined") ? row["写真更新日"] : "未添付";
         let popupContent = `<div class="popup-title target" style="border-bottom-color:${color};">${row["名称"]}</div><table class="popup-table"><tr><th>種別</th><td>${row["種別"] || "-"}</td></tr><tr><th>管轄署</th><td>${row["管轄署"] || "-"}</td></tr><tr><th>住所</th><td>${row["住所"] || "-"}</td></tr><tr><th>写真更新</th><td>${photoDateDisplay}</td></tr></table>`;
         
-        // ★追加：写真がある場合の表示（写真データが存在する時のみ実行）
         if (row["写真"] && row["写真"] !== "undefined") {
             let targetImgUrl = getDriveImageUrl(row["写真"]);
             if (targetImgUrl && targetImgUrl !== "undefined") {
@@ -234,10 +224,9 @@ function renderTargetMarkers(dataToRender, skipFit) {
             }
         }
 
-        // ★追加：点検・パトロールモードの時だけ「写真追加フォーム」を表示
         if (State.appMode === 'edit' || State.appMode === 'photo_only') {
             let safeId = String(row["名称"]).replace(/[^a-zA-Z0-9ぁ-んァ-ヶ亜-熙]/g, ""); 
-            if (!safeId) safeId = "unknown"; // 名称が記号だけの場合の安全対策
+            if (!safeId) safeId = "unknown";
             popupContent += `
             <button class="form-toggle" onclick="toggleForm('target-${safeId}')">📸 写真を追加する</button>
             <div class="input-form" id="form-target-${safeId}">
@@ -258,7 +247,6 @@ function renderTargetMarkers(dataToRender, skipFit) {
     }
 }
 
-
 // --- テスト用の特殊マーカー描画処理 ---
 function renderTargetMarkersForTest(centerLatLng) {
     targetMarkersGroup.clearLayers();
@@ -274,37 +262,31 @@ function renderTargetMarkersForTest(centerLatLng) {
         let customIcon = L.divIcon({ className: 'marker-target-container', html: iconHtml, iconSize: [0, 0] });
         let marker = L.marker([row["緯度"], row["経度"]], {icon: customIcon, zIndexOffset: 900}).addTo(targetMarkersGroup);
         TestManager.elements.push(marker);
-
-        
     });
 }
-// --- ★追加：画像を画面いっぱいに拡大表示する機能 ---
+
+// --- 画像を画面いっぱいに拡大表示する機能 ---
 function openImageModal(imgUrl) {
     let modal = document.getElementById('image-modal');
     if (!modal) {
-        // 初回のみ、拡大用の黒い背景画面を作る
         modal = document.createElement('div');
         modal.id = 'image-modal';
         modal.style.cssText = 'display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.8); align-items:center; justify-content:center; flex-direction:column;';
-        
-        // 閉じるボタンと、大きい写真を入れる枠
-        // ▼▼▼ <img> タグに referrerpolicy="no-referrer" を追加 ▼▼▼
         modal.innerHTML = `
             <span style="position:absolute; top:20px; right:30px; color:white; font-size:35px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('image-modal').style.display='none'">&times;</span>
             <img id="image-modal-img" referrerpolicy="no-referrer" style="max-width:95%; max-height:85%; object-fit:contain; border-radius:8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
         `;
-        // 黒い背景をタップしても閉じるようにする
         modal.addEventListener('click', function(e) {
             if (e.target === modal) modal.style.display = 'none';
         });
         document.body.appendChild(modal);
     }
-    // タップされた写真のURLをセットして、画面に表示！
     document.getElementById('image-modal-img').src = imgUrl;
     modal.style.display = 'flex';
 }
+
 // ==========================================
-// 🚒 進入可否エリア（線・円・多角形）描画・作図機能
+// 🚒 進入可否エリア（線・円・多角形）描画・作図・編集機能
 // ==========================================
 
 const ACCESS_CATEGORIES = {
@@ -316,24 +298,30 @@ const ACCESS_CATEGORIES = {
 };
 
 const ACCESS_FILTER_STORAGE_KEY = 'suiri_access_author_filter_v2';
+let accessFilterInitialized = false;
 
-// 前回の登録者フィルタ設定をブラウザから復元
-function loadSavedAccessFilter() {
+// ★修正：State読み込み後に安全に前回フィルタを復元する関数
+function ensureAccessFilterLoaded() {
+    if (accessFilterInitialized || typeof State === 'undefined') return;
+    accessFilterInitialized = true;
     try {
         const raw = localStorage.getItem(ACCESS_FILTER_STORAGE_KEY);
-        if (!raw) return 'ALL';
-        const parsed = JSON.parse(raw);
-        if (parsed === 'ALL' || Array.isArray(parsed)) return parsed;
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed === 'ALL' || Array.isArray(parsed)) {
+                State.accessAuthorFilter = parsed;
+                return;
+            }
+        }
     } catch (e) {}
-    return 'ALL';
+    State.accessAuthorFilter = 'ALL';
 }
-State.accessAuthorFilter = loadSavedAccessFilter();
 
 function escapeHtml(str) {
     return String(str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
-// --- ★変更：右上コントロール（複数選択ボタン＆作図ボタン） ---
+// --- 右上コントロール（複数選択ボタン＆作図ボタン） ---
 const accessControl = L.control({ position: 'topright' });
 accessControl.onAdd = function() {
     const div = L.DomUtil.create('div', 'access-map-controls');
@@ -358,10 +346,11 @@ window.toggleAccessDrawButton = function(show) {
     if (btn) btn.style.display = show ? 'block' : 'none';
 };
 
-// --- ★変更：右上ボタンのラベル表示を更新 ---
+// --- 右上ボタンのラベル表示を更新 ---
 window.updateAccessAuthorFilter = function() {
+    ensureAccessFilterLoaded();
     const btn = document.getElementById('access-author-filter-btn');
-    if (!btn) return;
+    if (!btn || typeof State === 'undefined') return;
     const filter = State.accessAuthorFilter;
     if (filter === 'ALL') {
         btn.innerText = '🚒 進入可否: 全員';
@@ -376,10 +365,11 @@ window.updateAccessAuthorFilter = function() {
     }
 };
 
-// --- ★追加：登録者（ニックネーム）複数選択モーダル ---
+// --- 登録者（ニックネーム）複数選択モーダル ---
 let pendingAccessModalMode = null;
 
 window.openAccessAuthorModal = function(targetMode) {
+    ensureAccessFilterLoaded();
     pendingAccessModalMode = targetMode || null;
 
     let modal = document.getElementById('access-author-modal');
@@ -405,7 +395,6 @@ window.openAccessAuthorModal = function(targetMode) {
         document.body.appendChild(modal);
     }
 
-    // 登録者一覧を作成（自分の記憶ニックネームがあれば先頭へ）
     const savedMe = localStorage.getItem('suiri_access_author') || '';
     let authors = [...new Set((State.accessAreasData || []).map(r => String(r["登録者"] || "匿名").trim()).filter(Boolean))].sort();
     if (savedMe && authors.includes(savedMe)) {
@@ -458,20 +447,20 @@ window.applyAccessAuthorSelection = function() {
     if (pendingAccessModalMode) {
         const nextMode = pendingAccessModalMode;
         pendingAccessModalMode = null;
-        enterApp(nextMode, true); // 2回目はモーダルをスキップして起動
+        enterApp(nextMode, true);
     } else {
         renderAccessAreas();
     }
 };
 
-// --- 進入可否エリアの地図描画（複数選択対応・線の太さを半分に変更） ---
+// --- 進入可否エリアの地図描画（複数選択対応・線の太さ半分・編集ボタン付き） ---
 window.renderAccessAreas = function() {
+    ensureAccessFilterLoaded();
     accessAreasGroup.clearLayers();
-    if (State.appMode === 'test') return;
+    if (typeof State === 'undefined' || State.appMode === 'test') return;
     const list = State.accessAreasData || [];
     const filter = State.accessAuthorFilter;
 
-    // 非表示（空配列）の場合は何も描かない
     if (Array.isArray(filter) && filter.length === 0) return;
 
     list.forEach(row => {
@@ -488,7 +477,6 @@ window.renderAccessAreas = function() {
 
         let layer = null;
         if (shape === 'line' && Array.isArray(coords) && coords.length >= 2) {
-            // ★変更：線の太さを半分（6 → 3）に調整
             layer = L.polyline(coords, { pane: 'accessPane', color: cat.color, weight: 3, opacity: 0.85 });
         } else if (shape === 'circle' && Array.isArray(coords) && coords.length === 2) {
             const r = Number(row["半径"]) || 30;
@@ -499,7 +487,6 @@ window.renderAccessAreas = function() {
         if (!layer) return;
 
         const memoHtml = row["メモ"] ? escapeHtml(row["メモ"]).replace(/\n/g, '<br>') : '（メモなし）';
-        // ★変更：非番パトロール時のみ「編集」と「削除」ボタンを表示
         const actionBtnsHtml = (State.appMode === 'photo_only')
             ? `<div style="display:flex; gap:6px; margin-top:10px;">
                    <button onclick="openAccessEditModal('${escapeHtml(row["ID"])}')" style="flex:1; padding:8px; background:#2563eb; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">✏️ 色・メモを編集</button>
@@ -520,6 +507,9 @@ window.renderAccessAreas = function() {
                 ${actionBtnsHtml}
             </div>
         `;
+        layer.bindPopup(popupHtml).addTo(accessAreasGroup);
+    });
+};
 
 // --- 作図ステート管理 ---
 const AccessDraw = {
@@ -529,7 +519,7 @@ const AccessDraw = {
     radius: 30,
     tempGroup: L.featureGroup().addTo(map),
     selectedCategory: 'red',
-    editingId: null // ★追加：編集中の図形ID（新規時はnull）
+    editingId: null
 };
 
 // ① 図形選択ポップアップ
@@ -630,7 +620,6 @@ function redrawTempAccessShape() {
         L.circleMarker(pt, { radius: 5, color: '#fff', weight: 2, fillColor: '#8b5cf6', fillOpacity: 1 }).addTo(AccessDraw.tempGroup);
     });
     if (AccessDraw.shape === 'line' && AccessDraw.points.length >= 2) {
-        // ★変更：作図中の線も半分（5 → 2.5）に調整
         L.polyline(AccessDraw.points, { color: '#8b5cf6', weight: 2.5, dashArray: '6,6' }).addTo(AccessDraw.tempGroup);
     } else if (AccessDraw.shape === 'polygon' && AccessDraw.points.length >= 3) {
         L.polygon(AccessDraw.points, { color: '#8b5cf6', weight: 3, fillColor: '#8b5cf6', fillOpacity: 0.25 }).addTo(AccessDraw.tempGroup);
@@ -668,7 +657,7 @@ window.finishAccessDrawing = function() {
     openAccessSaveModal();
 };
 
-// ★追加：既存図形の編集モーダルを開く
+// 既存図形の編集モーダルを開く
 window.openAccessEditModal = function(id) {
     const target = (State.accessAreasData || []).find(r => String(r["ID"]).trim() === String(id).trim());
     if (!target) {
@@ -729,14 +718,12 @@ function openAccessSaveModal(editData = null) {
     const submitBtn = document.getElementById('access-save-submit-btn');
 
     if (editData) {
-        // ★編集モード：現在の値をセット
         titleEl.innerText = '✏️ 進入可否の編集';
         submitBtn.innerText = '変更を保存';
         document.getElementById('access-memo-input').value = editData["メモ"] || '';
         document.getElementById('access-author-input').value = editData["登録者"] || '';
         selectAccessCategory(ACCESS_CATEGORIES[editData["区分"]] ? editData["区分"] : 'purple');
     } else {
-        // 新規登録モード
         titleEl.innerText = '🚒 進入可否の登録';
         submitBtn.innerText = 'スプレッドシートへ保存';
         document.getElementById('access-memo-input').value = '';
@@ -775,7 +762,6 @@ window.submitAccessArea = async function() {
     try {
         let res;
         if (isEdit) {
-            // ★既存図形の更新送信
             const payload = {
                 action: 'update_access_area',
                 id: AccessDraw.editingId,
@@ -785,7 +771,6 @@ window.submitAccessArea = async function() {
             };
             res = await updateAccessAreaInGAS(payload);
         } else {
-            // 新規登録送信
             const coordsToSend = (AccessDraw.shape === 'circle') ? AccessDraw.points[0] : AccessDraw.points;
             const payload = {
                 action: 'save_access_area',
@@ -820,6 +805,7 @@ window.submitAccessArea = async function() {
         btn.innerText = isEdit ? '変更を保存' : 'スプレッドシートへ保存';
     }
 };
+
 // ⑥ GASへ削除送信
 window.confirmDeleteAccessArea = async function(id) {
     if (!window.confirm('この進入可否図形を削除しますか？')) return;
