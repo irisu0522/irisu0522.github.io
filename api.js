@@ -217,3 +217,13 @@ window.deleteAccessAreaFromGAS = async function(id) {
     });
     return await res.json();
 };
+// --- ★追加：進入可否エリアの編集通信 ---
+window.updateAccessAreaInGAS = async function(payload) {
+    const res = await fetch(`${CONFIG.GAS_API_URL}?t=${Date.now()}`, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+    });
+    return await res.json();
+};
